@@ -1,0 +1,25 @@
+Hex Kit Instructions:
+Extract the zip file whereever you want it. Load Hex Kit and select 'Import Tiles' from the File menu. Select the Pixel Tileset folder. Do not adjust the tile settings, simply click 'Save' on the import tool without adjusting the tiles. The tiles may look like they're outside of the import boundry, but that is because the hex tiles have objects that poke over the hex edge.
+
+
+Import Settings Outside of Hex Kit: 
+These tiles were created to be visually appealing- as such, some tiles have objects sticking out of their respective hex (like towering mountains!). The images are saved as 96x96 pixels, but should be treated as 84x96 pixel images for the sake of hex sizing.
+
+Size: 84x96 pixels
+Hex Alignment: Horizontal
+Tile Side Length: 48 pixels
+Render Order: Right down
+Offset: None (These are perfectly aligned pixel hexes)
+
+
+TERMS OF USE:  By purchasing Pixel Hex Tileset, you agree to the following terms:
+
+These art assets can not be used for commercial purposes or any other incoming or money generating activity.
+The art assets can not be distributed individually, as single tiles, or as an art asset in any capacity other than a completed map or work.
+Derivative or modified versions of this artwork may not be distributed individually, as single tiles, or as an art asset in any capacity other than a completed map or work.
+Pixel Hex Tileset and all included artwork is Copyright 2018 Phillip Wiltzius (aka Zeshio)
+
+If you are interested in using these assets for commercial purposes, please send inquiries to zeshio.zworld@gmail.com.
+
+CREDITS:
+A thank you to Cecil Howe of Cone of Negative Energy (https://cone.itch.io/) for inspiring me to design hex artwork. He also put in the time to make sure the art assets in this pack would seemlessly integrate with Hex Kit and promoted my work.

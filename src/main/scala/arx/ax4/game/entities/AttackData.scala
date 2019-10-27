@@ -1,0 +1,231 @@
+package arx.ax4.game.entities
+
+import arx.application.Noto
+import arx.ax4.game.entities.AttackConditionals.AnyAttackReference
+import arx.ax4.game.entities.Conditionals.{AttackConditional, BaseAttackConditional}
+import arx.ax4.game.entities.DamageType.{Piercing, Unknown}
+import arx.ax4.game.entities.TargetPattern.Point
+import arx.core.introspection.{CopyAssistant, TEagerSingleton}
+import arx.core.macros.GenerateCompanion
+import arx.core.math.Sext
+import arx.core.representation.ConfigValue
+import arx.core.vec.coordinates.{AxialVec, AxialVec3}
+import arx.engine.data.ConfigLoadable
+import arx.engine.entity.{Entity, Taxon}
+import arx.engine.world.{Breakdown, WorldView}
+import arx.game.data.DicePool
+
+
+case class AttackData (
+	var name : String = "Strike",
+	var accuracyBonus: Int = 0,
+	var strikeCount : Int = 1,
+	var staminaCostPerStrike: Int = 1,
+	var minRange: Int = 0,
+	var maxRange: Int = 1,
+	var damage: Map[AnyRef, DamageElement] = Map(),
+	var targetPattern : TargetPattern = TargetPattern.Point
+) extends ConfigLoadable {
+	def merge(modifiers : AttackModifier): Unit = {
+		name = modifiers.namePrefix.getOrElse("") + name
+		name = modifiers.nameOverride.getOrElse(name)
+		accuracyBonus += modifiers.accuracyBonus
+		strikeCount += modifiers.strikeCountBonus
+		staminaCostPerStrike += modifiers.staminaCostIncrease
+		minRange = modifiers.minRangeOverride.getOrElse(minRange)
+		maxRange = modifiers.maxRangeOverride.getOrElse(maxRange)
+		targetPattern = modifiers.targetPatternOverride.getOrElse(targetPattern)
+		for ((src,dmg) <- modifiers.damageBonuses) {
+			val existing = damage.get(src)
+			val newDmg = existing match {
+				case Some(ext) => {
+					val dice = dmg.damageDice.map(d => ext.damageDice.mergedWith(d)).getOrElse(ext.damageDice)
+					val bonus = dmg.damageBonus.map(b => ext.damageBonus + b).getOrElse(ext.damageBonus)
+					val mult = dmg.damageMultiplier.map(d => 1.0f + (ext.damageMultiplier - 1.0f) + (d - 1.0f)).getOrElse(ext.damageMultiplier)
+					val dmgType = dmg.damageType.getOrElse(ext.damageType)
+					DamageElement(dice, bonus, mult, dmgType)
+				}
+				case None =>
+					Noto.warn("Modifier to damage element but no base damage element present")
+					DamageElement(dmg.damageDice.getOrElse(DicePool.none), dmg.damageBonus.getOrElse(0), dmg.damageMultiplier.getOrElse(1.0f), dmg.damageType.getOrElse(Unknown))
+			}
+			damage += src -> newDmg
+		}
+	}
+
+	override def customLoadFromConfig(config: ConfigValue): Unit = {
+		for (dmgConfig <- config.fieldOpt("damage")) {
+			if (dmgConfig.isObj) {
+				for ((dmgSrc, dmgDataConf) <- dmgConfig.fields) {
+					DamageElement.parse(dmgDataConf.str) match {
+						case Some(dmgElem) => damage += dmgSrc -> dmgElem
+						case _ => Noto.error(s"malformed damage element : ${dmgDataConf.str}")
+					}
+				}
+			} else {
+				DamageElement.parse(dmgConfig.str) match {
+					case Some(dmgElem) => damage += AttackData.PrimaryDamageKey -> dmgElem
+					case None => Noto.error(s"malformed top level damage element : ${dmgConfig.str}")
+				}
+			}
+		}
+		// TODO : target pattern
+	}
+}
+object AttackData {
+	val PrimaryDamageKey = "primary"
+}
+
+case class DefenseData(var armor : Int = 0,
+							  var dodgeBonus : Int = 0)
+{
+	def merge(modifiers : DefenseModifier) : Unit = {
+		armor += modifiers.armorBonus
+		dodgeBonus += modifiers.dodgeBonus
+	}
+}
+
+
+
+case class AttackModifier(var nameOverride: Option[String] = None,
+								  var namePrefix : Option[String] = None,
+								  var accuracyBonus: Int = 0,
+								  var strikeCountBonus: Int = 0,
+								  var staminaCostIncrease: Int = 0,
+								  var minRangeOverride: Option[Int] = None,
+								  var maxRangeOverride: Option[Int] = None,
+								  var damageBonuses: Map[AnyRef, DamageElementDelta] = Map(),
+								  var targetPatternOverride: Option[TargetPattern] = None)
+
+case class DefenseModifier(var dodgeBonus : Int = 0,
+									var armorBonus : Int = 0)
+
+class SpecialAttack {
+	var condition : BaseAttackConditional = AnyAttackReference
+	var attackModifier: AttackModifier = AttackModifier()
+}
+
+object SpecialAttack {
+
+
+
+	case object PiercingStab extends SpecialAttack {
+		condition = AttackConditionals.HasTargetPattern(Point) and AttackConditionals.HasDamageType(Piercing) and AttackConditionals.HasAtLeastMaxRange(2)
+		attackModifier = AttackModifier(
+			nameOverride = Some("piercing stab"),
+			accuracyBonus = -1,
+			targetPatternOverride = Some(TargetPattern.Line(startDist = 0,length = 2))
+		)
+	}
+
+	case object PowerAttack extends SpecialAttack {
+		condition = AttackConditionals.AnyAttackReference
+		attackModifier = AttackModifier(
+			namePrefix = Some("power attack : "),
+			accuracyBonus = -2,
+			damageBonuses = Map(AttackData.PrimaryDamageKey -> DamageElementDelta(damageMultiplier = Some(2.0f)))
+		)
+	}
+}
+
+class DamageType(nomen_ : String, parents_ : List[Taxon]) extends Taxon(nomen_, parents_) with TEagerSingleton {
+	DamageTypes.damageTypesByName += nomen_.toLowerCase() -> this
+}
+
+object DamageType extends DamageType("damage type", Nil) {
+	case object Physical extends DamageType("physical", DamageType :: Nil)
+
+	case object Bludgeoning extends DamageType("bludgeoning", Physical :: Nil)
+
+	case object Piercing extends DamageType("piercing", Physical :: Nil)
+
+	case object Slashing extends DamageType("slashing", Physical :: Nil)
+
+	case object Unknown extends DamageType("unknown", DamageType :: Nil)
+
+}
+object DamageTypes {
+	var damageTypesByName = Map[String, DamageType]()
+}
+
+case class DamageElement(damageDice: DicePool, damageBonus : Int, damageMultiplier : Float, damageType: DamageType) {
+}
+case class DamageElementDelta(damageDice : Option[DicePool] = None, damageBonus : Option[Int] = None, damageMultiplier : Option[Float], damageType : Option[DamageType] = None)
+
+object DamageElement {
+	val damageRegex = "([0-9]+)\\s*d\\s*([0-9]+)\\s*([+-]\\s*[0-9]+)?(.*)?".r
+	val bonusRegex = "([+-])\\s*([0-9]+)".r
+
+	def toString(elements: Traversable[DamageElement]) = {
+		elements.map(e => e.damageDice.toString)
+	}
+	def parse(str : String) : Option[DamageElement] = {
+		str match {
+			case damageRegex(dieCountStr, pipsStr, nullableBonusStr, nullableDamageTypeStr) =>
+				val bonus = Option(nullableBonusStr) collect {
+					case bonusRegex(sign, amount) => sign match {
+						case "+" => amount.toInt
+						case "-" => -amount.toInt
+					}
+				}
+				val damageType = Option(nullableDamageTypeStr).flatMap(str => DamageTypes.damageTypesByName.get(str.toLowerCase())).getOrElse(DamageType.Unknown)
+				val dieCount = dieCountStr.toInt
+				val pips = pipsStr.toInt
+
+				Some(DamageElement(DicePool(dieCount).d(pips), bonus.getOrElse(0), 1.0f, damageType))
+			case _ => None
+		}
+	}
+}
+
+trait BaseAttackProspect {
+	def attacker : Entity
+	def attackReference : AttackReference
+}
+
+case class UntargetedAttackProspect(attacker : Entity, attackReference: AttackReference) extends BaseAttackProspect
+case class AttackProspect(attacker : Entity, attackReference: AttackReference, target : Entity, allTargets : List[Entity], attackData : AttackData, defenseData : DefenseData) extends BaseAttackProspect
+
+
+//case class AttackResult(attacker: Entity, defender: Entity, strikes: List[StrikeResult])
+//
+//case class StrikeResult(outcomes: Set[StrikeOutcome], damage: List[DamageResult])
+
+case class DamageResult(amount: Int, damageType: DamageType)
+
+trait StrikeOutcome
+
+object StrikeOutcome {
+
+	case object Miss extends StrikeOutcome
+
+	case object Hit extends StrikeOutcome
+
+	case object Dodged extends StrikeOutcome
+
+	case object Armored extends StrikeOutcome
+
+	case object Blocked extends StrikeOutcome
+
+}
+
+
+trait TargetPattern {
+	def targetedHexes(sourcePoint: AxialVec3, targetPoint: AxialVec3): Seq[AxialVec3]
+}
+
+object TargetPattern {
+
+	case object Point extends TargetPattern {
+		override def targetedHexes(sourcePoint: AxialVec3, targetPoint: AxialVec3): Seq[AxialVec3] = targetPoint :: Nil
+	}
+
+	case class Line(startDist : Int, length: Int) extends TargetPattern {
+		override def targetedHexes(sourcePoint: AxialVec3, targetPoint: AxialVec3): Seq[AxialVec3] = {
+			val sourceCart = sourcePoint.qr.asCartesian
+			val delta = targetPoint.qr.asCartesian - sourceCart
+			(startDist until (startDist + length)).map(i => AxialVec.fromCartesian(sourceCart + delta * i.toFloat)).map(ax => AxialVec3(ax.q, ax.r, sourcePoint.l))
+		}
+	}
+
+}
