@@ -14,7 +14,7 @@ import arx.resource.ResourceManager
 @GenerateCompanion
 class Tile extends AxAuxData {
 	var entities = Set[Entity]()
-	var position = AxialVec.Zero
+	var position = AxialVec3.Zero
 }
 
 object Tiles {
@@ -31,9 +31,10 @@ object Tiles {
 
 	def characterOnTile(v : AxialVec3)(implicit world : WorldView) : Option[Entity] = {
 		val tileEnt = tileAt(v)
-		val tile = tileEnt[Tile]
-		tile.entities.find(e => {
-			e.hasData[CharacterInfo]
+		tileEnt.dataOpt[Tile].flatMap(tile => {
+			tile.entities.find(e => {
+				e.hasData[CharacterInfo]
+			})
 		})
 	}
 }

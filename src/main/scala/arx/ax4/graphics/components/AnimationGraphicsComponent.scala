@@ -2,7 +2,7 @@ package arx.ax4.graphics.components
 
 import arx.Prelude._
 import arx.ax4.game.entities.Companions.Physical
-import arx.ax4.game.event.MoveEvent
+import arx.ax4.game.event.EntityMoved
 import arx.ax4.graphics.data.{AxAnimatingWorldData, AxDrawingConstants, AxGraphicsData}
 import arx.core.introspection.Field
 import arx.core.math.Interpolation
@@ -39,7 +39,7 @@ class AnimationGraphicsComponent extends GraphicsComponent {
 				val event = animData.currentGameWorldView.events.last
 				if (event.state == Started) {
 					event pmatch {
-						case MoveEvent(entity, from, to) =>
+						case EntityMoved(entity, from, to) =>
 							val HexSize = display[AxDrawingConstants].HexSize
 							val endPos = to.asCartesian(HexSize.toFloat)
 							val startPos = from.asCartesian(HexSize.toFloat)

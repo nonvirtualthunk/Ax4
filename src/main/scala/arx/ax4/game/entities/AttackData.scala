@@ -5,6 +5,7 @@ import arx.ax4.game.entities.AttackConditionals.AnyAttackReference
 import arx.ax4.game.entities.Conditionals.{AttackConditional, BaseAttackConditional}
 import arx.ax4.game.entities.DamageType.{Piercing, Unknown}
 import arx.ax4.game.entities.TargetPattern.Point
+import arx.ax4.game.logic.Allegiance
 import arx.core.introspection.{CopyAssistant, TEagerSingleton}
 import arx.core.macros.GenerateCompanion
 import arx.core.math.Sext
@@ -210,17 +211,32 @@ object StrikeOutcome {
 }
 
 
-trait TargetPattern {
+sealed trait TargetPattern {
+
+}
+
+trait EntityTarget extends TargetPattern {
+	def matches (view : WorldView, attacker : Entity, target : Entity) : Boolean
+	def count : Int
+}
+
+trait HexTargetPattern extends TargetPattern {
 	def targetedHexes(sourcePoint: AxialVec3, targetPoint: AxialVec3): Seq[AxialVec3]
 }
 
 object TargetPattern {
 
-	case object Point extends TargetPattern {
+	case class Enemies(count : Int) extends EntityTarget {
+		override def matches(view: WorldView, attacker: Entity, target: Entity): Boolean = Allegiance.areEnemies(attacker, target)(view)
+	}
+
+	def SingleEnemy = Enemies(1)
+
+	case object Point extends HexTargetPattern {
 		override def targetedHexes(sourcePoint: AxialVec3, targetPoint: AxialVec3): Seq[AxialVec3] = targetPoint :: Nil
 	}
 
-	case class Line(startDist : Int, length: Int) extends TargetPattern {
+	case class Line(startDist : Int, length: Int) extends HexTargetPattern {
 		override def targetedHexes(sourcePoint: AxialVec3, targetPoint: AxialVec3): Seq[AxialVec3] = {
 			val sourceCart = sourcePoint.qr.asCartesian
 			val delta = targetPoint.qr.asCartesian - sourceCart

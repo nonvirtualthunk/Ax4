@@ -53,5 +53,7 @@ object WeaponLibrary extends EntityArchetypeLibrary {
 
 	override protected def conditionalDataTypes: Map[String, _ <: Clazz[_ <: TAuxData]] = Map("heldItemCountLimit" -> Inventory)
 
-	load("game/data/items/Weapons.sml")
+	override def initialLoad(): Unit = {
+		load("game/data/items/Weapons.sml")
+	}
 }

@@ -1,9 +1,14 @@
 package arx.ax4.game.entities
 
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.atomic.AtomicBoolean
+
 import arx.ax4.game.entities.Companions.Terrain
-import arx.core.introspection.{Clazz, CopyAssistant, ReflectionAssistant}
+import arx.core.async.Executor
+import arx.core.introspection.{Clazz, CopyAssistant, ReflectionAssistant, TEagerSingleton}
 import arx.core.macros.GenerateCompanion
 import arx.core.math.Sext
+import arx.core.metrics.Metrics
 import arx.core.representation.ConfigValue
 import arx.engine.data.TAuxData
 import arx.engine.entity.Companions.IdentityData
@@ -27,27 +32,42 @@ object TerrainLibrary extends AuxDataLibrary(Terrain) {
 	override protected def topLevelField: String = "Terrain"
 	override protected def createBlank(): Terrain = new Terrain
 
-	load("game/data/terrain/Terrains.sml")
+	override def initialLoad(): Unit = {
+		load("game/data/terrain/Terrains.sml")
+	}
 }
 
 
-trait Library[T] {
+trait Library[T] extends TEagerSingleton {
+	protected val initialLoadComplete = new CountDownLatch(1)
+
 	protected var byKind = Map[Taxon, T]()
 
 	protected def topLevelField : String
 	protected def createBlank() : T
 
-	def withKind(kind : Taxon) = byKind.getOrElse(kind, createBlank())
+	def withKind(kind : Taxon) = {
+		initialLoadComplete.await()
+		byKind.getOrElse(kind, createBlank())
+	}
 
 	def load(config : ConfigValue) : Unit
 
-	def load(smlPath : String) : Unit = load(ResourceManager.sml(smlPath))
+	final def load(smlPath : String) : Unit = load(ResourceManager.sml(smlPath))
+
+	def initialLoad()
+
+	Executor.submitAsync(() => {
+		initialLoad()
+		initialLoadComplete.countDown()
+		Metrics.checkpoint(s"${this.getClass.getSimpleName} initial load complete")
+	})
 }
 
 
 abstract class AuxDataLibrary[T <: TAuxData](clazz : Clazz[T]) extends Library[T] {
 
-	def load(config : ConfigValue) : Unit = {
+	def load(config : ConfigValue) : Unit = synchronized {
 		for (topLevelConf <- config.fieldOpt(topLevelField)) {
 			for ((kind, dataConf) <- topLevelConf.fields) {
 				val auxData = createBlank().loadFromConfig(dataConf)
@@ -93,9 +113,12 @@ abstract class EntityArchetypeLibrary extends Library [EntityArchetype] {
 	override protected def createBlank(): EntityArchetype = new EntityArchetype
 
 
-	override def withKind(kind: Taxon): EntityArchetype = byKind(kind)
+	override def withKind(kind: Taxon): EntityArchetype = {
+		initialLoadComplete.await()
+		byKind(kind)
+	}
 
-	def load(config : ConfigValue) : Unit = {
+	def load(config : ConfigValue) : Unit = synchronized {
 		for (topLevelConf <- config.fieldOpt(topLevelField)) {
 			for ((kind, dataConf) <- topLevelConf.fields) {
 				val arch = createBlank()

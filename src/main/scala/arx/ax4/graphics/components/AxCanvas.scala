@@ -1,5 +1,6 @@
 package arx.ax4.graphics.components
 
+import arx.application.Noto
 import arx.core.vec.{ReadVec2f, Vec2f, Vec3f}
 import arx.core.vec.coordinates.{AxialVec, CartVec, Hex}
 import arx.engine.simple.{CustomCanvas, TQuadBuilder}
@@ -39,6 +40,12 @@ class AxQuadBuilder(hexSize : Int, blankTC : Array[ReadVec2f]) extends TQuadBuil
 	def color(color : Color) = { _color = color; this }
 	def texture(t : String) = { _texCoords = textureBlock.getOrElseUpdate(ResourceManager.image(t)); this }
 	def texture(t : Image) = { _texCoords = textureBlock.getOrElseUpdate(t); this }
+	def texture(t : String, scale : Int) : this.type = {texture(ResourceManager.image(t), scale)}
+	def texture(t : Image, scale : Int) : this.type = {
+		_texCoords = textureBlock.getOrElseUpdate(t)
+		_dimensions = Vec2f(t.width * scale, t.height * scale)
+		this
+	}
 	def texCoords(tc : Array[ReadVec2f]) = { _texCoords = tc; this }
 	def textureIndexRotation(tir : Int) = { _textureIndexRotation = tir; this }
 	def position(v : AxialVec) = { _position = v.asCartesian(hexSize); this }

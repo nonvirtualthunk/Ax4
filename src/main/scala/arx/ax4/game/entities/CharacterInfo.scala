@@ -1,6 +1,7 @@
 package arx.ax4.game.entities
 
 import arx.Prelude
+import arx.ax4.game.action.{GameActionIntent, MoveIntent}
 import arx.ax4.game.entities.Conditionals.AttackConditional
 import arx.core.macros.GenerateCompanion
 import arx.core.math.Sext
@@ -13,15 +14,14 @@ import arx.engine.world.WorldView
 @GenerateCompanion
 class CharacterInfo extends AxAuxData {
 	var species : Taxon = Species.Human
-	var faction : Entity = Entity.Sentinel
 	var sex : Taxon = if (Prelude.random.nextInt() % 2 == 0) { Taxonomy("female") } else { Taxonomy("male") }
 
 	var health = Reduceable(6)
 	var healthRecoveryRate = 1
 	var alive = true
-	var actionPoints = Reduceable(Sext(6))
-	var moveSpeed = Sext.ofInt(6)
-	var movePoints = Reduceable(Sext.ofInt(0))
+	var actionPoints = Reduceable(3)
+	var moveSpeed = Sext.ofInt(3)
+	var movePoints = Sext(0)
 
 	var bodyParts : Set[BodyPart] = Set()
 
@@ -31,6 +31,10 @@ class CharacterInfo extends AxAuxData {
 	var cunning : Sext = 0
 
 	var activeAttack : Option[AttackReference] = None
+	var activeIntent : GameActionIntent = MoveIntent
+
+	def maxPossibleMovePoints = actionPoints.maxValue * moveSpeed
+	def curPossibleMovePoints = movePoints + actionPoints.currentValue * moveSpeed
 }
 
 @GenerateCompanion

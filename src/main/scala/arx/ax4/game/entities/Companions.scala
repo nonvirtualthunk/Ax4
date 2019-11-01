@@ -2,20 +2,26 @@ package arx.ax4.game.entities
 import arx.core.introspection.Field
 import arx.core.introspection.Clazz
 object Companions {
-import arx.ax4.game.entities.Physical
-object Physical extends Clazz[Physical]("Physical", classOf[Physical]){
-	val Sentinel = new Physical
-	override def instantiate = new Physical
-	val position = Field.fromValue(Sentinel.position).createField[Physical]("position",f => f.position, (f,position) => f.position = position, Physical) 
-	fields += "position" -> position
-	val offset = Field.fromValue(Sentinel.offset).createField[Physical]("offset",f => f.offset, (f,offset) => f.offset = offset, Physical) 
-	fields += "offset" -> offset
-	val facing = Field.fromValue(Sentinel.facing).createField[Physical]("facing",f => f.facing, (f,facing) => f.facing = facing, Physical) 
-	fields += "facing" -> facing
-	val occupiesHex = Field.fromValue(Sentinel.occupiesHex).createField[Physical]("occupiesHex",f => f.occupiesHex, (f,occupiesHex) => f.occupiesHex = occupiesHex, Physical) 
-	fields += "occupiesHex" -> occupiesHex
+import arx.ax4.game.entities.AllegianceData
+object AllegianceData extends Clazz[AllegianceData]("AllegianceData", classOf[AllegianceData]){
+	val Sentinel = new AllegianceData
+	override def instantiate = new AllegianceData
+	val faction = Field.fromValue(Sentinel.faction).createField[AllegianceData]("faction",f => f.faction, (f,faction) => f.faction = faction, AllegianceData) 
+	fields += "faction" -> faction
 
-	def apply(f : Physical => Unit) : Physical = { val v = new Physical; f(v); v }
+	def apply(f : AllegianceData => Unit) : AllegianceData = { val v = new AllegianceData; f(v); v }
+					 
+}
+import arx.ax4.game.entities.Inventory
+object Inventory extends Clazz[Inventory]("Inventory", classOf[Inventory]){
+	val Sentinel = new Inventory
+	override def instantiate = new Inventory
+	val heldItems = Field.fromValue(Sentinel.heldItems).createField[Inventory]("heldItems",f => f.heldItems, (f,heldItems) => f.heldItems = heldItems, Inventory) 
+	fields += "heldItems" -> heldItems
+	val heldItemCountLimit = Field.fromValue(Sentinel.heldItemCountLimit).createField[Inventory]("heldItemCountLimit",f => f.heldItemCountLimit, (f,heldItemCountLimit) => f.heldItemCountLimit = heldItemCountLimit, Inventory) 
+	fields += "heldItemCountLimit" -> heldItemCountLimit
+
+	def apply(f : Inventory => Unit) : Inventory = { val v = new Inventory; f(v); v }
 					 
 }
 import arx.ax4.game.entities.Equipment
@@ -30,6 +36,24 @@ object Equipment extends Clazz[Equipment]("Equipment", classOf[Equipment]){
 	fields += "usesBodyParts" -> usesBodyParts
 
 	def apply(f : Equipment => Unit) : Equipment = { val v = new Equipment; f(v); v }
+					 
+}
+import arx.ax4.game.entities.CombatData
+object CombatData extends Clazz[CombatData]("CombatData", classOf[CombatData]){
+	val Sentinel = new CombatData
+	override def instantiate = new CombatData
+	val attackModifier = Field.fromValue(Sentinel.attackModifier).createField[CombatData]("attackModifier",f => f.attackModifier, (f,attackModifier) => f.attackModifier = attackModifier, CombatData) 
+	fields += "attackModifier" -> attackModifier
+	val conditionalAttackModifiers = Field.fromValue(Sentinel.conditionalAttackModifiers).createField[CombatData]("conditionalAttackModifiers",f => f.conditionalAttackModifiers, (f,conditionalAttackModifiers) => f.conditionalAttackModifiers = conditionalAttackModifiers, CombatData) 
+	fields += "conditionalAttackModifiers" -> conditionalAttackModifiers
+	val defenseModifier = Field.fromValue(Sentinel.defenseModifier).createField[CombatData]("defenseModifier",f => f.defenseModifier, (f,defenseModifier) => f.defenseModifier = defenseModifier, CombatData) 
+	fields += "defenseModifier" -> defenseModifier
+	val conditionalDefenseModifiers = Field.fromValue(Sentinel.conditionalDefenseModifiers).createField[CombatData]("conditionalDefenseModifiers",f => f.conditionalDefenseModifiers, (f,conditionalDefenseModifiers) => f.conditionalDefenseModifiers = conditionalDefenseModifiers, CombatData) 
+	fields += "conditionalDefenseModifiers" -> conditionalDefenseModifiers
+	val specialAttacks = Field.fromValue(Sentinel.specialAttacks).createField[CombatData]("specialAttacks",f => f.specialAttacks, (f,specialAttacks) => f.specialAttacks = specialAttacks, CombatData) 
+	fields += "specialAttacks" -> specialAttacks
+
+	def apply(f : CombatData => Unit) : CombatData = { val v = new CombatData; f(v); v }
 					 
 }
 import arx.ax4.game.entities.Terrain
@@ -52,6 +76,34 @@ object Terrain extends Clazz[Terrain]("Terrain", classOf[Terrain]){
 	def apply(f : Terrain => Unit) : Terrain = { val v = new Terrain; f(v); v }
 					 
 }
+import arx.ax4.game.entities.Tile
+object Tile extends Clazz[Tile]("Tile", classOf[Tile]){
+	val Sentinel = new Tile
+	override def instantiate = new Tile
+	val entities = Field.fromValue(Sentinel.entities).createField[Tile]("entities",f => f.entities, (f,entities) => f.entities = entities, Tile) 
+	fields += "entities" -> entities
+	val position = Field.fromValue(Sentinel.position).createField[Tile]("position",f => f.position, (f,position) => f.position = position, Tile) 
+	fields += "position" -> position
+
+	def apply(f : Tile => Unit) : Tile = { val v = new Tile; f(v); v }
+					 
+}
+import arx.ax4.game.entities.Physical
+object Physical extends Clazz[Physical]("Physical", classOf[Physical]){
+	val Sentinel = new Physical
+	override def instantiate = new Physical
+	val position = Field.fromValue(Sentinel.position).createField[Physical]("position",f => f.position, (f,position) => f.position = position, Physical) 
+	fields += "position" -> position
+	val offset = Field.fromValue(Sentinel.offset).createField[Physical]("offset",f => f.offset, (f,offset) => f.offset = offset, Physical) 
+	fields += "offset" -> offset
+	val facing = Field.fromValue(Sentinel.facing).createField[Physical]("facing",f => f.facing, (f,facing) => f.facing = facing, Physical) 
+	fields += "facing" -> facing
+	val occupiesHex = Field.fromValue(Sentinel.occupiesHex).createField[Physical]("occupiesHex",f => f.occupiesHex, (f,occupiesHex) => f.occupiesHex = occupiesHex, Physical) 
+	fields += "occupiesHex" -> occupiesHex
+
+	def apply(f : Physical => Unit) : Physical = { val v = new Physical; f(v); v }
+					 
+}
 import arx.ax4.game.entities.Item
 object Item extends Clazz[Item]("Item", classOf[Item]){
 	val Sentinel = new Item
@@ -62,36 +114,16 @@ object Item extends Clazz[Item]("Item", classOf[Item]){
 	def apply(f : Item => Unit) : Item = { val v = new Item; f(v); v }
 					 
 }
-import arx.ax4.game.entities.Inventory
-object Inventory extends Clazz[Inventory]("Inventory", classOf[Inventory]){
-	val Sentinel = new Inventory
-	override def instantiate = new Inventory
-	val heldItems = Field.fromValue(Sentinel.heldItems).createField[Inventory]("heldItems",f => f.heldItems, (f,heldItems) => f.heldItems = heldItems, Inventory) 
-	fields += "heldItems" -> heldItems
-	val heldItemCountLimit = Field.fromValue(Sentinel.heldItemCountLimit).createField[Inventory]("heldItemCountLimit",f => f.heldItemCountLimit, (f,heldItemCountLimit) => f.heldItemCountLimit = heldItemCountLimit, Inventory) 
-	fields += "heldItemCountLimit" -> heldItemCountLimit
+import arx.ax4.game.entities.FactionData
+object FactionData extends Clazz[FactionData]("FactionData", classOf[FactionData]){
+	val Sentinel = new FactionData
+	override def instantiate = new FactionData
+	val color = Field.fromValue(Sentinel.color).createField[FactionData]("color",f => f.color, (f,color) => f.color = color, FactionData) 
+	fields += "color" -> color
+	val playerControlled = Field.fromValue(Sentinel.playerControlled).createField[FactionData]("playerControlled",f => f.playerControlled, (f,playerControlled) => f.playerControlled = playerControlled, FactionData) 
+	fields += "playerControlled" -> playerControlled
 
-	def apply(f : Inventory => Unit) : Inventory = { val v = new Inventory; f(v); v }
-					 
-}
-import arx.ax4.game.entities.Vegetation
-object Vegetation extends Clazz[Vegetation]("Vegetation", classOf[Vegetation]){
-	val Sentinel = new Vegetation
-	override def instantiate = new Vegetation
-	val layers = Field.fromValue(Sentinel.layers).createField[Vegetation]("layers",f => f.layers, (f,layers) => f.layers = layers, Vegetation) 
-	fields += "layers" -> layers
-
-	def apply(f : Vegetation => Unit) : Vegetation = { val v = new Vegetation; f(v); v }
-					 
-}
-import arx.ax4.game.entities.AllegianceData
-object AllegianceData extends Clazz[AllegianceData]("AllegianceData", classOf[AllegianceData]){
-	val Sentinel = new AllegianceData
-	override def instantiate = new AllegianceData
-	val faction = Field.fromValue(Sentinel.faction).createField[AllegianceData]("faction",f => f.faction, (f,faction) => f.faction = faction, AllegianceData) 
-	fields += "faction" -> faction
-
-	def apply(f : AllegianceData => Unit) : AllegianceData = { val v = new AllegianceData; f(v); v }
+	def apply(f : FactionData => Unit) : FactionData = { val v = new FactionData; f(v); v }
 					 
 }
 import arx.ax4.game.entities.CharacterInfo
@@ -100,9 +132,7 @@ object CharacterInfo extends Clazz[CharacterInfo]("CharacterInfo", classOf[Chara
 	override def instantiate = new CharacterInfo
 	val species = Field.fromValue(Sentinel.species).createField[CharacterInfo]("species",f => f.species, (f,species) => f.species = species, CharacterInfo) 
 	fields += "species" -> species
-	val faction = Field.fromValue(Sentinel.faction).createField[CharacterInfo]("faction",f => f.faction, (f,faction) => f.faction = faction, CharacterInfo) 
-	fields += "faction" -> faction
-	val sex = Field.fromValue(Sentinel.sex).createField[CharacterInfo]("sex",f => f.sex, (f,sex) => f.sex = sex, CharacterInfo) 
+	val sex = Field.fromValue(Sentinel.sex).createField[CharacterInfo]("sex",f => f.sex, (f,sex) => f.sex = sex, CharacterInfo)
 	fields += "sex" -> sex
 	val health = Field.fromValue(Sentinel.health).createField[CharacterInfo]("health",f => f.health, (f,health) => f.health = health, CharacterInfo) 
 	fields += "health" -> health
@@ -132,34 +162,26 @@ object CharacterInfo extends Clazz[CharacterInfo]("CharacterInfo", classOf[Chara
 	def apply(f : CharacterInfo => Unit) : CharacterInfo = { val v = new CharacterInfo; f(v); v }
 					 
 }
-import arx.ax4.game.entities.CombatData
-object CombatData extends Clazz[CombatData]("CombatData", classOf[CombatData]){
-	val Sentinel = new CombatData
-	override def instantiate = new CombatData
-	val attackModifier = Field.fromValue(Sentinel.attackModifier).createField[CombatData]("attackModifier",f => f.attackModifier, (f,attackModifier) => f.attackModifier = attackModifier, CombatData) 
-	fields += "attackModifier" -> attackModifier
-	val conditionalAttackModifiers = Field.fromValue(Sentinel.conditionalAttackModifiers).createField[CombatData]("conditionalAttackModifiers",f => f.conditionalAttackModifiers, (f,conditionalAttackModifiers) => f.conditionalAttackModifiers = conditionalAttackModifiers, CombatData) 
-	fields += "conditionalAttackModifiers" -> conditionalAttackModifiers
-	val defenseModifier = Field.fromValue(Sentinel.defenseModifier).createField[CombatData]("defenseModifier",f => f.defenseModifier, (f,defenseModifier) => f.defenseModifier = defenseModifier, CombatData) 
-	fields += "defenseModifier" -> defenseModifier
-	val conditionalDefenseModifiers = Field.fromValue(Sentinel.conditionalDefenseModifiers).createField[CombatData]("conditionalDefenseModifiers",f => f.conditionalDefenseModifiers, (f,conditionalDefenseModifiers) => f.conditionalDefenseModifiers = conditionalDefenseModifiers, CombatData) 
-	fields += "conditionalDefenseModifiers" -> conditionalDefenseModifiers
-	val specialAttacks = Field.fromValue(Sentinel.specialAttacks).createField[CombatData]("specialAttacks",f => f.specialAttacks, (f,specialAttacks) => f.specialAttacks = specialAttacks, CombatData) 
-	fields += "specialAttacks" -> specialAttacks
+import arx.ax4.game.entities.TurnData
+object TurnData extends Clazz[TurnData]("TurnData", classOf[TurnData]){
+	val Sentinel = new TurnData
+	override def instantiate = new TurnData
+	val turn = Field.fromValue(Sentinel.turn).createField[TurnData]("turn",f => f.turn, (f,turn) => f.turn = turn, TurnData) 
+	fields += "turn" -> turn
+	val activeFaction = Field.fromValue(Sentinel.activeFaction).createField[TurnData]("activeFaction",f => f.activeFaction, (f,activeFaction) => f.activeFaction = activeFaction, TurnData) 
+	fields += "activeFaction" -> activeFaction
 
-	def apply(f : CombatData => Unit) : CombatData = { val v = new CombatData; f(v); v }
+	def apply(f : TurnData => Unit) : TurnData = { val v = new TurnData; f(v); v }
 					 
 }
-import arx.ax4.game.entities.FactionData
-object FactionData extends Clazz[FactionData]("FactionData", classOf[FactionData]){
-	val Sentinel = new FactionData
-	override def instantiate = new FactionData
-	val color = Field.fromValue(Sentinel.color).createField[FactionData]("color",f => f.color, (f,color) => f.color = color, FactionData) 
-	fields += "color" -> color
-	val playerControlled = Field.fromValue(Sentinel.playerControlled).createField[FactionData]("playerControlled",f => f.playerControlled, (f,playerControlled) => f.playerControlled = playerControlled, FactionData) 
-	fields += "playerControlled" -> playerControlled
+import arx.ax4.game.entities.Vegetation
+object Vegetation extends Clazz[Vegetation]("Vegetation", classOf[Vegetation]){
+	val Sentinel = new Vegetation
+	override def instantiate = new Vegetation
+	val layers = Field.fromValue(Sentinel.layers).createField[Vegetation]("layers",f => f.layers, (f,layers) => f.layers = layers, Vegetation) 
+	fields += "layers" -> layers
 
-	def apply(f : FactionData => Unit) : FactionData = { val v = new FactionData; f(v); v }
+	def apply(f : Vegetation => Unit) : Vegetation = { val v = new Vegetation; f(v); v }
 					 
 }
 import arx.ax4.game.entities.Weapon
@@ -172,18 +194,6 @@ object Weapon extends Clazz[Weapon]("Weapon", classOf[Weapon]){
 	fields += "primaryAttack" -> primaryAttack
 
 	def apply(f : Weapon => Unit) : Weapon = { val v = new Weapon; f(v); v }
-					 
-}
-import arx.ax4.game.entities.Tile
-object Tile extends Clazz[Tile]("Tile", classOf[Tile]){
-	val Sentinel = new Tile
-	override def instantiate = new Tile
-	val entities = Field.fromValue(Sentinel.entities).createField[Tile]("entities",f => f.entities, (f,entities) => f.entities = entities, Tile) 
-	fields += "entities" -> entities
-	val position = Field.fromValue(Sentinel.position).createField[Tile]("position",f => f.position, (f,position) => f.position = position, Tile) 
-	fields += "position" -> position
-
-	def apply(f : Tile => Unit) : Tile = { val v = new Tile; f(v); v }
 					 
 }
 import arx.ax4.game.entities.VegetationLayer

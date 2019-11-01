@@ -81,10 +81,10 @@ Taxonomy {
 
   Action : []
   Actions {
+    DoNothing : Action
     MoveAction : Action
     AttackAction : Action
     GatherAction : Action
-    SwitchActiveCharacterAction : Action
   }
 
   Sex : []
