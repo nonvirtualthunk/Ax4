@@ -5,9 +5,10 @@ import arx.application.Noto
 import arx.ax4.control.components.{TacticalUIActionControl, TacticalUIControl}
 import arx.ax4.game.components.TurnComponent
 import arx.ax4.game.entities.Companions.{CharacterInfo, Physical, Tile, TurnData}
-import arx.ax4.game.entities.{AllegianceData, AxAuxData, CharacterInfo, FactionData, Physical, Terrain, TerrainLibrary, Tile, Tiles, TurnData, Vegetation, VegetationLayer, VegetationLibrary}
-import arx.ax4.graphics.components.{AnimationGraphicsComponent, EntityGraphics, TacticalUIData, TacticalUIGraphics, TileGraphics}
-import arx.ax4.graphics.data.AxGraphicsData
+import arx.ax4.game.entities.{AllegianceData, AxAuxData, CharacterInfo, CombatData, Equipment, FactionData, Inventory, Physical, Terrain, TerrainLibrary, Tile, Tiles, TurnData, Vegetation, VegetationLayer, VegetationLibrary, WeaponLibrary}
+import arx.ax4.game.logic.InventoryLogic
+import arx.ax4.graphics.components.{AnimationGraphicsComponent, EntityGraphics, TacticalUIGraphics, TileGraphics}
+import arx.ax4.graphics.data.{AxGraphicsData, TacticalUIData}
 import arx.core.async.Executor
 import arx.core.metrics.Metrics
 import arx.core.units.UnitOfTime
@@ -26,6 +27,7 @@ import arx.engine.graphics.GraphicsEngine
 import arx.engine.graphics.components.windowing.WindowingGraphicsComponent
 import arx.engine.graphics.data.PovData
 import arx.engine.world.{Universe, World, WorldQuery}
+import arx.game.data.RandomizationWorldData
 import arx.graphics.helpers.RGBA
 import arx.graphics.pov.{PixelCamera, TopDownCamera}
 import org.lwjgl.glfw.GLFW
@@ -78,11 +80,17 @@ object SimpleMapScenario extends Scenario {
 			fd.color = RGBA(0.1f,0.1f,0.75f,1.0f)
 		})
 
+
 		val torbold = createCreature(world, player)
 		world.modify(Tiles.tileAt(0,0), Tile.entities + torbold, None)
 		world.modify(torbold, IdentityData.name -> Some("Torbold"), None)
 
 		playerCharacter = torbold
+
+		val longspearArch = WeaponLibrary.withKind(Taxonomy("longspear"))
+		val longspear = longspearArch.createEntity(world)
+
+		InventoryLogic.equip(torbold, longspear)(world)
 
 		val slime = createCreature(world, enemy)
 		world.modify(slime, CharacterInfo.species setTo Taxonomy("slime"), None)
@@ -93,6 +101,8 @@ object SimpleMapScenario extends Scenario {
 		world.attachWorldData(new TurnData)
 		world.modifyWorld(TurnData.activeFaction -> player, None)
 
+		world.attachWorldData(new RandomizationWorldData)
+
 		world
 	}
 
@@ -101,6 +111,9 @@ object SimpleMapScenario extends Scenario {
 		world.attachData(creature, new CharacterInfo)
 		world.attachData(creature, new Physical)
 		world.attachData(creature, new IdentityData)
+		world.attachData(creature, new Equipment)
+		world.attachData(creature, new Inventory)
+		world.attachData(creature, new CombatData)
 		world.attachDataWith(creature, (ad : AllegianceData) => {
 			ad.faction = faction
 		})
@@ -110,8 +123,6 @@ object SimpleMapScenario extends Scenario {
 	override def displayWorld(universe: Universe): World = {
 		val world = new World
 		world.registerSubtypesOf[AxGraphicsData]()
-
-		world[TacticalUIData].selectedCharacter = Some(playerCharacter)
 
 		world[PovData].pov = new PixelCamera(512, 0.1f)
 

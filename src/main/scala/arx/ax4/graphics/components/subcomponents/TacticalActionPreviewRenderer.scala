@@ -2,15 +2,17 @@ package arx.ax4.graphics.components.subcomponents
 
 import arx.ai.search.PathStep
 import arx.application.Noto
-import arx.ax4.game.action.{GameAction, MoveAction}
+import arx.ax4.game.action.{AttackAction, BiasedAxialVec3, GameAction, HexSelector, MoveAction, Selector}
 import arx.ax4.game.entities.Companions.Physical
 import arx.ax4.graphics.components.{AxCanvas, DrawLayer}
 import arx.core.vec.Vec3f
+import arx.core.vec.coordinates.AxialVec3
 import arx.engine.world.{HypotheticalWorldView, World}
 import arx.resource.ResourceManager
+import arx.Prelude._
 
 trait TacticalActionPreviewRenderer {
-	def previewAction(game : HypotheticalWorldView, display : World, canvas: AxCanvas) : PartialFunction[GameAction, _]
+	def previewAction(game: HypotheticalWorldView, display: World, canvas: AxCanvas): PartialFunction[GameAction, _]
 }
 
 
@@ -35,6 +37,44 @@ class MoveActionPreviewRenderer extends TacticalActionPreviewRenderer {
 						.draw()
 					prev = hex
 				}
-			} else { Noto.warn(s"trying to preview degenerate path : $path")}
+			} else {
+				Noto.warn(s"trying to preview degenerate path : $path")
+			}
+	}
+}
+
+class AttackActionPreviewRenderer extends TacticalActionPreviewRenderer {
+	override def previewAction(game: HypotheticalWorldView, display: World, canvas: AxCanvas): PartialFunction[GameAction, _] = {
+		case AttackAction(attacker, attack, targets, preMove, postMove) =>
+			implicit val view = game
+			val img = ResourceManager.image("third-party/DHGZ/sword1.png")
+			val startPos = attacker(Physical).position
+			val endPos = targets match {
+				case Left(entities) => entities.head(Physical).position
+				case Right(hexes) => hexes.head
+			}
+
+			canvas.quad((startPos.qr.asCartesian + endPos.qr.asCartesian) * 0.5f)
+				.texture(img, 4)
+				.layer(DrawLayer.OverEntity)
+				.draw()
+	}
+}
+
+
+trait TacticalSelectorRenderer {
+	def renderSelection(game: HypotheticalWorldView, display: World, canvas: AxCanvas, selector: Selector[_], selected: List[Any])
+}
+
+class HexSelectorRenderer extends TacticalSelectorRenderer {
+	override def renderSelection(game: HypotheticalWorldView, display: World, canvas: AxCanvas, selector: Selector[_], selected: List[Any]) = selector pmatch {
+		case HexSelector(pattern, hexPredicate) =>
+			selected.foreach {
+				case a: AxialVec3 => canvas.quad(a)
+					.layer(DrawLayer.UnderEntity)
+					.texture("third-party/DHGZ/frame11.png")
+					.draw()
+				case other => Noto.warn(s"Unexpected selected value for hex selector $other")
+			}
 	}
 }

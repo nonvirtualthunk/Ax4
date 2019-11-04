@@ -1,7 +1,7 @@
 package arx.ax4.game.logic
 
+import arx.ax4.game.entities.AttackConditionals.AttackConditional
 import arx.ax4.game.entities.Companions.CombatData
-import arx.ax4.game.entities.Conditionals.AttackConditional
 import arx.ax4.game.entities.Species.MudMonster
 import arx.ax4.game.entities._
 import arx.ax4.game.logic.CombatLogicTest.{AntiMudDefense, Sandbox, SingleAttackBuff}
@@ -80,14 +80,14 @@ object CombatLogicTest {
 	case object AntiMudDefense extends AttackConditional {
 		override def source: String = "anti mud defense"
 
-		override def isTrueFor(implicit view : WorldView, prospect: AttackProspect): Boolean = {
+		override def isTrueForProspect(implicit view : WorldView, prospect: AttackProspect): Boolean = {
 			prospect.attacker.dataOpt[CharacterInfo].exists(ci => ci.species == MudMonster)
 		}
 	}
 
 	case object SingleAttackBuff extends AttackConditional {
 		override def source: String = "single attack buff"
-		override def isTrueFor(implicit view: WorldView, prospect: AttackProspect): Boolean = prospect.allTargets.size == 1
+		override def isTrueForProspect(implicit view: WorldView, prospect: AttackProspect): Boolean = prospect.allTargets.size == 1
 	}
 
 	case object TestPowerAttack extends SpecialAttack {

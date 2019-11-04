@@ -133,4 +133,23 @@ object Movement {
 				path
 		}
 	}
+
+	def actionPointsRequiredForPath(character : Entity, path : Path[AxialVec3])(implicit view : WorldView) : Int = {
+		val charInf = character(CharacterInfo)
+		val speed = charInf.moveSpeed
+		var points = charInf.movePoints
+		var actionsRequired = 0
+		for ((from,to) <- path.steps.sliding2) {
+			moveCostTo(character, to.node) match {
+				case Some(stepCost) =>
+					while (points < stepCost) {
+						points += speed
+						actionsRequired += 1
+					}
+					points -= stepCost
+				case None => Noto.warn("Checking action cost of untravellable path")
+			}
+		}
+		actionsRequired
+	}
 }

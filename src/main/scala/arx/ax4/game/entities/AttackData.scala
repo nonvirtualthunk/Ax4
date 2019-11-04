@@ -2,7 +2,7 @@ package arx.ax4.game.entities
 
 import arx.application.Noto
 import arx.ax4.game.entities.AttackConditionals.AnyAttackReference
-import arx.ax4.game.entities.Conditionals.{AttackConditional, BaseAttackConditional}
+import arx.ax4.game.entities.Conditionals.{BaseAttackConditional}
 import arx.ax4.game.entities.DamageType.{Piercing, Unknown}
 import arx.ax4.game.entities.TargetPattern.Point
 import arx.ax4.game.logic.Allegiance
@@ -22,10 +22,11 @@ case class AttackData (
 	var accuracyBonus: Int = 0,
 	var strikeCount : Int = 1,
 	var staminaCostPerStrike: Int = 1,
+	var actionCost : Int = 1,
 	var minRange: Int = 0,
 	var maxRange: Int = 1,
 	var damage: Map[AnyRef, DamageElement] = Map(),
-	var targetPattern : TargetPattern = TargetPattern.Point
+	var targetPattern : TargetPattern = TargetPattern.SingleEnemy
 ) extends ConfigLoadable {
 	def merge(modifiers : AttackModifier): Unit = {
 		name = modifiers.namePrefix.getOrElse("") + name
@@ -151,7 +152,10 @@ object DamageTypes {
 
 case class DamageElement(damageDice: DicePool, damageBonus : Int, damageMultiplier : Float, damageType: DamageType) {
 }
-case class DamageElementDelta(damageDice : Option[DicePool] = None, damageBonus : Option[Int] = None, damageMultiplier : Option[Float], damageType : Option[DamageType] = None)
+case class DamageElementDelta(damageDice : Option[DicePool] = None, damageBonus : Option[Int] = None, damageMultiplier : Option[Float] = None, damageType : Option[DamageType] = None)
+object DamageElementDelta {
+	def damageBonus(n : Int) = DamageElementDelta(damageBonus = Some(n))
+}
 
 object DamageElement {
 	val damageRegex = "([0-9]+)\\s*d\\s*([0-9]+)\\s*([+-]\\s*[0-9]+)?(.*)?".r

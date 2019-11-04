@@ -7,25 +7,27 @@ import arx.core.macros.GenerateCompanion
 import arx.core.math.Sext
 import arx.core.representation.ConfigValue
 import arx.engine.data.{Reduceable, TAuxData}
-import arx.engine.entity.{Entity, Taxon}
+import arx.engine.entity.{Entity, Taxon, Taxonomy}
 
 @GenerateCompanion
 class Item extends AxAuxData {
 	var durability : Reduceable[Sext] = Reduceable(Sext(25))
+
+	var equippedTo : Option[Entity] = None
+	var heldIn : Option[Entity] = None
+	var wornOn : Map[Taxon, Int] = Map()
+	var usesBodyParts : Map[Taxon, Int] = Map()
 }
 
 @GenerateCompanion
 class Inventory extends AxAuxData {
-	var heldItems = List[Entity]()
+	var heldItems = Set[Entity]()
 	var heldItemCountLimit = none[Int]
 }
 
 @GenerateCompanion
 class Equipment extends AxAuxData {
 	var equipped : Set[Entity] = Set()
-
-	var wornOn : Map[Taxon, Int] = Map()
-	var usesBodyParts : Map[Taxon, Int] = Map()
 }
 
 
@@ -33,6 +35,7 @@ class Equipment extends AxAuxData {
 class Weapon extends AxAuxData {
 	var attacks : Map[AnyRef, AttackData] = Map()
 	var primaryAttack : AnyRef = "primary"
+	var weaponSkills : List[Taxon] = Nil
 
 	override def customLoadFromConfig(config: ConfigValue): Unit = {
 		for (attField <- config.fieldOpt("attacks")) {
@@ -41,6 +44,9 @@ class Weapon extends AxAuxData {
 				attData.loadFromConfig(attDataConfig)
 				attacks += attName -> attData
 			}
+		}
+		for (weaponSkillsConf <- config.fieldOpt("weaponSkills")) {
+			weaponSkills = weaponSkillsConf.arr.map(cv => Taxonomy(cv.str)).toList
 		}
 	}
 }

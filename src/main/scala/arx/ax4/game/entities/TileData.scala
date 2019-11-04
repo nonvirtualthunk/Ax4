@@ -29,13 +29,12 @@ object Tiles {
 	/** Compute the entity id to use for the tile at the given x/y/(z) coordinates */
 	def tileEntityId(x : Int, y : Int, z : Int = 0) = (1 << 32L) + ((z + 16) << 17) + ((y + 2048) << 12) + (x + 2048)
 
-	def characterOnTile(v : AxialVec3)(implicit world : WorldView) : Option[Entity] = {
+	def entitiesOnTile(v : AxialVec3)(implicit world : WorldView) : Set[Entity] = {
 		val tileEnt = tileAt(v)
-		tileEnt.dataOpt[Tile].flatMap(tile => {
-			tile.entities.find(e => {
-				e.hasData[CharacterInfo]
-			})
-		})
+		tileEnt.dataOpt[Tile].map(t => t.entities).getOrElse(Set())
+	}
+	def characterOnTile(v : AxialVec3)(implicit world : WorldView) : Option[Entity] = {
+		entitiesOnTile(v).find(e => e.hasData[CharacterInfo])
 	}
 }
 

@@ -93,4 +93,16 @@ Taxonomy {
     Male : Sex
     Female : Sex
   }
+
+
+  Skill : []
+  Skills {
+    WeaponSkill : Skill
+
+    MeleeSkill : Skill
+
+    Spearwielding : [WeaponSkill, MeleeSkill]
+    Swordfighting : [WeaponSkill, MeleeSkill]
+    AxeWielding : [WeaponSkill, MeleeSkill]
+  }
 }

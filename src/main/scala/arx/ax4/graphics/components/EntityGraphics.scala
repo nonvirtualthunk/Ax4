@@ -4,9 +4,10 @@ import arx.ax4.graphics.data.{AxDrawingConstants, CullingData}
 import arx.ax4.graphics.resources.CharacterImageset
 import arx.core.units.UnitOfTime
 import arx.core.vec.Vec2f
-import arx.core.vec.coordinates.{AxialVec, Hex}
+import arx.core.vec.coordinates.{AxialVec, CartVec, Hex}
 import arx.engine.graphics.components.DrawPriority
 import arx.engine.world.{HypotheticalWorldView, World}
+import arx.graphics.helpers.{Color, RGBA}
 import arx.resource.ResourceManager
 
 class EntityGraphics extends AxCanvasGraphicsComponent {
@@ -39,13 +40,60 @@ class EntityGraphics extends AxCanvasGraphicsComponent {
 			  ent <- tile.entities) {
 
 			for (characterInfo <- game.dataOpt[CharacterInfo](ent)) {
+				val rawCenter = tilePos.asCartesian(const.HexSize) + game.data[Physical](ent).offset
 				for (layer <- imageset.drawInfoFor(game, ent, display.view)) {
-					canvas.quad(tilePos.asCartesian(const.HexSize) + game.data[Physical](ent).offset)
-   					.hexBottomOrigin(0.5f)
+					val color = game.dataOpt[Physical](ent).map(p => p.colorTransforms.foldRight(Color.White)((transform, cur) => transform.apply(cur))).getOrElse(Color.White)
+
+					canvas.quad(rawCenter)
+   					.hexBottomOrigin(-0.05f, 0.2f)
    					.texture(layer.image)
+   					.color(color)
    					.dimensions(layer.image.width * 4, layer.image.height * 4)
    					.layer(DrawLayer.Entity)
    					.draw()
+				}
+
+
+				val frame = ResourceManager.image("graphics/ui/vertical_bar_frame.png")
+				val content = ResourceManager.image("graphics/ui/vertical_bar_content.png")
+
+				val stamFrame = ResourceManager.image("graphics/ui/stamina_frame.png")
+				val stamCont = ResourceManager.image("graphics/ui/stamina_content.png")
+
+				val healthBarStart = rawCenter + Vec2f((0.25f * const.HexSize).toInt, 0.0f)
+				val base = canvas.quad(healthBarStart)
+					.color(Color.White)
+					.hexBottomOrigin(0.0f, 0.2f)
+					.layer(DrawLayer.Entity)
+
+				base.copy()
+   				.texture(frame, 4)
+   				.draw()
+
+				val fullHeight = content.height * 4
+				val fullWidth = content.width * 4
+				val practicalWidth = 3 * 4
+				base.copy()
+					.position(healthBarStart + Vec2f(0,4))
+   				.color(RGBA(0.8f,0.1f,0.1f,1.0f))
+   				.texture(content)
+   				.dimensions(fullWidth, fullHeight * (characterInfo.health.currentValue.toFloat / characterInfo.health.maxValue.toFloat))
+   				.draw()
+
+				for (i <- 0 until characterInfo.stamina.maxValue) {
+					val staminaStart = healthBarStart + Vec2f(practicalWidth, i * 3 * 4)
+					base.copy()
+						.position(staminaStart)
+						.texture(stamFrame, 4)
+						.draw()
+
+					if (i < characterInfo.stamina.currentValue) {
+						base.copy()
+							.position(staminaStart)
+							.texture(stamCont, 4)
+							.color(RGBA(0.1f, 0.7f, 0.2f, 1.0f))
+							.draw()
+					}
 				}
 			}
 

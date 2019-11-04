@@ -1,9 +1,10 @@
 package arx.ax4.game.logic
 
 import arx.application.Noto
-import arx.ax4.game.entities.Companions.CharacterInfo
-import arx.ax4.game.entities.{AttackData, AttackModifier, AttackProspect, AttackReference, CharacterInfo, CombatData, DamageResult, DamageType, DefenseData, DefenseModifier, Weapon}
-import arx.ax4.game.event.{AttackEventInfo, DamageEvent, DeflectEvent, DodgeEvent, StrikeEvent, SubStrike}
+import arx.ax4.game.entities.Companions.{CharacterInfo, CombatData, Equipment, Physical, Weapon}
+import arx.ax4.game.entities.{AttackData, AttackModifier, AttackProspect, AttackReference, CharacterInfo, CombatData, DamageResult, DamageType, DefenseData, DefenseModifier, Physical, UntargetedAttackProspect, Weapon}
+import arx.ax4.game.event.{AttackEvent, AttackEventInfo, DamageEvent, DeflectEvent, DodgeEvent, StrikeEvent, SubStrike}
+import arx.core.vec.coordinates.AxialVec3
 import arx.engine.entity.Entity
 import arx.engine.world.{World, WorldView}
 import arx.game.logic.Randomizer
@@ -21,9 +22,13 @@ object CombatLogic {
 				val (baseAttackData,_) = resolveUnconditionalAttackData(view, attacker, weapon, weaponAttackData)
 				val (untargetedAttackData,_) = resolveConditionalAttackData(view, attacker, attackReference, Entity.Sentinel, targets, baseAttackData, new DefenseData)
 
+				world.startEvent(AttackEvent(AttackEventInfo(attacker, weapon, targets, untargetedAttackData)))
+				world.modify(attacker, CharacterInfo.actionPoints reduceBy untargetedAttackData.actionCost)
+
 				for (strikeN <- 0 until untargetedAttackData.strikeCount) {
 					world.startEvent(StrikeEvent(AttackEventInfo(attacker, weapon, targets, untargetedAttackData)))
 
+					world.modify(attacker, CharacterInfo.stamina reduceBy untargetedAttackData.staminaCostPerStrike)
 					for (target <- targets) yield {
 						// resolve raw defense, assuming no information about the attack
 						val (rawDefenseData, _) = resolveUnconditionalDefenseData(view, target)
@@ -48,6 +53,10 @@ object CombatLogic {
 					world.endEvent(StrikeEvent(AttackEventInfo(attacker, weapon, targets, untargetedAttackData)))
 				}
 
+				for (weaponSkill <- weapon(Weapon).weaponSkills) {
+					Skills.gainSkillXP(attacker, weaponSkill, 20)(world)
+				}
+				world.endEvent(AttackEvent(AttackEventInfo(attacker, weapon, targets, untargetedAttackData)))
 
 			case None => Noto.error("invalid attack reference")
 		}
@@ -70,6 +79,30 @@ object CombatLogic {
 		}
 	}
 
+	def canAttackBeMade(implicit worldView : WorldView, attacker : Entity, attackerPos : AxialVec3, target : Entity, attackData : AttackData) : Boolean = {
+		if (attackData.actionCost > attacker(CharacterInfo).actionPoints.currentValue) {
+			false
+		} else {
+			worldView.dataOpt[Physical](target) match {
+				case Some(p) =>
+					val dist = attackerPos.distance(p.position).toInt
+					if (dist >= attackData.minRange && dist <= attackData.maxRange) {
+						true
+					} else {
+						false
+					}
+				case None => false
+			}
+		}
+	}
+
+	def resolveUntargetedConditionalAttackData(view: WorldView, attacker: Entity, attackRef : AttackReference): Option[(AttackData, Vector[(String, AttackModifier)])] = {
+		val weapon = attackRef.weapon
+		attackRef.resolve()(view).map(weaponAttackData => {
+			val (baseAttackData,_) = resolveUnconditionalAttackData(view, attacker, weapon, weaponAttackData)
+			resolveConditionalAttackData(view, attacker, attackRef, Entity.Sentinel, Nil, baseAttackData, new DefenseData)
+		})
+	}
 
 	def resolveUnconditionalAttackData(view: WorldView, attacker: Entity, weapon: Entity, baseAttackData: AttackData): (AttackData, Vector[(String, AttackModifier)]) = {
 		implicit val implView = view
@@ -88,6 +121,7 @@ object CombatLogic {
 
 		attackData -> modifiers
 	}
+
 
 	def resolveConditionalAttackData(view: WorldView, attacker: Entity, attackReference: AttackReference, target: Entity, allTargets : List[Entity], baseAttackData: AttackData, baseDefenseData: DefenseData): (AttackData, Vector[(String, AttackModifier)]) = {
 		implicit val implView = view
@@ -138,6 +172,29 @@ object CombatLogic {
 		}
 
 		defenseData -> modifiers
+	}
+
+	def availableAttacks(implicit view : WorldView, attacker : Entity) : Seq[AttackReference] = {
+		val weaponAttacks = attacker(Equipment).equipped
+   		.filter(e => e.hasData[Weapon])
+			.flatMap(weapon => weapon(Weapon).attacks.map { case (k,_) => AttackReference(weapon, k, None, None)})
+
+
+		val specialAttackSources = attacker(Equipment).equipped
+   		.filter(e => e.hasData[CombatData])
+   		.flatMap(e => e(CombatData).specialAttacks.map(sa => e -> sa))
+
+		val specialAttacks = specialAttackSources.flatMap { case (src,(sak,sav)) => {
+			weaponAttacks.flatMap(war => {
+				if (sav.condition.isTrueFor(view, UntargetedAttackProspect(attacker, war))) {
+					Some(war.copy(specialSource = Some(src), specialKey = Some(sak)))
+				} else {
+					None
+				}
+			})
+		}}
+
+		(weaponAttacks ++ specialAttacks).toSeq
 	}
 
 }

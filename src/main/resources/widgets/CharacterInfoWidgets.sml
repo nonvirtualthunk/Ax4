@@ -58,5 +58,18 @@ SelectedCharacterInfo {
       y : "0 below Move"
       text : "Speed: %(selectedCharacter.speed)"
     }
+
+    AttackDisplay : {
+      type : ListWidget
+
+      y : "0 below Speed"
+      dimensions : [100%, WrapContent]
+      backgroundPixelScale : 1
+      background.image : "ui/greenWoodBorder.png"
+
+      listItemArchetype : AttackInfoWidgets.BasicAttackInfo
+      listItemBinding : "attacks -> attack"
+
+    }
   }
 }

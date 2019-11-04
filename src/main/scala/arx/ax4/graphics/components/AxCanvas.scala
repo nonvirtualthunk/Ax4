@@ -1,6 +1,7 @@
 package arx.ax4.graphics.components
 
 import arx.application.Noto
+import arx.core.introspection.CopyAssistant
 import arx.core.vec.{ReadVec2f, Vec2f, Vec3f}
 import arx.core.vec.coordinates.{AxialVec, CartVec, Hex}
 import arx.engine.simple.{CustomCanvas, TQuadBuilder}
@@ -31,6 +32,9 @@ class AxQuadBuilder(hexSize : Int, blankTC : Array[ReadVec2f]) extends TQuadBuil
 	protected var _lightColor : Color = Color.White
 	protected var _hexBottomOrigin : Boolean = false
 	protected var _layer : DrawLayer = DrawLayer.Terrain
+	protected var _hexOffset : CartVec = CartVec.Zero
+
+	def copy() = CopyAssistant.copyShallow(this)
 
 	def forward(v : ReadVec2f) = { _forward = v; this }
 	def ortho(v : ReadVec2f) = { _ortho = v; this }
@@ -53,7 +57,7 @@ class AxQuadBuilder(hexSize : Int, blankTC : Array[ReadVec2f]) extends TQuadBuil
 	def position(v : ReadVec2f) = { _position = v; this }
 	def visionPcnt(p : Float) = { _visionPcnt = p; this }
 	def lightColor(c : Color) = { _lightColor = c; this }
-	def hexBottomOrigin(offset : Float = 0.0f) = { _hexBottomOrigin = true; _relativeOrigin = Vec2f(0.0f,-1.0f - offset); this }
+	def hexBottomOrigin(offsetX : Float = 0.0f, offsetY : Float = 0.0f) = { _hexBottomOrigin = true; _relativeOrigin = Vec2f(0.0f,-1.0f); _hexOffset = CartVec(offsetX, offsetY); this }
 	def layer(l : DrawLayer) = { _layer = l; this }
 	/**
 	 * Unscaled origin, generally in the range [-1,1] with (-1,-1) being bottom left origin, (1,1) being top right
@@ -74,24 +78,24 @@ class AxQuadBuilder(hexSize : Int, blankTC : Array[ReadVec2f]) extends TQuadBuil
 			_position.y
 		}
 
-		val originX = posX + _forward.x * _dimensions.x * _relativeOrigin.x * -0.5f + _ortho.x  * _dimensions.y * _relativeOrigin.y * -0.5f
-		val originY = posY + _forward.y * _dimensions.x * _relativeOrigin.x * -0.5f + _ortho.y  * _dimensions.y * _relativeOrigin.y * -0.5f
+		val originX = (posX + _forward.x * _dimensions.x * _relativeOrigin.x * -0.5f + _ortho.x  * _dimensions.y * _relativeOrigin.y * -0.5f + _hexOffset.x * hexSize).toInt
+		val originY = (posY + _forward.y * _dimensions.x * _relativeOrigin.x * -0.5f + _ortho.y  * _dimensions.y * _relativeOrigin.y * -0.5f + _hexOffset.y * Hex.heightForSize(hexSize)).toInt
 
 		vbo.setA(AxAttributeProfile.VertexAttribute, vi + 0,
-			originX + _forward.x * _dimensions.x * -0.5f + _ortho.x * _dimensions.y * -0.5f,
-			originY + _forward.y * _dimensions.x * -0.5f + _ortho.y * _dimensions.y * -0.5f,
+			(originX + _forward.x * _dimensions.x * -0.5f + _ortho.x * _dimensions.y * -0.5f).toInt,
+			(originY + _forward.y * _dimensions.x * -0.5f + _ortho.y * _dimensions.y * -0.5f).toInt,
 			_layer.depth)
 		vbo.setA(AxAttributeProfile.VertexAttribute, vi + 1,
-			originX + _forward.x * _dimensions.x * +0.5f + _ortho.x * _dimensions.y * -0.5f,
-			originY + _forward.y * _dimensions.x * +0.5f + _ortho.y * _dimensions.y * -0.5f,
+			(originX + _forward.x * _dimensions.x * +0.5f + _ortho.x * _dimensions.y * -0.5f).toInt,
+			(originY + _forward.y * _dimensions.x * +0.5f + _ortho.y * _dimensions.y * -0.5f).toInt,
 			_layer.depth)
 		vbo.setA(AxAttributeProfile.VertexAttribute, vi + 2,
-			originX + _forward.x * _dimensions.x * +0.5f + _ortho.x * _dimensions.y * +0.5f,
-			originY + _forward.y * _dimensions.x * +0.5f + _ortho.y * _dimensions.y * +0.5f,
+			(originX + _forward.x * _dimensions.x * +0.5f + _ortho.x * _dimensions.y * +0.5f).toInt,
+			(originY + _forward.y * _dimensions.x * +0.5f + _ortho.y * _dimensions.y * +0.5f).toInt,
 			_layer.depth)
 		vbo.setA(AxAttributeProfile.VertexAttribute, vi + 3,
-			originX + _forward.x * _dimensions.x * -0.5f + _ortho.x * _dimensions.y * +0.5f,
-			originY + _forward.y * _dimensions.x * -0.5f + _ortho.y * _dimensions.y * +0.5f,
+			(originX + _forward.x * _dimensions.x * -0.5f + _ortho.x * _dimensions.y * +0.5f).toInt,
+			(originY + _forward.y * _dimensions.x * -0.5f + _ortho.y * _dimensions.y * +0.5f).toInt,
 			_layer.depth)
 		var i = 0
 		while (i < 4) {

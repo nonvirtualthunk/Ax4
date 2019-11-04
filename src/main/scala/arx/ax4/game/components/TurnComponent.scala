@@ -17,6 +17,7 @@ class TurnComponent extends GameComponent {
 			case TurnStartedEvent(faction, turnNumber) =>
 				for (allegiant <- world.view.entitiesMatching[AllegianceData](ad => ad.faction == faction)) {
 					world.modify(allegiant, CharacterInfo.actionPoints.recoverToFull())
+					world.modify(allegiant, CharacterInfo.stamina recoverBy allegiant(CharacterInfo).staminaRecoveryRate)
 				}
 			case TurnEndedEvent(faction, turnNumber) =>
 				for (allegiant <- world.view.entitiesMatching[AllegianceData](ad => ad.faction == faction)) {

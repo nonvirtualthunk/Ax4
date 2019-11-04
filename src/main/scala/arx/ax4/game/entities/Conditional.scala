@@ -1,7 +1,8 @@
 package arx.ax4.game.entities
 
-import arx.ax4.game.entities.Conditionals.{AttackConditional, BaseAttackConditional}
+import arx.ax4.game.entities.Conditionals.{BaseAttackConditional}
 import arx.ax4.game.entities.DamageType.{Piercing, Slashing}
+import arx.engine.entity.{IdentityData, Taxon}
 import arx.engine.world.{World, WorldView}
 import arx.game.data.DicePoolBuilder._
 
@@ -17,7 +18,7 @@ trait Conditional[-T] {
 }
 
 object Conditionals {
-	type AttackConditional = Conditional[AttackProspect]
+//	type AttackConditional = Conditional[AttackProspect]
 	type BaseAttackConditional = Conditional[BaseAttackProspect]
 
 	def all[T] : Conditional[T] = new Conditional[T] {
@@ -34,7 +35,11 @@ trait WorldConditional {
 
 object AttackConditionals {
 
-	case class WeaponIs()
+	case class WeaponIs(isA : Taxon) extends BaseAttackConditional {
+		override def isTrueFor(implicit view: WorldView, value: BaseAttackProspect): Boolean = {
+			value.attackReference.weapon.dataOpt[IdentityData].exists(id => id.isA(isA))
+		}
+	}
 
 	case object AnyAttackReference extends BaseAttackConditional {
 		override def isTrueFor(implicit view: WorldView, value: BaseAttackProspect): Boolean = true
@@ -65,7 +70,17 @@ object AttackConditionals {
 		override def isTrueFor(implicit view: WorldView, attack: AttackData): Boolean = attack.maxRange >= maxRange
 	}
 
+	abstract class AttackConditional extends BaseAttackConditional {
+		override def isTrueFor(implicit view: WorldView, value: BaseAttackProspect): Boolean = {
+			value match {
+				case ap : AttackProspect => isTrueForProspect(view, ap : AttackProspect)
+				case _ => false
+			}
+		}
+		def isTrueForProspect(implicit view: WorldView, value: AttackProspect): Boolean
+	}
+
 	case object SingleTarget extends AttackConditional {
-		override def isTrueFor(implicit view: WorldView, value: AttackProspect): Boolean = value.allTargets.size == 1
+		override def isTrueForProspect(implicit view: WorldView, value: AttackProspect): Boolean = value.allTargets.size == 1
 	}
 }

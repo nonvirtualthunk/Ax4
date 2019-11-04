@@ -1,15 +1,16 @@
 package arx.ax4.game.entities
 
 import arx.Prelude
-import arx.ax4.game.action.{GameActionIntent, MoveIntent}
-import arx.ax4.game.entities.Conditionals.AttackConditional
+import arx.ax4.game.action.{DoNothingIntent, GameActionIntent, MoveIntent, WaypointMoveIntent}
+import arx.ax4.game.entities.Conditionals.{BaseAttackConditional}
 import arx.core.macros.GenerateCompanion
 import arx.core.math.Sext
-import arx.core.vec.{ReadVec2f, Vec2f}
+import arx.core.vec.{ReadVec2f, ReadVec4f, Vec2f, Vec4f}
 import arx.core.vec.coordinates.{AxialVec3, CartVec3, HexDirection}
 import arx.engine.data.Reduceable
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.world.WorldView
+import arx.graphics.helpers.{Color, RGBA}
 
 @GenerateCompanion
 class CharacterInfo extends AxAuxData {
@@ -23,7 +24,13 @@ class CharacterInfo extends AxAuxData {
 	var moveSpeed = Sext.ofInt(3)
 	var movePoints = Sext(0)
 
+	var stamina = Reduceable(6)
+	var staminaRecoveryRate = 1
+
 	var bodyParts : Set[BodyPart] = Set()
+
+	var skillXP : Map[Taxon, Int] = Map()
+	var skillLevels : Map[Taxon, Int] = Map()
 
 	var strength : Sext = 0
 	var dexterity : Sext = 0
@@ -31,7 +38,7 @@ class CharacterInfo extends AxAuxData {
 	var cunning : Sext = 0
 
 	var activeAttack : Option[AttackReference] = None
-	var activeIntent : GameActionIntent = MoveIntent
+	var activeIntent : GameActionIntent = DoNothingIntent
 
 	def maxPossibleMovePoints = actionPoints.maxValue * moveSpeed
 	def curPossibleMovePoints = movePoints + actionPoints.currentValue * moveSpeed
@@ -41,6 +48,7 @@ class CharacterInfo extends AxAuxData {
 class Physical extends AxAuxData {
 	var position : AxialVec3 = AxialVec3.Zero
 	var offset : ReadVec2f = Vec2f.Zero
+	var colorTransforms : List[ColorTransform] = Nil
 	var facing : HexDirection = HexDirection.Top
 	var occupiesHex : Boolean = true
 }
@@ -48,9 +56,9 @@ class Physical extends AxAuxData {
 @GenerateCompanion
 class CombatData extends AxAuxData {
 	var attackModifier = AttackModifier()
-	var conditionalAttackModifiers: List[(AttackConditional, AttackModifier)] = List()
+	var conditionalAttackModifiers: List[(BaseAttackConditional, AttackModifier)] = List()
 	var defenseModifier = DefenseModifier()
-	var conditionalDefenseModifiers: List[(AttackConditional, DefenseModifier)] = List()
+	var conditionalDefenseModifiers: List[(BaseAttackConditional, DefenseModifier)] = List()
 	var specialAttacks = Map[AnyRef, SpecialAttack]()
 }
 
@@ -84,3 +92,24 @@ case class AttackReference(weapon : Entity, attackKey : AnyRef, specialSource : 
 
 
 
+sealed trait ColorTransform {
+	def apply(color : Color) : Color
+}
+
+case class HueShift(hue : Float, pcnt : Float) extends ColorTransform {
+	override def apply(color: Color): Color = {
+		color.asHSBA.hueShifted(hue, pcnt)
+	}
+}
+case class Brightness(brightness : Float, pcnt : Float) extends ColorTransform {
+	override def apply(color: Color): Color = {
+		color.asHSBA.brightnessShifted(brightness, pcnt)
+	}
+}
+case class ColorComponentMix(mult : RGBA, pcnt : Float) extends  ColorTransform {
+	override def apply(color: Color): Color = {
+		val start = color.asRGBA
+		val end = mult
+		RGBA(start + (end - start) * pcnt)
+	}
+}

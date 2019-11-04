@@ -11,9 +11,11 @@ object Action {
 		val res = action match {
 			case MoveAction(character, path) =>
 				Movement.moveCharacterOnPath(character, path)
-			case a: AttackAction =>
-//				Attacks.attack(a)
-				???
+			case AttackAction(attacker, attack, targets, preMove, postMove) =>
+				targets match {
+					case Left(entityTargets) => CombatLogic.attack(world, attacker, entityTargets.toList, attack)
+					case Right(hexTargets) => Noto.error("Hex targeting is not supported yet")
+				}
 				true
 			case _ =>
 				Noto.error(s"Unsupported action: $action")

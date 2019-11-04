@@ -1,10 +1,11 @@
 package arx.ax4.graphics.components
 import arx.Prelude
+import arx.ax4.control.components.ActionSelectionContext
 import arx.ax4.game.action.GameAction
 import arx.ax4.game.entities.Companions.{AllegianceData, FactionData, Physical}
 import arx.ax4.game.entities.{CharacterInfo, Physical}
-import arx.ax4.graphics.components.subcomponents.TacticalActionPreviewRenderer
-import arx.ax4.graphics.data.AxDrawingConstants
+import arx.ax4.graphics.components.subcomponents.{TacticalActionPreviewRenderer, TacticalSelectorRenderer}
+import arx.ax4.graphics.data.{AxDrawingConstants, TacticalUIData}
 import arx.core.introspection.ReflectionAssistant
 import arx.core.units.UnitOfTime
 import arx.core.vec.{Vec2f, Vec3f}
@@ -19,7 +20,8 @@ import arx.resource.ResourceManager
 
 class TacticalUIGraphics(anim : AnimationGraphicsComponent) extends AxCanvasGraphicsComponent {
 
-	lazy val renderers = ReflectionAssistant.instancesOfSubtypesOf[TacticalActionPreviewRenderer]
+	lazy val actionRenderers = ReflectionAssistant.instancesOfSubtypesOf[TacticalActionPreviewRenderer]
+	lazy val selectorRenderers = ReflectionAssistant.instancesOfSubtypesOf[TacticalSelectorRenderer]
 
 	override protected def onInitialize(game: World, display: World): Unit = {
 
@@ -48,8 +50,18 @@ class TacticalUIGraphics(anim : AnimationGraphicsComponent) extends AxCanvasGrap
 //   			.relativeOrigin(Vec2f(0.0f,-1.0f))
    			.draw()
 
-			for (consideredAction <- consideringActions; renderer <- renderers) {
-				renderer.previewAction(game, display, canvas).lift.apply(consideredAction)
+			consideringActionSelectionContext match {
+				case Some(ActionSelectionContext(intent, selectionResults)) =>
+					if (!intent.hasRemainingSelections(selectionResults)) {
+						for (action <- intent.createAction(selectionResults.build()) ; renderer <- actionRenderers) {
+							renderer.previewAction(game, display, canvas).lift.apply(action)
+						}
+					} else {
+						for ((selector, values) <- selectionResults.results ; selRenderer <- selectorRenderers) {
+							selRenderer.renderSelection(game, display, canvas, selector, values)
+						}
+					}
+				case None => // do nothing
 			}
 		}
 
@@ -63,14 +75,4 @@ class TacticalUIGraphics(anim : AnimationGraphicsComponent) extends AxCanvasGrap
 //   		.texture(s"third-party/DHGZ/hexArrow${mousedOverHexBiasDir}.png", 2)
 //   		.draw()
 	}
-}
-
-class TacticalUIData extends TControlData with TMutableAuxData with TWorldAuxData {
-	var selectedCharacter : Option[Entity] = None
-
-	var consideringActions : List[GameAction] = Nil
-	var consideringSelection : Option[Entity] = None
-
-	var mousedOverHex = AxialVec3.Zero
-	var mousedOverHexBiasDir = 0
 }
