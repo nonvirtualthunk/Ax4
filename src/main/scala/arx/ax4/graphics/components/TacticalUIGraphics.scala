@@ -2,20 +2,21 @@ package arx.ax4.graphics.components
 import arx.Prelude
 import arx.ax4.control.components.ActionSelectionContext
 import arx.ax4.game.action.GameAction
-import arx.ax4.game.entities.Companions.{AllegianceData, FactionData, Physical}
+import arx.ax4.game.entities.Companions.{AllegianceData, CharacterInfo, FactionData, Physical}
 import arx.ax4.game.entities.{CharacterInfo, Physical}
 import arx.ax4.graphics.components.subcomponents.{TacticalActionPreviewRenderer, TacticalSelectorRenderer}
 import arx.ax4.graphics.data.{AxDrawingConstants, TacticalUIData}
+import arx.ax4.graphics.logic.EntityDrawLogic
 import arx.core.introspection.ReflectionAssistant
 import arx.core.units.UnitOfTime
 import arx.core.vec.{Vec2f, Vec3f}
-import arx.core.vec.coordinates.{AxialVec, AxialVec3}
+import arx.core.vec.coordinates.{AxialVec, AxialVec3, CartVec, CartVec3}
 import arx.engine.control.data.TControlData
 import arx.engine.data.{TMutableAuxData, TWorldAuxData}
 import arx.engine.entity.Entity
 import arx.engine.graphics.data.TGraphicsData
 import arx.engine.world.{HypotheticalWorldView, World}
-import arx.graphics.helpers.RGBA
+import arx.graphics.helpers.{Color, RGBA}
 import arx.resource.ResourceManager
 
 class TacticalUIGraphics(anim : AnimationGraphicsComponent) extends AxCanvasGraphicsComponent {
@@ -40,15 +41,30 @@ class TacticalUIGraphics(anim : AnimationGraphicsComponent) extends AxCanvasGrap
 
 		val dy = (math.cos(Prelude.curTime().inSeconds * 2.0f) * 0.03f).toFloat
 		for (selC <- selectedCharacter) {
-			val pos = selC(Physical).position
+			val pos = EntityDrawLogic.characterPosition(selC).getOrElse(CartVec3.Zero)
 
-			canvas.quad(pos.asCartesian(const.HexSize.toFloat).xy + Vec2f(0.0f,const.HexSize * (0.5f + dy)) + selC(Physical).offset)
-   			.layer(DrawLayer.OverEntity)
-   			.texture(selImg)
-   			.dimensions(selImg.width * selScale, selImg.height * selScale)
-   			.color(selC(AllegianceData).faction(FactionData).color)
-//   			.relativeOrigin(Vec2f(0.0f,-1.0f))
-   			.draw()
+			canvas.quad(pos.xy + CartVec(0.0f,0.5f + dy))
+				.layer(DrawLayer.OverEntity)
+				.texture(selImg)
+				.dimensions(selImg.width * selScale, selImg.height * selScale)
+				.color(Color.White)
+				.draw()
+
+			val ap = selC(CharacterInfo).actionPoints
+			val fractionalIndicator = if (ap.currentValue == ap.maxValue) {
+				"graphics/ui/selection_arrow.png"
+			} else {
+				s"graphics/ui/selection_arrow_${ap.currentValue}_${ap.maxValue}.png"
+			}
+			if (ap.currentValue > 0) {
+				canvas.quad(pos.xy + CartVec(0.0f, 0.5f + dy))
+					.layer(DrawLayer.OverEntity)
+					.texture(fractionalIndicator)
+					.dimensions(selImg.width * selScale, selImg.height * selScale)
+					.color(selC(AllegianceData).faction(FactionData).color)
+					.draw()
+			}
+
 
 			consideringActionSelectionContext match {
 				case Some(ActionSelectionContext(intent, selectionResults)) =>

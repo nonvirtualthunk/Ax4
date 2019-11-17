@@ -5,9 +5,9 @@ import arx.application.Noto
 import arx.ax4.control.components.{TacticalUIActionControl, TacticalUIControl}
 import arx.ax4.game.components.TurnComponent
 import arx.ax4.game.entities.Companions.{CharacterInfo, Physical, Tile, TurnData}
-import arx.ax4.game.entities.{AllegianceData, AxAuxData, CharacterInfo, CombatData, Equipment, FactionData, Inventory, Physical, Terrain, TerrainLibrary, Tile, Tiles, TurnData, Vegetation, VegetationLayer, VegetationLibrary, WeaponLibrary}
-import arx.ax4.game.logic.InventoryLogic
-import arx.ax4.graphics.components.{AnimationGraphicsComponent, EntityGraphics, TacticalUIGraphics, TileGraphics}
+import arx.ax4.game.entities.{AllegianceData, AxAuxData, CharacterInfo, CombatData, EntityConditionals, Equipment, FactionData, GatherMethod, Inventory, ItemLibrary, Physical, QualitiesData, ReactionData, Resource, ResourceKey, ResourceOrigin, ResourceSourceData, Terrain, TerrainLibrary, Tile, Tiles, TurnData, Vegetation, VegetationLayer, VegetationLayerType, VegetationLibrary, WeaponLibrary}
+import arx.ax4.game.logic.{InventoryLogic, MovementLogic}
+import arx.ax4.graphics.components.{AnimationGraphicsComponent, AnimationGraphicsRenderingComponent, EntityGraphics, TacticalUIGraphics, TileGraphics}
 import arx.ax4.graphics.data.{AxGraphicsData, TacticalUIData}
 import arx.core.async.Executor
 import arx.core.metrics.Metrics
@@ -19,6 +19,7 @@ import arx.engine.control.ControlEngine
 import arx.engine.control.components.ControlComponent
 import arx.engine.control.components.windowing.WindowingControlComponent
 import arx.engine.control.event.KeyPressEvent
+import arx.engine.data.Reduceable
 import arx.engine.entity.Companions.IdentityData
 import arx.engine.entity.{Entity, IdentityData, Taxonomy}
 import arx.engine.event.WorldCreatedEvent
@@ -31,6 +32,8 @@ import arx.game.data.RandomizationWorldData
 import arx.graphics.helpers.RGBA
 import arx.graphics.pov.{PixelCamera, TopDownCamera}
 import org.lwjgl.glfw.GLFW
+import arx.ax4.game.entities.UnitOfGameTimeFloat._
+import arx.core.gen.SimplexNoise
 
 import scala.io.StdIn
 
@@ -44,16 +47,15 @@ object SimpleMapScenario extends Scenario {
 		world.registerSubtypesOf[AxAuxData]()
 		Metrics.checkpoint("SimpleMap world subtypes registered")
 
+
+
 		var created = 0
-		for (r <- 0 until 6) {
+		for (r <- 0 until 8) {
 			for (apos <- HexRingIterator(AxialVec.Zero, r)) {
 				val ent = world.createEntity(Tiles.tileEntityId(apos.q, apos.r))
 				world.attachDataWith[Tile](ent, t => t.position = AxialVec3(apos, 0))
-				val veg = new Vegetation
-				if (apos.q > apos.r && r > 1) {
-					veg.layers = Vector(VegetationLibrary.withKind(Taxonomy("grass")))
-				}
-				world.attachData(ent, veg)
+
+
 				val terrainKind = if (r <= 1) {
 					Taxonomy("Mountains")
 				} else if (r <= 4) {
@@ -63,6 +65,48 @@ object SimpleMapScenario extends Scenario {
 				}
 				val terrain = TerrainLibrary.withKind(terrainKind)
 				world.attachData(ent, terrain)
+
+
+				val veg = new Vegetation
+				if (apos.q > apos.r && r > 1) {
+					veg.layers += VegetationLayerType.GroundCover -> VegetationLibrary.withKind(Taxonomy("grass"))
+				}
+				val cpos = apos.asCartesian
+
+
+				val terrainForestThreshold = if (terrainKind == Taxonomy("mountains")) {
+					0.4f
+				} else if (terrainKind == Taxonomy("hills")) {
+					0.3f
+				} else {
+					0.2f
+				}
+				val forestThreshold = if (veg.layers.nonEmpty) {
+					terrainForestThreshold
+				} else {
+					terrainForestThreshold + 0.35f
+				}
+
+
+				if (SimplexNoise.noise(cpos.x * 0.3f, cpos.y * 0.3f) > forestThreshold) {
+					veg.layers += VegetationLayerType.Canopy -> VegetationLibrary.withKind(Taxonomy("forest"))
+				}
+				world.attachData(ent, veg)
+
+
+
+				val resourceData = new ResourceSourceData
+				for ((vlt, l) <- veg.layers) {
+					if (l.kind == Taxonomy("grass")) {
+						resourceData.resources += ResourceKey(ResourceOrigin.Vegetation(vlt), Taxonomy("hay bale")) ->
+							Resource(Taxonomy("hay bale"), Reduceable(3), 1, 1.gameYear, canRecoverFromZero = true, structural = false,
+								Vector(
+									GatherMethod(name = "gather hay by hand", actionCost = 3, amount = 1),
+									GatherMethod(name = "cut hay", toolRequirements = EntityConditionals.isA(Taxonomy("fine cutting tool")) ,actionCost = 2, amount = 3)))
+					}
+				}
+				world.attachData(ent, resourceData)
+
 				created += 1
 			}
 		}
@@ -82,15 +126,19 @@ object SimpleMapScenario extends Scenario {
 
 
 		val torbold = createCreature(world, player)
-		world.modify(Tiles.tileAt(0,0), Tile.entities + torbold, None)
+		MovementLogic.placeCharacterAt(torbold, AxialVec3(1,-1,0))(world)
+//		world.modify(Tiles.tileAt(0,0), Tile.entities + torbold, None)
 		world.modify(torbold, IdentityData.name -> Some("Torbold"), None)
 
 		playerCharacter = torbold
 
 		val longspearArch = WeaponLibrary.withKind(Taxonomy("longspear"))
 		val longspear = longspearArch.createEntity(world)
-
 		InventoryLogic.equip(torbold, longspear)(world)
+
+		val stamPot = ItemLibrary.withKind(Taxonomy("staminaPotion")).createEntity(world)
+		InventoryLogic.transferItem(stamPot, Some(torbold))(world)
+
 
 		val slime = createCreature(world, enemy)
 		world.modify(slime, CharacterInfo.species setTo Taxonomy("slime"), None)
@@ -114,6 +162,8 @@ object SimpleMapScenario extends Scenario {
 		world.attachData(creature, new Equipment)
 		world.attachData(creature, new Inventory)
 		world.attachData(creature, new CombatData)
+		world.attachData(creature, new QualitiesData)
+		world.attachData(creature, new ReactionData)
 		world.attachDataWith(creature, (ad : AllegianceData) => {
 			ad.faction = faction
 		})
@@ -138,6 +188,7 @@ object SimpleMapScenario extends Scenario {
 	override def registerGraphicsComponents(graphicsEngine: GraphicsEngine, universe: Universe): Unit = {
 		graphicsEngine.register[WindowingGraphicsComponent]
 		graphicsEngine.register[AnimationGraphicsComponent]
+		graphicsEngine.register[AnimationGraphicsRenderingComponent]
 		graphicsEngine.register[TileGraphics]
 		graphicsEngine.register[EntityGraphics]
 		graphicsEngine.register[TacticalUIGraphics]

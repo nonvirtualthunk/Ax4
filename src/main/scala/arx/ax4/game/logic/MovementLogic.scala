@@ -11,7 +11,7 @@ import arx.engine.world.{EntityDataStore, TEntityDataStore, World, WorldView}
 import arx.Prelude.toArxList
 import arx.ax4.game.event.{EntityMoved, EntityPlaced}
 
-object Movement {
+object MovementLogic {
 	import arx.core.introspection.FieldOperations._
 
 	def moveCostTo(character : Entity, position : AxialVec3, tileStore : TEntityDataStore[Tile], terrainStore : TEntityDataStore[Terrain], vegetationStore : TEntityDataStore[Vegetation], physicalStore : TEntityDataStore[Physical]) : Option[Sext] = {

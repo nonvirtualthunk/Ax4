@@ -1,7 +1,7 @@
 package arx.ax4.game.entities
 
 import arx.Prelude.none
-import arx.ax4.game.entities.Companions.{Equipment, Inventory, Item, Weapon}
+import arx.ax4.game.entities.Companions.{Consumable, Equipment, Inventory, Item, Weapon}
 import arx.core.introspection.Clazz
 import arx.core.macros.GenerateCompanion
 import arx.core.math.Sext
@@ -17,6 +17,11 @@ class Item extends AxAuxData {
 	var heldIn : Option[Entity] = None
 	var wornOn : Map[Taxon, Int] = Map()
 	var usesBodyParts : Map[Taxon, Int] = Map()
+}
+
+@GenerateCompanion
+class Consumable extends AxAuxData {
+	var uses : Reduceable[Int] = Reduceable(1)
 }
 
 @GenerateCompanion
@@ -61,5 +66,17 @@ object WeaponLibrary extends EntityArchetypeLibrary {
 
 	override def initialLoad(): Unit = {
 		load("game/data/items/Weapons.sml")
+	}
+}
+
+object ItemLibrary extends EntityArchetypeLibrary {
+	override protected def fixedDataTypes: Seq[_ <: Clazz[_ <: TAuxData]] = List(Item)
+
+	override protected def conditionalDataTypes: Map[String, _ <: Clazz[_ <: TAuxData]] = Map("uses" -> Consumable)
+
+	override protected def topLevelField: String = "Items"
+
+	override def initialLoad(): Unit = {
+		load("game/data/items/Items.sml")
 	}
 }

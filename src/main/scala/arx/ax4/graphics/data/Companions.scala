@@ -13,5 +13,9 @@ object CharacterDrawingData extends Clazz[CharacterDrawingData]("CharacterDrawin
 
 	def apply(f : CharacterDrawingData => Unit) : CharacterDrawingData = { val v = new CharacterDrawingData; f(v); v }
 					 
+	def copyInto(from : CharacterDrawingData, to : CharacterDrawingData) {
+		to.exactPositionOverride = from.exactPositionOverride
+		to.colorMultiplier = from.colorMultiplier
+	}
 }
 }

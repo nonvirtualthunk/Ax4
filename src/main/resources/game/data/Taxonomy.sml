@@ -8,10 +8,16 @@ Taxonomy {
 
   UnknownThing : []
   Material : []
+  Materials {
+    Wood : Material
+    Stone : Material
+    Metal : Material
 
-  Wood : Material
-  Stone : Material
-  Metal : Material
+    Ironwood : Wood
+
+    Hay : Material
+
+  }
 
   LivingThing : []
 
@@ -26,8 +32,33 @@ Taxonomy {
   }
 
   Item : []
+  Items {
+    RawMaterial : Item
+    RefinedMaterial : Item
+
+    Foodstuff : Item
+    HumanFoodstuff : Foodstuff
+    AnimalFoodstuff : Foodstuff
+
+    Consumable : Item
+    Potion : [Consumable]
+
+    Tool : Item
+    FineCuttingTool : Tool
+    SturdyCuttingTool : Tool
+
+    Log : RawMaterial
+    Plank : RefinedMaterial
+
+    IronwoodLog : Log
+    IronwoodPlank : Plank
+
+    HayBale : [RawMaterial, AnimalFoodstuff]
+
+    StaminaPotion : Potion
+  }
   Weapon : Item
-  Axe : Item
+  Axe : [Item, SturdyCuttingTool]
 
   Weapons {
     BattleAxe: [Weapon, Axe]
@@ -98,11 +129,25 @@ Taxonomy {
   Skill : []
   Skills {
     WeaponSkill : Skill
+    ArmorSkill : Skill
 
     MeleeSkill : Skill
 
-    Spearwielding : [WeaponSkill, MeleeSkill]
-    Swordfighting : [WeaponSkill, MeleeSkill]
-    AxeWielding : [WeaponSkill, MeleeSkill]
+    SpearSkill : [WeaponSkill, MeleeSkill]
+    SwordSkill : [WeaponSkill, MeleeSkill]
+    AxeSkill : [WeaponSkill, MeleeSkill]
+    ShieldSkill : [ArmorSkill, MeleeSkill]
+
   }
+
+
+  Reaction : []
+  Reactions {
+    Parry : Reaction
+    Defend : Reaction
+    Block : Reaction
+    Counter : Reaction
+    Dodge : Reaction
+  }
+
 }

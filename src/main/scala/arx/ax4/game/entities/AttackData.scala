@@ -2,16 +2,16 @@ package arx.ax4.game.entities
 
 import arx.application.Noto
 import arx.ax4.game.entities.AttackConditionals.AnyAttackReference
-import arx.ax4.game.entities.Conditionals.{BaseAttackConditional}
+import arx.ax4.game.entities.Conditionals.BaseAttackConditional
 import arx.ax4.game.entities.DamageType.{Piercing, Unknown}
 import arx.ax4.game.entities.TargetPattern.Point
-import arx.ax4.game.logic.Allegiance
+import arx.ax4.game.logic.AllegianceLogic
 import arx.core.introspection.{CopyAssistant, TEagerSingleton}
 import arx.core.macros.GenerateCompanion
 import arx.core.math.Sext
 import arx.core.representation.ConfigValue
-import arx.core.vec.coordinates.{AxialVec, AxialVec3}
-import arx.engine.data.ConfigLoadable
+import arx.core.vec.coordinates.{AxialVec, AxialVec3, CartVec}
+import arx.engine.data.{ConfigLoadable, TNestedData}
 import arx.engine.entity.{Entity, Taxon}
 import arx.engine.world.{Breakdown, WorldView}
 import arx.game.data.DicePool
@@ -88,7 +88,7 @@ case class DefenseData(var armor : Int = 0,
 }
 
 
-
+@GenerateCompanion
 case class AttackModifier(var nameOverride: Option[String] = None,
 								  var namePrefix : Option[String] = None,
 								  var accuracyBonus: Int = 0,
@@ -97,10 +97,11 @@ case class AttackModifier(var nameOverride: Option[String] = None,
 								  var minRangeOverride: Option[Int] = None,
 								  var maxRangeOverride: Option[Int] = None,
 								  var damageBonuses: Map[AnyRef, DamageElementDelta] = Map(),
-								  var targetPatternOverride: Option[TargetPattern] = None)
+								  var targetPatternOverride: Option[TargetPattern] = None) extends TNestedData
 
+@GenerateCompanion
 case class DefenseModifier(var dodgeBonus : Int = 0,
-									var armorBonus : Int = 0)
+									var armorBonus : Int = 0) extends TNestedData
 
 class SpecialAttack {
 	var condition : BaseAttackConditional = AnyAttackReference
@@ -112,11 +113,13 @@ object SpecialAttack {
 
 
 	case object PiercingStab extends SpecialAttack {
-		condition = AttackConditionals.HasTargetPattern(Point) and AttackConditionals.HasDamageType(Piercing) and AttackConditionals.HasAtLeastMaxRange(2)
+		condition = (AttackConditionals.HasTargetPattern(Point) or AttackConditionals.HasTargetPattern(TargetPattern.SingleEnemy)) and AttackConditionals.HasDamageType(Piercing) and AttackConditionals.HasAtLeastMaxRange(2)
 		attackModifier = AttackModifier(
 			nameOverride = Some("piercing stab"),
 			accuracyBonus = -1,
-			targetPatternOverride = Some(TargetPattern.Line(startDist = 0,length = 2))
+			targetPatternOverride = Some(TargetPattern.Line(startDist = 1,length = 2)),
+			minRangeOverride = Some(1),
+			maxRangeOverride = Some(1)
 		)
 	}
 
@@ -231,7 +234,7 @@ trait HexTargetPattern extends TargetPattern {
 object TargetPattern {
 
 	case class Enemies(count : Int) extends EntityTarget {
-		override def matches(view: WorldView, attacker: Entity, target: Entity): Boolean = Allegiance.areEnemies(attacker, target)(view)
+		override def matches(view: WorldView, attacker: Entity, target: Entity): Boolean = AllegianceLogic.areEnemies(attacker, target)(view)
 	}
 
 	def SingleEnemy = Enemies(1)
@@ -242,9 +245,11 @@ object TargetPattern {
 
 	case class Line(startDist : Int, length: Int) extends HexTargetPattern {
 		override def targetedHexes(sourcePoint: AxialVec3, targetPoint: AxialVec3): Seq[AxialVec3] = {
-			val sourceCart = sourcePoint.qr.asCartesian
-			val delta = targetPoint.qr.asCartesian - sourceCart
-			(startDist until (startDist + length)).map(i => AxialVec.fromCartesian(sourceCart + delta * i.toFloat)).map(ax => AxialVec3(ax.q, ax.r, sourcePoint.l))
+//			val sourceCart = sourcePoint.qr.asCartesian
+//			val delta = CartVec((targetPoint.qr.asCartesian - sourceCart).normalizeSafe)
+//			(startDist until (startDist + length)).map(i => AxialVec.fromCartesian(sourceCart + delta * i.toFloat)).map(ax => AxialVec3(ax.q, ax.r, sourcePoint.l))
+			val q = sourcePoint.sideClosestTo(targetPoint, AxialVec3.Zero)
+			(startDist until (startDist + length)).map(i => AxialVec3(sourcePoint.plusDir(q, i), sourcePoint.l))
 		}
 	}
 

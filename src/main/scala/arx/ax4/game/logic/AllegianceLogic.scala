@@ -4,7 +4,7 @@ import arx.ax4.game.entities.{AllegianceData, CharacterInfo, FactionData}
 import arx.engine.entity.Entity
 import arx.engine.world.WorldView
 
-object Allegiance {
+object AllegianceLogic {
 	def isPlayerCharacter (character : Entity)(implicit view : WorldView) : Boolean = {
 		character[AllegianceData].faction[FactionData].playerControlled
 	}

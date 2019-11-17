@@ -19,14 +19,12 @@ class Tileset {
 	var vegetation = Map[Taxon, VegetationImageset]()
 
 	def drawInfoFor(position : AxialVec, terrain : Terrain, vegetation: Vegetation) = {
-		val TerrainImageset(default,_) = imagesetForTerrain(terrain.kind)
+		val baseImageLayer = baseImageLayerForTerrainVegetation(position, terrain.kind, vegetation.layers.values.map(_.kind))
 
-		val mainLayer = vegetation.layers.sortBy(_.layer)
-			.flatMap(l => baseImageLayerForTerrainVegetation(position, terrain.kind, l.kind))
-   		.headOption
-   		.getOrElse(ImageLayer(default.pickBasedOn(position, terrain.kind), Color.White))
+		val secondaryLayers = vegetation.layers.values
+   		.flatMap(vl => vegetationImageLayerFor(position, terrain.kind, vl.kind))
 
-		List(mainLayer)
+		baseImageLayer :: secondaryLayers.toList
 	}
 
 	def imagesetForTerrain(tKind : Taxon) = tKind.selfAndAncestorsUpTo(Taxonomy("Terrain")).toStream
@@ -39,11 +37,26 @@ class Tileset {
    	.headOption
    	.getOrElse(Tileset.DefaultVegetationImageset)
 
-	def baseImageLayerForTerrainVegetation(position : AxialVec, tKind : Taxon, vKind : Taxon) = {
+	def vegetationImageLayerFor(position : AxialVec, tKind : Taxon, vKind : Taxon) = {
 		val TerrainImageset(_, byVeg) = imagesetForTerrain(tKind)
 		// todo: this will be weird with hierarchicals that match multiple since it does depth first, effectively
 		vKind.selfAndAncestorsUpTo(Taxonomy("Vegetation")).toStream.flatMap(byVeg.get).headOption
-   		.map(vi => ImageLayer(vi.imageset.pickBasedOn(position, vKind), Color.White))
+			.map(vi => ImageLayer(vi.imageset.pickBasedOn(position, vKind), Color.White))
+	}
+
+	def baseImageLayerForTerrainVegetation(position : AxialVec, tKind : Taxon, vKinds : Iterable[Taxon]) = {
+		val TerrainImageset(default, byVeg) = imagesetForTerrain(tKind)
+		var ret = ImageLayer(default.pickBasedOn(position, tKind), Color.White)
+
+		for (vKind <- vKinds) {
+			// todo: this will be weird with hierarchicals that match multiple since it does depth first, effectively
+			ret = vKind.selfAndAncestorsUpTo(Taxonomy("Vegetation")).toStream.flatMap(byVeg.get).headOption match {
+				case Some(vegImageset) if vegImageset.replaces => ImageLayer(vegImageset.imageset.pickBasedOn(position, vKind), Color.White)
+				case _ => ret
+			}
+		}
+
+		ret
 	}
 }
 

@@ -1,7 +1,7 @@
 package arx.ax4.game.event
 
 import arx.ax4.game.action.GameActionIntent
-import arx.ax4.game.entities.{AttackData, DamageType, DefenseData}
+import arx.ax4.game.entities.{AttackData, DamageType, DefenseData, GatherProspect, ReactionType, Resource}
 import arx.engine.entity.{Entity, Taxon}
 import arx.engine.event.GameEvent
 
@@ -34,3 +34,9 @@ case class ActiveIntentChanged(entity : Entity, intent : GameActionIntent) exten
 case class GainSkillXPEvent(entity : Entity, skill : Taxon, amount : Int) extends GameEvent
 
 case class GainSkillLevelEvent(entity : Entity, skill : Taxon, newLevel : Int) extends GameEvent
+
+case class SwitchReactionEvent(entity : Entity, from : ReactionType, to : ReactionType) extends GameEvent
+
+case class GatherEvent(prospect : GatherProspect) extends GameEvent
+
+case class ResourceGatheredEvent(entity : Entity, kind : Taxon, gained : Int) extends GameEvent

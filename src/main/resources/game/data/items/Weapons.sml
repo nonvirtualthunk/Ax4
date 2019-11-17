@@ -2,7 +2,7 @@ Weapons {
   Longspear : {
     durability : 25
 
-    weaponSkills : [spearwielding]
+    weaponSkills : [spearSkill]
 
     usesBodyParts : {
       gripping : 2
@@ -19,7 +19,7 @@ Weapons {
         staminaCostPerStrike : 2
         minRange : 2
         maxRange : 2
-        damage : 1d8 Slashing
+        damage : 1d8 Piercing
       }
 
       secondary : {

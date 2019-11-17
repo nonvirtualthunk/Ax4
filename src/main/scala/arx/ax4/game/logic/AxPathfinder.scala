@@ -17,7 +17,7 @@ object AxPathfinder {
 		Pathfinder[AxialVec3](
 			"AxMainPathfinder",
 			v => v.neighbors,
-			(e, from, to) => Movement.moveCostTo(e, to, tileData, terrainData, vegData, physicalData).map(_.asFloat),
+			(e, from, to) => MovementLogic.moveCostTo(e, to, tileData, terrainData, vegData, physicalData).map(_.asFloat),
 			(from, to) => from.distance(to)
 		)
 	})
@@ -31,7 +31,7 @@ object AxPathfinder {
 		Pathfinder[AxialVec3](
 			"AxMainPathfinder",
 			v => v.neighbors,
-			(e, from, to) => Movement.moveCostTo(e, to, tileData, terrainData, vegData, physicalData).map(_.asFloat),
+			(e, from, to) => MovementLogic.moveCostTo(e, to, tileData, terrainData, vegData, physicalData).map(_.asFloat),
 			(from, to) => 0.0f
 		)
 	})

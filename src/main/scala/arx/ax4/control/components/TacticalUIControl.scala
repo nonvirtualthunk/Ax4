@@ -3,28 +3,34 @@ package arx.ax4.control.components
 import arx.ai.search.Pathfinder
 import arx.application.Noto
 import arx.ax4.game.entities.Companions.{CharacterInfo, Physical, Tile, TurnData}
-import arx.ax4.game.entities.{AllegianceData, CharacterInfo, DamageElement, FactionData, Physical, Tile, Tiles, TurnData}
+import arx.ax4.game.entities.{AllegianceData, AttackData, AttackReference, CharacterInfo, DamageElement, FactionData, Physical, SkillsLibrary, Tile, Tiles, TurnData}
 import arx.ax4.game.event.{ActiveIntentChanged, EntityMoved}
 import arx.ax4.graphics.components.EntityGraphics
-import arx.ax4.graphics.data.{AxDrawingConstants, TacticalUIData}
+import arx.ax4.graphics.data.{AxDrawingConstants, SpriteLibrary, TacticalUIData, TacticalUIMode}
 import arx.core.units.UnitOfTime
-import arx.core.vec.{ReadVec2f, Vec3f}
-import arx.core.vec.coordinates.{AxialVec, AxialVec3}
+import arx.core.vec.{ReadVec2f, Vec3f, Vec4f}
+import arx.core.vec.coordinates.{AxialVec, AxialVec3, HexDirection}
 import arx.engine.control.components.ControlComponent
-import arx.engine.control.event.{KeyModifiers, KeyPressEvent, KeyReleaseEvent, MouseButton, MouseMoveEvent, MousePressEvent, UIEvent}
+import arx.engine.control.event.{KeyModifiers, KeyPressEvent, KeyReleaseEvent, MouseButton, MouseEvent, MouseMoveEvent, MousePressEvent, MouseReleaseEvent, UIEvent}
 import arx.engine.graphics.data.PovData
 import arx.engine.world.{GameEventClock, HypotheticalWorldView, World, WorldView}
-import arx.graphics.GL
+import arx.graphics.{GL, TToImage}
 import arx.Prelude.toArxList
-import arx.ax4.game.action.{AttackIntent, BiasedAxialVec3, DoNothingIntent, GameAction, MoveIntent}
+import arx.ax4.control.components.widgets.InventoryWidget
+import arx.ax4.game.action.{AttackIntent, BiasedAxialVec3, DoNothingIntent, GameAction, GatherIntent, MoveIntent}
 import arx.ax4.game.event.TurnEvents.{TurnEndedEvent, TurnStartedEvent}
-import arx.ax4.game.logic.{Action, CombatLogic}
+import arx.ax4.game.logic.{ActionLogic, CombatLogic, SkillsLogic}
+import arx.ax4.graphics.data.TacticalUIMode.ChooseSpecialAttackMode
 import arx.core.datastructures.{Watcher, Watcher2}
 import arx.core.math.Sext
-import arx.engine.control.components.windowing.WindowingControlComponent
+import arx.engine.control.components.windowing.widgets.DimensionExpression.ExpandTo
+import arx.engine.control.components.windowing.{SimpleWidget, WindowingControlComponent}
+import arx.engine.control.components.windowing.widgets.{DimensionExpression, ListItemSelected}
 import arx.engine.control.data.WindowingControlData
 import arx.engine.data.Moddable
 import arx.engine.entity.{Entity, IdentityData}
+import arx.engine.event.Event
+import arx.graphics.helpers.{Color, RGBA}
 import arx.resource.ResourceManager
 import org.lwjgl.glfw.GLFW
 
@@ -45,7 +51,7 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 	}
 
 	override protected def onInitialize(gameView : HypotheticalWorldView, game: World, display: World): Unit = {
-		implicit val view = game.view
+		implicit val view = gameView
 
 		val tuid = display[TacticalUIData]
 
@@ -54,7 +60,42 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 		desktop.drawing.backgroundImage = Some(ResourceManager.image("ui/woodBorder2.png"))
 		val selCInfo = desktop.createChild("widgets/CharacterInfoWidgets.sml", "SelectedCharacterInfo")
 		selCInfo.showing = Moddable(() => tuid.selectedCharacter.isDefined)
+		selCInfo.consumeEventHighPrecedence {
+			case me : MouseEvent => true
+		}
 		tuid.selectedCharacterInfoWidget = selCInfo
+
+		val mainSection = desktop.createChild(SimpleWidget).widget
+		mainSection.width = ExpandTo(tuid.selectedCharacterInfoWidget)
+		mainSection.height = DimensionExpression.Proportional(1.0f)
+		mainSection.drawing.drawBackground = false
+		tuid.mainSectionWidget = mainSection
+
+
+		val actionSelBar = mainSection.createChild("widgets/ActionSelectionWidgets.sml", "ActionSelectionButtonBar")
+		actionSelBar.showing = Moddable(() => tuid.selectedCharacter.isDefined)
+		for (w <- actionSelBar.descendantsWithIdentifier("SpecialAttackButton")) {
+			w.consumeEvent {
+				case MouseReleaseEvent(_,_,_) => tuid.toggleUIMode(ChooseSpecialAttackMode)
+			}
+		}
+
+		tuid.specialAttacksList = mainSection.createChild("widgets/ActionSelectionWidgets.sml", "SpecialAttackSelectionList")
+//		specialAttackList.showing = Moddable(() => )
+		(desktop.descendantsWithIdentifier("SpecialAttackSelectionList") ::: desktop.descendantsWithIdentifier("AttackDisplay")).foreach(w =>
+			w.onEvent {
+				case ListItemSelected(_, _, Some(attackDisplayInfo: SimpleAttackDisplayInfo)) =>
+					val selC = display[TacticalUIData].selectedCharacter.get
+					val newIntent = AttackIntent(attackDisplayInfo.attackRef)
+					game.modify(selC, CharacterInfo.activeIntent -> newIntent)
+					game.addEvent(ActiveIntentChanged(selC, newIntent))
+			}
+		)
+		tuid.specialAttacksList.showing = Moddable(() => tuid.activeUIMode == TacticalUIMode.ChooseSpecialAttackMode)
+
+		tuid.inventoryWidget = new InventoryWidget(mainSection)
+		tuid.inventoryWidget.widget.showing = Moddable(() => tuid.activeUIMode == TacticalUIMode.InventoryMode)
+
 
 
 		val activeFaction = gameView.worldData[TurnData].activeFaction
@@ -79,12 +120,11 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 
 				val tuid = display[TacticalUIData]
 				val biasDir = (0 until 6).minBy(q => (mousedHex.neighbor(q).asCartesian(const.HexSize.toFloat) - unprojected.xy).lengthSafe)
-				tuid.mousedOverBiasedHex = BiasedAxialVec3(AxialVec3(mousedHex,0), biasDir)
+				tuid.mousedOverBiasedHex = BiasedAxialVec3(AxialVec3(mousedHex,0), HexDirection.fromInt(biasDir))
 
 
 				fireEvent(HexMouseMoveEvent(mousedHex,pos,modifiers))
 			case KeyReleaseEvent(GLFW.GLFW_KEY_ENTER, _) =>
-				println("Ending turn")
 				val TD = game.view.worldData[TurnData]
 				val factions = game.view.entitiesWithData[FactionData].toList.sortBy(e => e.id)
 				val activeFaction = TD.activeFaction
@@ -98,23 +138,13 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 
 				game.modifyWorld(TurnData.activeFaction -> nextFaction)
 				game.addEvent(TurnStartedEvent(nextFaction, TD.turn))
-			case HexMousePressEvent(button, hex, pos, modifiers) =>
+			case KeyReleaseEvent(GLFW.GLFW_KEY_I, _) =>
 				val tuid = display[TacticalUIData]
-				for (sel <- tuid.consideringSelection) {
-					selectCharcter(game, display, sel)
-				}
-
-				tuid.consideringActionSelectionContext match {
-					case Some(ActionSelectionContext(intent, selectionResults)) =>
-						if (! intent.hasRemainingSelections(selectionResults)) {
-							for (action <- intent.createAction(selectionResults.build())) {
-								Action.performAction(action)(game)
-							}
-						} else {
-							// lock in the considered value here when we press
-							tuid.actionSelectionContext = Some(ActionSelectionContext(intent, selectionResults))
-						}
-					case None =>
+				tuid.toggleUIMode(TacticalUIMode.InventoryMode)
+			case KeyReleaseEvent(GLFW.GLFW_KEY_G, _) =>
+				val tuid = display[TacticalUIData]
+				for (selC <- tuid.selectedCharacter) {
+					selC(CharacterInfo).activeIntent = GatherIntent
 				}
 		}
 	}
@@ -124,7 +154,7 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 		val tuid = display[TacticalUIData]
 		tuid.selectedCharacter = Some(selC)
 		if (selC.data[CharacterInfo].activeIntent == DoNothingIntent) {
-			val availableAttacks = CombatLogic.availableAttacks(game.view, selC)
+			val availableAttacks = CombatLogic.availableAttacks(game.view, selC, includeBaseAttacks = true, includeSpecialAttacks = false)
 			val newIntent = availableAttacks.find(a => a.attackKey == "primary")
    			.orElse(availableAttacks.headOption) match {
 				case Some(attackRef) => AttackIntent(attackRef)
@@ -139,7 +169,8 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 	}
 
 	def updateBindings(implicit game : WorldView, display : World, character : Option[Entity]): Unit = {
-		for (selC <- display[TacticalUIData].selectedCharacter) {
+		val tuid = display[TacticalUIData]
+		for (selC <- tuid.selectedCharacter) {
 			val desktop = display[WindowingControlData].desktop
 			desktop.bind("selectedCharacter.name", selC[IdentityData].name.getOrElse("nameless"))
 			desktop.bind("selectedCharacter.portrait", () => EntityGraphics.characterImageset.drawInfoFor(game, selC, display.view).head.image)
@@ -155,18 +186,41 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 
 			desktop.bind("selectedCharacter.speed", () => selC[CharacterInfo].moveSpeed)
 
-			val selCWidget = display[TacticalUIData].selectedCharacterInfoWidget
-			selCWidget.bind("attacks", () => {
-				CombatLogic.availableAttacks(game, selC)
+			tuid.selectedCharacterInfoWidget.bind("attacks", () => {
+				CombatLogic.availableAttacks(game, selC, includeBaseAttacks = true,  includeSpecialAttacks = false)
    				.sortBy(aref => aref.attackKey != "primary")
-					.map(attack => {
-					CombatLogic.resolveUntargetedConditionalAttackData(game, selC, attack) match {
-						case Some((attackData, modifiers)) =>
-							SimpleAttackDisplayInfo(attackData.name.capitalize, AttackBonus(attackData.accuracyBonus), DamageExpression(attackData.damage))
-						case None => SimpleAttackDisplayInfo("unresolved", AttackBonus(0), DamageExpression(Map()))
+					.map(aref => {
+						val selected = selC[CharacterInfo].activeIntent == AttackIntent(aref)
+					CombatLogic.resolveUntargetedConditionalAttackData(game, selC, aref) match {
+						case Some((attackData, modifiers)) => SimpleAttackDisplayInfo.fromAttackData(aref, attackData, selected)
+						case None => SimpleAttackDisplayInfo(aref, "unresolved", AttackBonus(0), DamageExpression(Map()), RGBA(0.1f,0.2f,0.3f,1f))
 					}
 				}).toList
 			})
+
+			tuid.specialAttacksList.bind("specialAttacks", () => {
+				CombatLogic.availableAttacks(game, selC, includeBaseAttacks = false,  includeSpecialAttacks = true)
+   				.sortBy(aref => s"${aref.attackKey} ${aref.specialKey}")
+   				.map(aref => {
+						val selected = selC[CharacterInfo].activeIntent == AttackIntent(aref)
+						CombatLogic.resolveUntargetedConditionalAttackData(game, selC, aref) match {
+							case Some((attackData, modifiers)) => SimpleAttackDisplayInfo.fromAttackData(aref, attackData, selected)
+							case None => SimpleAttackDisplayInfo(aref, "unresolved", AttackBonus(0), DamageExpression(Map()), RGBA(0.1f,0.2f,0.3f,1f))
+						}
+					})
+			})
+
+			tuid.selectedCharacterInfoWidget.bind("skills", () => {
+				SkillsLogic.skillLevels(selC).toList.map {
+					case (taxon, level) =>
+						SkillsLibrary(taxon) match {
+							case Some(skill) => SimpleSkillDisplayInfo(skill.displayName.capitalize, level, SpriteLibrary.iconFor(taxon), SkillsLogic.currentLevelXp(selC, taxon), SkillsLogic.currentLevelXpRequired(selC, taxon))
+							case None => Noto.error(s"Skill display couldn't find info for skill $taxon")
+						}
+				}
+			})
+
+			tuid.inventoryWidget.updateBindings(game, display, selC)
 		}
 	}
 }
@@ -192,7 +246,15 @@ case class AttackBonus(bonus : Int) {
 	import arx.Prelude.int2RicherInt
 	override def toString: String = bonus.toSignedString
 }
-case class SimpleAttackDisplayInfo(name : String, accuracyBonus : AttackBonus, damage : DamageExpression)
+case class SimpleAttackDisplayInfo(attackRef : AttackReference, name : String, accuracyBonus : AttackBonus, damage : DamageExpression, selectedColor : Color)
+object SimpleAttackDisplayInfo {
+	def fromAttackData(aref : AttackReference, attackData : AttackData, selected : Boolean) : SimpleAttackDisplayInfo = {
+		SimpleAttackDisplayInfo(aref, attackData.name.capitalize, AttackBonus(attackData.accuracyBonus), DamageExpression(attackData.damage),
+			if (selected) { RGBA(0.1f,0.2f,0.3f,1f) } else { RGBA(0.5f,0.5f,0.5f,1.0f) })
+	}
+}
+
+case class SimpleSkillDisplayInfo(name : String, level : Int, icon : TToImage, currentXp : Int, requiredXp : Int)
 
 case class HexMousePressEvent(button : MouseButton, hex : AxialVec, pos : ReadVec2f, modifiers : KeyModifiers) extends UIEvent
 case class HexMouseMoveEvent(hex : AxialVec, pos : ReadVec2f, modifiers: KeyModifiers) extends UIEvent

@@ -5,8 +5,8 @@ import arx.application.Noto
 import arx.ax4.game.entities.Companions.{CharacterInfo, Physical}
 import arx.ax4.game.entities.{AllegianceData, AttackProspect, AttackReference, CharacterInfo, EntityTarget, HexTargetPattern, Physical, TargetPattern, Tile, Tiles}
 import arx.ax4.game.event.AttackEventInfo
-import arx.ax4.game.logic.{Allegiance, AxPathfinder, CombatLogic, Movement}
-import arx.core.vec.coordinates.{AxialVec, AxialVec3}
+import arx.ax4.game.logic.{AllegianceLogic, AxPathfinder, CombatLogic, MovementLogic}
+import arx.core.vec.coordinates.{AxialVec, AxialVec3, HexDirection}
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.world.WorldView
 
@@ -30,6 +30,7 @@ case class MoveAction(character: Entity, path: Path[AxialVec3]) extends GameActi
 
 case class AttackAction(attacker: Entity,
 								attack: AttackReference,
+								from : AxialVec3,
 								targets: Either[Seq[Entity], Seq[AxialVec3]],
 								preMove: Option[Path[AxialVec3]],
 								postMove: Option[Path[AxialVec3]]) extends GameAction {
@@ -68,8 +69,13 @@ case object DoNothingIntent extends GameActionIntent {
 	})
 }
 
-case class 	AttackIntent(attackRef: AttackReference) extends GameActionIntent {
+case class AttackIntent(attackRef: AttackReference) extends GameActionIntent {
 	override def instantiate(implicit view: WorldView, attacker: Entity): Either[GameActionIntentInstance, String] = {
+
+		def getApAfterMove(p : Path[AxialVec3]) = {
+			attacker(CharacterInfo).actionPoints.currentValue - MovementLogic.actionPointsRequiredForPath(attacker, p)
+		}
+
 		attackRef.resolve() match {
 			case Some(attack) =>
 				val (attackDetails, _) = CombatLogic.resolveUnconditionalAttackData(view, attacker, attackRef.weapon, attack)
@@ -77,23 +83,56 @@ case class 	AttackIntent(attackRef: AttackReference) extends GameActionIntent {
 				attackDetails.targetPattern match {
 					case hexPattern: HexTargetPattern =>
 						Left(new GameActionIntentInstance {
-							val hexSelector = HexSelector(attackDetails.targetPattern, (view, v) => {
-								val tileEnt = Tiles.tileAt(v)
-								view.dataOpt[Tile](tileEnt).exists(t => t.entities.exists(e => Allegiance.areEnemies(e, attacker)(view)))
-							})
+							val hexSelector = BiasedHexSelector(attackDetails.targetPattern, (view, v) => true)
 
 							override def nextSelection(resultsSoFar: SelectionResultBuilder): Option[Selector[_]] = Some(hexSelector).filter(h => !resultsSoFar.fullySatisfied(h))
 
 							override def createAction(selectionResult: SelectionResult): Seq[GameAction] = {
 								val targetHex = selectionResult.single(hexSelector)
-								val allHexes = hexPattern.targetedHexes(attacker(Physical).position, targetHex)
-								//							val targets = allHexes.flatMap(h => Tiles.tileAt(h)[Tile].entities)
-								//								.filter(e => Allegiance.areEnemies(e, attacker))
-								List(AttackAction(attacker, attackRef, Right(allHexes), None, None))
+
+								val attackerPos = attacker(Physical).position
+								val exactDirectionPath = AxPathfinder.findPathToMatching(attacker, attackerPos, v => {
+									targetHex.vec.sideClosestTo(v, AxialVec3.Zero) == targetHex.biasDirection &&
+									CombatLogic.canAttackBeMade(view, attacker, v, Right(targetHex.vec), attackDetails)
+								})(view)
+								lazy val approximateDirectionPath = AxPathfinder.findPathToMatching(attacker, attackerPos, v => {
+									CombatLogic.canAttackBeMade(view, attacker, v, Right(targetHex.vec), attackDetails)
+								})(view)
+
+								val effectivePath = if(exactDirectionPath.isEmpty) {
+									approximateDirectionPath
+								} else if (approximateDirectionPath.isEmpty ) {
+									exactDirectionPath
+								} else {
+									val ep = exactDirectionPath.get
+									val ap = approximateDirectionPath.get
+									if (getApAfterMove(ep) < attackDetails.actionCost && getApAfterMove(ap) >= attackDetails.actionCost) {
+										Some(ap)
+									} else {
+										Some(ep)
+									}
+								}
+
+								effectivePath match {
+									case Some(path) =>
+										val subPath = MovementLogic.subPath(attacker, path, attacker[CharacterInfo].curPossibleMovePoints)
+										val apAfterMove = getApAfterMove(subPath)
+
+										var actions = List[GameAction]()
+										if (path.steps.size >= 2) {
+											actions ::= MoveAction(attacker, subPath)
+										}
+										if (apAfterMove >= attackDetails.actionCost) {
+											val allHexes = hexPattern.targetedHexes(path.steps.last.node, targetHex.vec)
+											actions ::= AttackAction(attacker, attackRef, path.steps.last.node, Right(allHexes), None, None)
+										}
+										actions.reverse
+									case None => Nil
+								}
 							}
 						})
 					case entityTarget: EntityTarget =>
-						val entitySelector = EntitySelector((view, ent) => Allegiance.areEnemies(attacker, ent)(view), "Enemy creature")
+						val entitySelector = EntitySelector((view, ent) => AllegianceLogic.areEnemies(attacker, ent)(view), "Enemy creature")
 							.withAmount(entityTarget.count)
 						Left(new GameActionIntentInstance {
 							override def nextSelection(resultsSoFar: SelectionResultBuilder): Option[Selector[_]] = Some(entitySelector).filter(h => !resultsSoFar.fullySatisfied(h))
@@ -101,17 +140,17 @@ case class 	AttackIntent(attackRef: AttackReference) extends GameActionIntent {
 							override def createAction(selectionResult: SelectionResult): Seq[GameAction] = {
 								val targets = selectionResult(entitySelector)
 
-								AxPathfinder.findPathToMatching(attacker, attacker(Physical).position, v => targets.forall(t => CombatLogic.canAttackBeMade(view, attacker, v, t, attackDetails)))(view) match {
+								AxPathfinder.findPathToMatching(attacker, attacker(Physical).position, v => targets.forall(t => CombatLogic.canAttackBeMade(view, attacker, v, Left(t), attackDetails)))(view) match {
 									case Some(path) =>
-										val subPath = Movement.subPath(attacker, path, attacker[CharacterInfo].curPossibleMovePoints)
-										val apAfterMove = attacker(CharacterInfo).actionPoints.currentValue - Movement.actionPointsRequiredForPath(attacker, subPath)
+										val subPath = MovementLogic.subPath(attacker, path, attacker[CharacterInfo].curPossibleMovePoints)
+										val apAfterMove = attacker(CharacterInfo).actionPoints.currentValue - MovementLogic.actionPointsRequiredForPath(attacker, subPath)
 
 										var actions = List[GameAction]()
 										if (path.steps.size >= 2) {
 											actions ::= MoveAction(attacker, subPath)
 										}
 										if (apAfterMove >= attackDetails.actionCost) {
-											actions ::= AttackAction(attacker, attackRef, Left(targets), None, None)
+											actions ::= AttackAction(attacker, attackRef, path.steps.last.node, Left(targets), None, None)
 										}
 										actions.reverse
 									case None => Nil
@@ -140,7 +179,7 @@ case object MoveIntent extends GameActionIntent {
 				val pathFound = AxPathfinder.findPath(entity, entity(Physical).position, hex)
 				pathFound match {
 					case Some(path) =>
-						val subPath = Movement.subPath(entity, path, entity[CharacterInfo].curPossibleMovePoints)
+						val subPath = MovementLogic.subPath(entity, path, entity[CharacterInfo].curPossibleMovePoints)
 						if (subPath.steps.size < 2) {
 							List(DoNothingAction(entity))
 						} else {
@@ -185,7 +224,7 @@ case object WaypointMoveIntent extends GameActionIntent {
 					val pathFound = AxPathfinder.findPath(entity, startPos, hex)
 					pathFound match {
 						case Some(path) =>
-							val subPath = Movement.subPath(entity, path, entity[CharacterInfo].curPossibleMovePoints)
+							val subPath = MovementLogic.subPath(entity, path, entity[CharacterInfo].curPossibleMovePoints)
 							if (subPath.steps.size < 2) {
 								List(DoNothingAction(entity))
 							} else {
@@ -203,7 +242,7 @@ case object WaypointMoveIntent extends GameActionIntent {
 
 
 
-class SelectionResult(private val results: Map[Selector[_], List[Any]] = Map()) {
+case class SelectionResult(private val results: Map[Selector[_], List[Any]] = Map()) {
 	def apply[T](sel: Selector[T]): List[T] = {
 		results(sel).asInstanceOf[List[T]]
 	}
@@ -274,6 +313,7 @@ case class HexSelector(pattern: TargetPattern, hexPredicate: (WorldView, AxialVe
 	override def description: String = "hex"
 }
 
+
 case class BiasedHexSelector(pattern: TargetPattern, hexPredicate: (WorldView, BiasedAxialVec3) => Boolean) extends Selector[BiasedAxialVec3] {
 	override def satisfiedBy(view: WorldView, a: Any): Option[(BiasedAxialVec3, Int)] = a match {
 		case bv : BiasedAxialVec3 if hexPredicate(view, bv) => Some(bv -> 1)
@@ -284,7 +324,7 @@ case class BiasedHexSelector(pattern: TargetPattern, hexPredicate: (WorldView, B
 }
 
 
-case class BiasedAxialVec3(vec : AxialVec3, biasDirection : Int)
+case class BiasedAxialVec3(vec : AxialVec3, biasDirection : HexDirection)
 
 
 /*

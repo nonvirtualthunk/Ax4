@@ -24,7 +24,7 @@ object SkillLevel{
 }
 
 
-case class Skill(var levels: List[SkillLevel]) {
+case class Skill(displayName : String, var levels: List[SkillLevel]) {
 	def skillLevel(n : Int) = levels.lift(n - 1)
 }
 
@@ -37,7 +37,7 @@ object SkillsLibrary {
 
 	def apply(skill : Taxon) : Option[Skill] = byTaxon.get(skill)
 
-	byTaxon += Taxonomy("spearwielding") -> Skill(
+	byTaxon += Taxonomy("spearSkill") -> Skill("Spear",
 		List(
 			SkillLevel(
 				(world, entity) => world.modify(entity, CombatData.conditionalAttackModifiers append (AttackConditionals.WeaponIs(Taxonomy("spear")) -> AttackModifier(accuracyBonus = 1))),
@@ -49,7 +49,7 @@ object SkillsLibrary {
 			)
 		)
 	)
-	byTaxon += Taxonomy("swordfighting") -> Skill(
+	byTaxon += Taxonomy("swordSkill") -> Skill("Sword",
 		List(
 			SkillLevel()
 				.withModifier(CombatData.conditionalAttackModifiers append (WeaponIs(Taxonomy("sword")) -> AttackModifier(accuracyBonus = 1)))

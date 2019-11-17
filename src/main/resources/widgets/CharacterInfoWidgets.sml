@@ -59,17 +59,46 @@ SelectedCharacterInfo {
       text : "Speed: %(selectedCharacter.speed)"
     }
 
-    AttackDisplay : {
-      type : ListWidget
+
+    InfoTabs : {
+      type : TabWidget
+
+      tabs : [
+        { heading : Attacks , tab : AttackDisplay }
+        { heading : Skills , tab : SkillDisplay}
+      ]
 
       y : "0 below Speed"
-      dimensions : [100%, WrapContent]
-      backgroundPixelScale : 1
-      background.image : "ui/greenWoodBorder.png"
+      dimensions : [100%, 600]
 
-      listItemArchetype : AttackInfoWidgets.BasicAttackInfo
-      listItemBinding : "attacks -> attack"
+      drawBackground : false
 
+      tabHeight : 75
+
+      children : {
+        AttackDisplay : {
+          type : ListWidget
+
+          listItemArchetype : AttackInfoWidgets.BasicAttackInfo
+          listItemBinding : "attacks -> attack"
+
+          backgroundPixelScale : 1
+          background.image : "ui/greenWoodBorder.png"
+          drawBackground : true
+        },
+
+        SkillDisplay : {
+          type : ListWidget
+
+          listItemArchetype : SkillInfoWidgets.BasicSkillInfo
+          listItemBinding : "skills -> skill"
+
+          backgroundPixelScale : 1
+          background.image : "ui/greenWoodBorder.png"
+          drawBackground : true
+        }
+      }
     }
+
   }
 }

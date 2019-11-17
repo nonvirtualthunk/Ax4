@@ -1,9 +1,10 @@
 package arx.ax4.game.logic
 
 import arx.ax4.game.entities.Companions.{Equipment, Inventory, Item}
+import arx.ax4.game.entities.{Equipment, Inventory}
 import arx.ax4.game.event.{EquipItem, TransferItem, UnequipItem}
 import arx.engine.entity.Entity
-import arx.engine.world.World
+import arx.engine.world.{World, WorldView}
 
 object InventoryLogic {
 	import arx.core.introspection.FieldOperations._
@@ -49,5 +50,23 @@ object InventoryLogic {
 			world.endEvent(UnequipItem(curEquippedTo, item))
 		}
 
+	}
+
+	def heldItems(entity : Entity)(implicit view : WorldView) : List[Entity] = {
+		entity.dataOpt[Inventory] match {
+			case Some(inv) => inv.heldItems.toList.sortBy(i => IdentityLogic.kind(i).name)
+			case None => Nil
+		}
+	}
+
+	def heldAndEquippedItems(entity : Entity)(implicit view : WorldView) : List[Entity] = {
+		equippedItems(entity) ::: heldItems(entity)
+	}
+
+	def equippedItems(entity : Entity)(implicit view : WorldView) : List[Entity] = {
+		entity.dataOpt[Equipment] match {
+			case Some(equip) => equip.equipped.toList.sortBy(i => IdentityLogic.kind(i).name)
+			case None => Nil
+		}
 	}
 }

@@ -7,4 +7,8 @@ object TurnEvents {
 	case class TurnStartedEvent(faction : Entity, turnNumber : Int) extends GameEvent
 
 	case class TurnEndedEvent(faction : Entity, turnNumber : Int) extends GameEvent
+
+	case class EntityTurnStartEvent(entity : Entity, turnNumber : Int) extends GameEvent
+
+	case class EntityTurnEndEvent(entity : Entity, turnNumber : Int) extends GameEvent
 }

@@ -1,12 +1,13 @@
 package arx.ax4.game.entities
 
 import arx.Prelude
+import arx.application.Noto
 import arx.ax4.game.action.{DoNothingIntent, GameActionIntent, MoveIntent, WaypointMoveIntent}
-import arx.ax4.game.entities.Conditionals.{BaseAttackConditional}
+import arx.ax4.game.entities.Conditionals.BaseAttackConditional
 import arx.core.macros.GenerateCompanion
 import arx.core.math.Sext
 import arx.core.vec.{ReadVec2f, ReadVec4f, Vec2f, Vec4f}
-import arx.core.vec.coordinates.{AxialVec3, CartVec3, HexDirection}
+import arx.core.vec.coordinates.{AxialVec3, CartVec, CartVec3, HexDirection}
 import arx.engine.data.Reduceable
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.world.WorldView
@@ -47,7 +48,7 @@ class CharacterInfo extends AxAuxData {
 @GenerateCompanion
 class Physical extends AxAuxData {
 	var position : AxialVec3 = AxialVec3.Zero
-	var offset : ReadVec2f = Vec2f.Zero
+	var offset : CartVec = CartVec.Zero
 	var colorTransforms : List[ColorTransform] = Nil
 	var facing : HexDirection = HexDirection.Top
 	var occupiesHex : Boolean = true
@@ -83,7 +84,11 @@ case class AttackReference(weapon : Entity, attackKey : AnyRef, specialSource : 
 		val baseAttackData = view.data[Weapon](weapon).attacks.get(attackKey)
 		val specialAttackModifier = specialSource.flatMap(ss => view.data[CombatData](ss).specialAttacks.get(specialKey)).map(sa => sa.attackModifier)
 		specialAttackModifier match {
-			case Some(mod) => baseAttackData.map(ba => { val bac = ba.copy(); bac.merge(mod); bac })
+			case Some(mod) => baseAttackData.map(ba => {
+				val bac = ba.copy();
+				bac.merge(mod);
+				bac
+			})
 			case None => baseAttackData
 		}
 	}

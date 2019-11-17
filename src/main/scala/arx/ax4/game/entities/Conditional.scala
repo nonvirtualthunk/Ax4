@@ -1,8 +1,8 @@
 package arx.ax4.game.entities
 
-import arx.ax4.game.entities.Conditionals.{BaseAttackConditional}
+import arx.ax4.game.entities.Conditionals.{BaseAttackConditional, EntityConditional}
 import arx.ax4.game.entities.DamageType.{Piercing, Slashing}
-import arx.engine.entity.{IdentityData, Taxon}
+import arx.engine.entity.{Entity, IdentityData, Taxon}
 import arx.engine.world.{World, WorldView}
 import arx.game.data.DicePoolBuilder._
 
@@ -20,6 +20,8 @@ trait Conditional[-T] {
 object Conditionals {
 //	type AttackConditional = Conditional[AttackProspect]
 	type BaseAttackConditional = Conditional[BaseAttackProspect]
+	type BaseGatherConditional = Conditional[BaseGatherProspect]
+	type EntityConditional = Conditional[Entity]
 
 	def all[T] : Conditional[T] = new Conditional[T] {
 		override def isTrueFor(implicit view: WorldView, value: T): Boolean = true
@@ -30,6 +32,12 @@ object Conditionals {
 
 trait WorldConditional {
 	def isTrueFor(view : WorldView) : Boolean
+}
+
+object EntityConditionals {
+	case class isA(taxon : Taxon) extends EntityConditional {
+		override def isTrueFor(implicit view: WorldView, value: Entity): Boolean = value.dataOpt[IdentityData].exists(id => id.isA(taxon))
+	}
 }
 
 

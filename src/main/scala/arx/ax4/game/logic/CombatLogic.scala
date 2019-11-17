@@ -10,6 +10,7 @@ import arx.engine.world.{World, WorldView}
 import arx.game.logic.Randomizer
 
 object CombatLogic {
+
 	import arx.core.introspection.FieldOperations._
 
 	def attack(world: World, attacker: Entity, targets: List[Entity], attackReference: AttackReference): Unit = {
@@ -19,8 +20,8 @@ object CombatLogic {
 		val weapon = attackReference.weapon
 		attackReference.resolve() match {
 			case Some(weaponAttackData) =>
-				val (baseAttackData,_) = resolveUnconditionalAttackData(view, attacker, weapon, weaponAttackData)
-				val (untargetedAttackData,_) = resolveConditionalAttackData(view, attacker, attackReference, Entity.Sentinel, targets, baseAttackData, new DefenseData)
+				val (baseAttackData, _) = resolveUnconditionalAttackData(view, attacker, weapon, weaponAttackData)
+				val (untargetedAttackData, _) = resolveConditionalAttackData(view, attacker, attackReference, Entity.Sentinel, targets, baseAttackData, new DefenseData)
 
 				world.startEvent(AttackEvent(AttackEventInfo(attacker, weapon, targets, untargetedAttackData)))
 				world.modify(attacker, CharacterInfo.actionPoints reduceBy untargetedAttackData.actionCost)
@@ -54,7 +55,7 @@ object CombatLogic {
 				}
 
 				for (weaponSkill <- weapon(Weapon).weaponSkills) {
-					Skills.gainSkillXP(attacker, weaponSkill, 20)(world)
+					SkillsLogic.gainSkillXP(attacker, weaponSkill, 10)(world)
 				}
 				world.endEvent(AttackEvent(AttackEventInfo(attacker, weapon, targets, untargetedAttackData)))
 
@@ -62,13 +63,13 @@ object CombatLogic {
 		}
 	}
 
-	def doDamage(world : World, target : Entity, damage : Int, damageType : DamageType, defenseData : DefenseData, source : Option[String]): Unit = {
+	def doDamage(world: World, target: Entity, damage: Int, damageType: DamageType, defenseData: DefenseData, source: Option[String]): Unit = {
 		val effDamage = if (damageType.isA(DamageType.Physical)) {
 			damage - defenseData.armor
 		} else {
-			// TODO: elemental resistances or whatnot
+
 			damage
-		}.min(world.view.data[CharacterInfo](target).health.currentValue)
+			}.min(world.view.data[CharacterInfo](target).health.currentValue)
 
 		if (effDamage > 0) {
 			world.startEvent(DamageEvent(target, effDamage, damageType))
@@ -79,27 +80,39 @@ object CombatLogic {
 		}
 	}
 
-	def canAttackBeMade(implicit worldView : WorldView, attacker : Entity, attackerPos : AxialVec3, target : Entity, attackData : AttackData) : Boolean = {
+	def canAttackBeMade(implicit worldView: WorldView, attacker: Entity, attackerPos: AxialVec3, target: Either[Entity, AxialVec3], attackData: AttackData): Boolean = {
 		if (attackData.actionCost > attacker(CharacterInfo).actionPoints.currentValue) {
 			false
+		} else if (attackData.staminaCostPerStrike * attackData.strikeCount > attacker(CharacterInfo).stamina.currentValue) {
+			false
 		} else {
-			worldView.dataOpt[Physical](target) match {
-				case Some(p) =>
-					val dist = attackerPos.distance(p.position).toInt
+			target match {
+				case Left(targetEnt) =>
+					worldView.dataOpt[Physical](targetEnt) match {
+						case Some(p) =>
+							val dist = attackerPos.distance(p.position).toInt
+							if (dist >= attackData.minRange && dist <= attackData.maxRange) {
+								true
+							} else {
+								false
+							}
+						case None => false
+					}
+				case Right(hex) =>
+					val dist = attackerPos.distance(hex).toInt
 					if (dist >= attackData.minRange && dist <= attackData.maxRange) {
 						true
 					} else {
 						false
 					}
-				case None => false
 			}
 		}
 	}
 
-	def resolveUntargetedConditionalAttackData(view: WorldView, attacker: Entity, attackRef : AttackReference): Option[(AttackData, Vector[(String, AttackModifier)])] = {
+	def resolveUntargetedConditionalAttackData(view: WorldView, attacker: Entity, attackRef: AttackReference): Option[(AttackData, Vector[(String, AttackModifier)])] = {
 		val weapon = attackRef.weapon
 		attackRef.resolve()(view).map(weaponAttackData => {
-			val (baseAttackData,_) = resolveUnconditionalAttackData(view, attacker, weapon, weaponAttackData)
+			val (baseAttackData, _) = resolveUnconditionalAttackData(view, attacker, weapon, weaponAttackData)
 			resolveConditionalAttackData(view, attacker, attackRef, Entity.Sentinel, Nil, baseAttackData, new DefenseData)
 		})
 	}
@@ -114,16 +127,19 @@ object CombatLogic {
 			attackData.merge(combatData.attackModifier)
 			if (modifyingEntity == attacker) {
 				modifiers :+= "character" -> combatData.attackModifier
-			} else if(modifyingEntity == weapon) {
+			} else if (modifyingEntity == weapon) {
 				modifiers :+= "weapon" -> combatData.attackModifier
-			} else { Noto.error("unlisted unconditional attack source") }
+			} else {
+				Noto.error("unlisted unconditional attack source")
+			}
 		}
+
 
 		attackData -> modifiers
 	}
 
 
-	def resolveConditionalAttackData(view: WorldView, attacker: Entity, attackReference: AttackReference, target: Entity, allTargets : List[Entity], baseAttackData: AttackData, baseDefenseData: DefenseData): (AttackData, Vector[(String, AttackModifier)]) = {
+	def resolveConditionalAttackData(view: WorldView, attacker: Entity, attackReference: AttackReference, target: Entity, allTargets: List[Entity], baseAttackData: AttackData, baseDefenseData: DefenseData): (AttackData, Vector[(String, AttackModifier)]) = {
 		implicit val implView = view
 
 		var modifiers = Vector[(String, AttackModifier)]()
@@ -150,13 +166,15 @@ object CombatLogic {
 			defenseData.merge(combatData.defenseModifier)
 			if (modifyingEntity == target) {
 				modifiers :+= "character" -> combatData.defenseModifier
-			} else { Noto.error("unlisted unconditional defense source") }
+			} else {
+				Noto.error("unlisted unconditional defense source")
+			}
 		}
 
 		defenseData -> modifiers
 	}
 
-	def resolveConditionalDefenseData(view: WorldView, attacker: Entity, attackReference: AttackReference, target: Entity, allTargets : List[Entity], baseAttackData: AttackData, baseDefenseData : DefenseData): (DefenseData, Vector[(String, DefenseModifier)]) = {
+	def resolveConditionalDefenseData(view: WorldView, attacker: Entity, attackReference: AttackReference, target: Entity, allTargets: List[Entity], baseAttackData: AttackData, baseDefenseData: DefenseData): (DefenseData, Vector[(String, DefenseModifier)]) = {
 		implicit val implView = view
 
 		var modifiers = Vector[(String, DefenseModifier)]()
@@ -174,27 +192,40 @@ object CombatLogic {
 		defenseData -> modifiers
 	}
 
-	def availableAttacks(implicit view : WorldView, attacker : Entity) : Seq[AttackReference] = {
+	def availableAttacks(implicit view: WorldView, attacker: Entity, includeBaseAttacks : Boolean, includeSpecialAttacks: Boolean): Seq[AttackReference] = {
 		val weaponAttacks = attacker(Equipment).equipped
-   		.filter(e => e.hasData[Weapon])
-			.flatMap(weapon => weapon(Weapon).attacks.map { case (k,_) => AttackReference(weapon, k, None, None)})
+			.filter(e => e.hasData[Weapon])
+			.flatMap(weapon => weapon(Weapon).attacks.map { case (k, _) => AttackReference(weapon, k, None, None) })
+
+		if (includeSpecialAttacks) {
+			val specialAttackSources = (attacker(Equipment).equipped + attacker)
+				.filter(e => e.hasData[CombatData])
+				.flatMap(e => e(CombatData).specialAttacks.map(sa => e -> sa))
+
+			val specialAttacks = specialAttackSources.flatMap { case (src, (sak, sav)) =>
+				weaponAttacks.flatMap(war => {
+					if (sav.condition.isTrueFor(view, UntargetedAttackProspect(attacker, war))) {
+						Some(war.copy(specialSource = Some(src), specialKey = sak))
+					} else {
+						None
+					}
+				})
+			}
+
+			if (includeBaseAttacks) {
+				(weaponAttacks ++ specialAttacks).toSeq
+			} else {
+				specialAttacks.toSeq
+			}
+		} else {
+			if (includeBaseAttacks) {
+				weaponAttacks.toSeq
+			} else {
+				Nil
+			}
+		}
 
 
-		val specialAttackSources = attacker(Equipment).equipped
-   		.filter(e => e.hasData[CombatData])
-   		.flatMap(e => e(CombatData).specialAttacks.map(sa => e -> sa))
-
-		val specialAttacks = specialAttackSources.flatMap { case (src,(sak,sav)) => {
-			weaponAttacks.flatMap(war => {
-				if (sav.condition.isTrueFor(view, UntargetedAttackProspect(attacker, war))) {
-					Some(war.copy(specialSource = Some(src), specialKey = Some(sak)))
-				} else {
-					None
-				}
-			})
-		}}
-
-		(weaponAttacks ++ specialAttacks).toSeq
 	}
 
 }

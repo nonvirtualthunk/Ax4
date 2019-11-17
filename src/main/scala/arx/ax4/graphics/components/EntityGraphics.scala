@@ -40,7 +40,7 @@ class EntityGraphics extends AxCanvasGraphicsComponent {
 			  ent <- tile.entities) {
 
 			for (characterInfo <- game.dataOpt[CharacterInfo](ent)) {
-				val rawCenter = tilePos.asCartesian(const.HexSize) + game.data[Physical](ent).offset
+				val rawCenter = tilePos.asCartesian + game.data[Physical](ent).offset
 				for (layer <- imageset.drawInfoFor(game, ent, display.view)) {
 					val color = game.dataOpt[Physical](ent).map(p => p.colorTransforms.foldRight(Color.White)((transform, cur) => transform.apply(cur))).getOrElse(Color.White)
 
@@ -60,7 +60,7 @@ class EntityGraphics extends AxCanvasGraphicsComponent {
 				val stamFrame = ResourceManager.image("graphics/ui/stamina_frame.png")
 				val stamCont = ResourceManager.image("graphics/ui/stamina_content.png")
 
-				val healthBarStart = rawCenter + Vec2f((0.25f * const.HexSize).toInt, 0.0f)
+				val healthBarStart = rawCenter + CartVec(0.25f, 0.0f)
 				val base = canvas.quad(healthBarStart)
 					.color(Color.White)
 					.hexBottomOrigin(0.0f, 0.2f)
@@ -74,14 +74,14 @@ class EntityGraphics extends AxCanvasGraphicsComponent {
 				val fullWidth = content.width * 4
 				val practicalWidth = 3 * 4
 				base.copy()
-					.position(healthBarStart + Vec2f(0,4))
+					.position(healthBarStart * const.HexSize + Vec2f(0,4))
    				.color(RGBA(0.8f,0.1f,0.1f,1.0f))
    				.texture(content)
    				.dimensions(fullWidth, fullHeight * (characterInfo.health.currentValue.toFloat / characterInfo.health.maxValue.toFloat))
    				.draw()
 
 				for (i <- 0 until characterInfo.stamina.maxValue) {
-					val staminaStart = healthBarStart + Vec2f(practicalWidth, i * 3 * 4)
+					val staminaStart = healthBarStart * const.HexSize + Vec2f(practicalWidth, i * 3 * 4)
 					base.copy()
 						.position(staminaStart)
 						.texture(stamFrame, 4)

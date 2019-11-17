@@ -8,7 +8,7 @@ import arx.Prelude.permute
 import arx.ax4.game.entities.Companions.{Terrain, Tile, Vegetation}
 import arx.ax4.game.entities.{Terrain, Tile, Tiles, Vegetation}
 import arx.ax4.graphics.data.{AxDrawingConstants, AxGraphicsComponent, AxGraphicsData, CullingData}
-import arx.ax4.graphics.resources.Tileset
+import arx.ax4.graphics.resources.{ImageLayer, Tileset}
 import arx.core.datastructures.Watcher
 import arx.core.mathutil.RunningVector
 import arx.core.units.UnitOfTime
@@ -51,21 +51,20 @@ class TileGraphics(cullingComponent : CullingGraphicsComponent) extends AxCanvas
 			  tileEnt = Tiles.tileAt(tilePos.q, tilePos.r);
 			  tile <- game.dataOpt[Tile](tileEnt)) {
 
-			val img = tileset.drawInfoFor(tilePos, game.data[Terrain](tileEnt), game.data[Vegetation](tileEnt))
-				.head
-				.image
+			for (ImageLayer(img, color) <- tileset.drawInfoFor(tilePos, game.data[Terrain](tileEnt), game.data[Vegetation](tileEnt))) {
 
-			val roundedWidth = (const.HexSize / img.width) * img.width
-			val roundedHeight = (const.HexSize / img.height) * img.height
+				val roundedWidth = (const.HexSize / img.width) * img.width
+				val roundedHeight = (const.HexSize / img.height) * img.height
 
-			canvas.quad(tilePos)
-				.hexBottomOrigin()
-				.dimensions(Vec2f(roundedWidth, roundedHeight))
-				.color(Color.White)
-				.lightColor(Color.White)
-				.texture(img)
-				.visionPcnt(1.0f)
-				.draw()
+				canvas.quad(tilePos)
+					.hexBottomOrigin()
+					.dimensions(Vec2f(roundedWidth, roundedHeight))
+					.color(color)
+					.lightColor(Color.White)
+					.texture(img)
+					.visionPcnt(1.0f)
+					.draw()
+			}
 		}
 	}
 

@@ -2,6 +2,8 @@ File {
   root: "third-party/zeshioModified/"
 }
 
+treePath : "16 Trees"
+
 Terrain {
   Flatland : {
     Default : {
@@ -25,6 +27,19 @@ Terrain {
           "01 Grass/01 Solid Tiles/PixelHex_zeshio_tile-006.png"]
       }
     }
+
+    Forest : {
+      textures: {
+        primary: ${treePath}"/PixelHex_zeshio_tile-1197.png"
+        variants: [
+          ${treePath}"/PixelHex_zeshio_tile-1196.png",
+          ${treePath}"/PixelHex_zeshio_tile-1195.png",
+          ${treePath}"/PixelHex_zeshio_tile-1198.png",
+          ${treePath}"/PixelHex_zeshio_tile-1204.png",
+          ${treePath}"/PixelHex_zeshio_tile-1206.png",
+        ]
+      }
+    }
   }
 
   Hills : {
@@ -36,12 +51,23 @@ Terrain {
 
     Grass : {
       textures: {
+        replaces : true
         primary: "01 Grass/03 Hills/PixelHex_zeshio_tile-020.png"
         variantChance: 0.2
         variants: [
           "01 Grass/03 Hills/PixelHex_zeshio_tile-019.png",
           "01 Grass/03 Hills/PixelHex_zeshio_tile-021.png",
           "01 Grass/03 Hills/PixelHex_zeshio_tile-022.png"
+        ]
+      }
+    }
+
+    Forest : {
+      textures : {
+        primary: ${treePath}"/PixelHex_zeshio_tile-1203.png"
+        variants: [
+          ${treePath}"/PixelHex_zeshio_tile-1204.png",
+          ${treePath}"/PixelHex_zeshio_tile-1195.png"
         ]
       }
     }
@@ -59,8 +85,11 @@ Terrain {
         ]
       }
     }
-  }
-}
 
-Vegetation {
+    Forest : {
+      textures : {
+        primary: ${treePath}"/PixelHex_zeshio_tile-1203.png"
+      }
+    }
+  }
 }
