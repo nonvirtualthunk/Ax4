@@ -9,6 +9,12 @@ object AllegianceLogic {
 		character[AllegianceData].faction[FactionData].playerControlled
 	}
 
+	def areInSameFaction(characterA : Entity, characterB : Entity)(implicit view : WorldView) : Boolean = {
+		val factionA = characterA.dataOpt[AllegianceData].map(_.faction)
+		val factionB = characterB.dataOpt[AllegianceData].map(_.faction)
+		factionA == factionB && factionA.isDefined
+	}
+
 	def areFriendly(characterA : Entity, characterB : Entity)(implicit view : WorldView) : Boolean = {
 		if (!characterA.hasData[AllegianceData] || !characterB.hasData[AllegianceData]) {
 			// if they do not have allegiance then they are not enemies or friends

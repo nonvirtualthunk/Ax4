@@ -7,7 +7,7 @@ BasicAttackText {
 
 
 BasicAttackInfo {
-  type : Div
+  type : Window
 
   dimensions : [100%, WrapContent]
   backgroundPixelScale : 1
@@ -37,8 +37,69 @@ BasicAttackInfo {
       x : "10 right of SelectedIcon"
     }
     AttackInfo : ${BasicAttackText} {
-      text : "%(attack.accuracyBonus)  %(attack.damage)"
+      text: [
+        {text: "%(attack.accuracyBonus)"},
+        {horizontalPadding : 4}
+        {image: "graphics/ui/crosshairs.png", scale : 2}
+        {horizontalPadding : 10}
+        {text: "%(attack.damage)"}
+      ]
       x : "20 right of AttackName"
+    }
+//    AttackInfo : ${BasicAttackText} {
+//      text : "%(attack.accuracyBonus)  %(attack.damage)"
+//      x : "20 right of AttackName"
+//    }
+  }
+}
+
+ConsideredAttackInfo {
+  type : Div
+
+  backgroundPixelScale : 1
+  background.image : ui/fancyBackground_ns.png
+  drawBackground : true
+
+  children {
+    AttackerSide : {
+      type : Div
+
+      children {
+        AttackInfo : ${BasicAttackText} {
+          text: [
+            {text: "%(attack.accuracyBonus)"},
+            {horizontalPadding : 4}
+            {image: "graphics/ui/crosshairs.png", scale : 2}
+            {horizontalPadding : 10}
+            {text: "%(attack.damage)"}
+          ]
+        }
+      }
+    }
+
+    VsDivider : ${BasicAttackText} {
+      text : "-vs-"
+      x : 10 right of AttackerSide
+      y : centered
+    }
+
+    DefenderSide : {
+      type : Div
+
+      x : 10 right of VsDivider
+
+      children {
+        Defense : ${BasicAttackText} {
+          text : "%(attack.defense) %(attack.defenseConcept) %(attack.defenderHP) HP"
+        }
+//        Defense : ${BasicAttackText} {
+//          text : "Defense: %(attack.defense)"
+//        }
+//        HP : ${BasicAttackText} {
+//          y : 0 below Defense
+//          text : "HP: %(attack.defenderHP)"
+//        }
+      }
     }
   }
 }

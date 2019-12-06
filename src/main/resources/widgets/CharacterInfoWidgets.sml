@@ -13,13 +13,14 @@ StatDisplay : {
 
 
 SelectedCharacterInfo {
-  type : Div
+  type : Window
 
   position : ["0 from Right", 0]
   dimensions : [500, "100%"]
 
   backgroundPixelScale : 1
   background.image : "ui/greenWoodBorder.png"
+  drawBackground : true
 
   backgroundEdges : [0]
 

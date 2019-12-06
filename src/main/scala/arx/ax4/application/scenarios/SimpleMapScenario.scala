@@ -3,9 +3,10 @@ package arx.ax4.application.scenarios
 import arx.Prelude
 import arx.application.Noto
 import arx.ax4.control.components.{TacticalUIActionControl, TacticalUIControl}
+import arx.ax4.game.action.{AttackIntent, MoveIntent}
 import arx.ax4.game.components.TurnComponent
-import arx.ax4.game.entities.Companions.{CharacterInfo, Physical, Tile, TurnData}
-import arx.ax4.game.entities.{AllegianceData, AxAuxData, CharacterInfo, CombatData, EntityConditionals, Equipment, FactionData, GatherMethod, Inventory, ItemLibrary, Physical, QualitiesData, ReactionData, Resource, ResourceKey, ResourceOrigin, ResourceSourceData, Terrain, TerrainLibrary, Tile, Tiles, TurnData, Vegetation, VegetationLayer, VegetationLayerType, VegetationLibrary, WeaponLibrary}
+import arx.ax4.game.entities.Companions.{CharacterInfo, DeckData, Physical, Tile, TurnData}
+import arx.ax4.game.entities.{AllegianceData, AttackReference, AxAuxData, CardData, CardTypes, CharacterInfo, CombatData, DeckData, EntityConditionals, Equipment, FactionData, GatherMethod, Inventory, ItemLibrary, Physical, QualitiesData, ReactionData, Resource, ResourceKey, ResourceOrigin, ResourceSourceData, Terrain, TerrainLibrary, Tile, Tiles, TurnData, Vegetation, VegetationLayer, VegetationLayerType, VegetationLibrary, WeaponLibrary}
 import arx.ax4.game.logic.{InventoryLogic, MovementLogic}
 import arx.ax4.graphics.components.{AnimationGraphicsComponent, AnimationGraphicsRenderingComponent, EntityGraphics, TacticalUIGraphics, TileGraphics}
 import arx.ax4.graphics.data.{AxGraphicsData, TacticalUIData}
@@ -33,6 +34,7 @@ import arx.graphics.helpers.RGBA
 import arx.graphics.pov.{PixelCamera, TopDownCamera}
 import org.lwjgl.glfw.GLFW
 import arx.ax4.game.entities.UnitOfGameTimeFloat._
+import arx.ax4.game.event.TurnEvents.TurnStartedEvent
 import arx.core.gen.SimplexNoise
 
 import scala.io.StdIn
@@ -57,11 +59,11 @@ object SimpleMapScenario extends Scenario {
 
 
 				val terrainKind = if (r <= 1) {
-					Taxonomy("Mountains")
+					Taxonomy("Mountains", "Terrains")
 				} else if (r <= 4) {
-					Taxonomy("Hills")
+					Taxonomy("Hills", "Terrains")
 				} else {
-					Taxonomy("Flatland")
+					Taxonomy("Flatland", "Terrains")
 				}
 				val terrain = TerrainLibrary.withKind(terrainKind)
 				world.attachData(ent, terrain)
@@ -69,14 +71,14 @@ object SimpleMapScenario extends Scenario {
 
 				val veg = new Vegetation
 				if (apos.q > apos.r && r > 1) {
-					veg.layers += VegetationLayerType.GroundCover -> VegetationLibrary.withKind(Taxonomy("grass"))
+					veg.layers += VegetationLayerType.GroundCover -> VegetationLibrary.withKind(Taxonomy("grass", "Vegetations"))
 				}
 				val cpos = apos.asCartesian
 
 
-				val terrainForestThreshold = if (terrainKind == Taxonomy("mountains")) {
+				val terrainForestThreshold = if (terrainKind == Taxonomy("mountains", "Terrains")) {
 					0.4f
-				} else if (terrainKind == Taxonomy("hills")) {
+				} else if (terrainKind == Taxonomy("hills", "Terrains")) {
 					0.3f
 				} else {
 					0.2f
@@ -89,7 +91,7 @@ object SimpleMapScenario extends Scenario {
 
 
 				if (SimplexNoise.noise(cpos.x * 0.3f, cpos.y * 0.3f) > forestThreshold) {
-					veg.layers += VegetationLayerType.Canopy -> VegetationLibrary.withKind(Taxonomy("forest"))
+					veg.layers += VegetationLayerType.Canopy -> VegetationLibrary.withKind(Taxonomy("forest", "Vegetations"))
 				}
 				world.attachData(ent, veg)
 
@@ -97,12 +99,12 @@ object SimpleMapScenario extends Scenario {
 
 				val resourceData = new ResourceSourceData
 				for ((vlt, l) <- veg.layers) {
-					if (l.kind == Taxonomy("grass")) {
-						resourceData.resources += ResourceKey(ResourceOrigin.Vegetation(vlt), Taxonomy("hay bale")) ->
-							Resource(Taxonomy("hay bale"), Reduceable(3), 1, 1.gameYear, canRecoverFromZero = true, structural = false,
+					if (l.kind == Taxonomy("grass", "Vegetations")) {
+						resourceData.resources += ResourceKey(ResourceOrigin.Vegetation(vlt), Taxonomy("hay bale", "Items")) ->
+							Resource(Taxonomy("hay bale", "Items"), Reduceable(3), 1, 1.gameYear, canRecoverFromZero = true, structural = false,
 								Vector(
 									GatherMethod(name = "gather hay by hand", actionCost = 3, amount = 1),
-									GatherMethod(name = "cut hay", toolRequirements = EntityConditionals.isA(Taxonomy("fine cutting tool")) ,actionCost = 2, amount = 3)))
+									GatherMethod(name = "cut hay", toolRequirements = Some(EntityConditionals.isA(Taxonomy("fine cutting tool"))) ,actionCost = 2, amount = 3)))
 					}
 				}
 				world.attachData(ent, resourceData)
@@ -132,12 +134,36 @@ object SimpleMapScenario extends Scenario {
 
 		playerCharacter = torbold
 
-		val longspearArch = WeaponLibrary.withKind(Taxonomy("longspear"))
+		val longspearArch = WeaponLibrary.withKind(Taxonomy("longspear", "Items.Weapons"))
 		val longspear = longspearArch.createEntity(world)
 		InventoryLogic.equip(torbold, longspear)(world)
 
 		val stamPot = ItemLibrary.withKind(Taxonomy("staminaPotion")).createEntity(world)
 		InventoryLogic.transferItem(stamPot, Some(torbold))(world)
+
+
+
+		world.attachDataWith[DeckData](torbold, dd => {
+			val moveCards = (0 until 3).map(_ => {
+				val moveCard = world.createEntity()
+				world.attachDataWith[CardData](moveCard, cd => {
+					cd.action = Some(MoveIntent)
+					cd.cardType = CardTypes.MoveCard
+				})
+				moveCard
+			})
+
+			val attackCards = (0 until 3).map(_ => {
+				val attackCard = world.createEntity()
+				world.attachDataWith[CardData](attackCard, cd => {
+					cd.action = Some(AttackIntent(AttackReference(longspear, "primary", None, None)))
+					cd.cardType = CardTypes.AttackCard
+				})
+				attackCard
+			})
+
+			dd.drawPile = (attackCards ++ moveCards).toVector
+		})
 
 
 		val slime = createCreature(world, enemy)
@@ -150,6 +176,8 @@ object SimpleMapScenario extends Scenario {
 		world.modifyWorld(TurnData.activeFaction -> player, None)
 
 		world.attachWorldData(new RandomizationWorldData)
+
+		world.addEvent(TurnStartedEvent(player, 0))
 
 		world
 	}
@@ -203,6 +231,7 @@ object SimpleMapScenario extends Scenario {
 	}
 
 	override def serialGraphicsEngine(universe: Universe): Boolean = true
+	override def serialControlEngine(universe: Universe): Boolean = true
 }
 
 class QueryControlComponent extends ControlComponent {

@@ -26,7 +26,7 @@ ActionSelectionButtonBar {
 }
 
 SpecialAttackSelectionList {
-  type: Div
+  type: Window
 
   background.image : "ui/greenWoodBorder.png"
 

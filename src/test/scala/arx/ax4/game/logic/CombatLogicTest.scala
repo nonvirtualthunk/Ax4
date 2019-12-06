@@ -2,13 +2,13 @@ package arx.ax4.game.logic
 
 import arx.ax4.game.entities.AttackConditionals.AttackConditional
 import arx.ax4.game.entities.Companions.CombatData
-import arx.ax4.game.entities.Species.MudMonster
 import arx.ax4.game.entities._
 import arx.ax4.game.logic.CombatLogicTest.{AntiMudDefense, Sandbox, SingleAttackBuff}
 import arx.core.introspection.FieldOperations._
 import arx.core.introspection.ReflectionAssistant
 import arx.core.representation.ConfigValue
 import arx.engine.data.Reduceable
+import arx.engine.entity.Taxonomy
 import arx.engine.world.{World, WorldQuery, WorldView}
 import arx.game.data.RandomizationStyle.Median
 import arx.game.data.{DefaultGameAuxData, RandomizationWorldData}
@@ -81,7 +81,7 @@ object CombatLogicTest {
 		override def source: String = "anti mud defense"
 
 		override def isTrueForProspect(implicit view : WorldView, prospect: AttackProspect): Boolean = {
-			prospect.attacker.dataOpt[CharacterInfo].exists(ci => ci.species == MudMonster)
+			prospect.attacker.dataOpt[CharacterInfo].exists(ci => ci.species == Taxonomy("MudMonster"))
 		}
 	}
 
@@ -117,7 +117,7 @@ object CombatLogicTest {
 		})(world)
 		attacker.attachI(new CharacterInfo)(ci => {
 			ci.health = Reduceable(10)
-			ci.species = MudMonster
+			ci.species = Taxonomy("MudMonster")
 		})(world)
 
 

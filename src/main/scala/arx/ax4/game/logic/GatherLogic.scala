@@ -12,9 +12,18 @@ object GatherLogic {
 
 	def bestToolFor(tools : Iterable[Entity], gatherMethod : GatherMethod)(implicit view : WorldView) : Option[Entity] = {
 		// TODO : incorporate some sort of notion of tool quality
-		tools.find(t => gatherMethod.toolRequirements.isTrueFor(view, t))
+		gatherMethod.toolRequirements.flatMap(req => tools.find(t => req.isTrueFor(view, t)))
 	}
 
+	def gatherProspectsFor(gatherer : Entity, target : Entity)(implicit view : WorldView) = {
+		view.dataOpt[ResourceSourceData](target) match {
+			case Some(rsrcs) =>
+				rsrcs.resources.flatMap {
+					case (key,rsrc) => rsrc.gatherMethods.map(method => GatherSelectionProspect(gatherer, target, key, method))
+				}
+			case None => Nil
+		}
+	}
 
 	def gather(prospect : GatherProspect)(implicit game : World): Unit = {
 		implicit val view = game.view
@@ -46,31 +55,30 @@ object GatherLogic {
 
 	def cantGatherReason(prospect : GatherSelectionProspect)(implicit view : WorldView) : Option[String] = {
 		prospect.toGatherProspect(view) match {
-			case Some(p) =>
-				val skillLevel = SkillsLogic.effectiveSkillLevel(p.gatherer, p.method.skills)
-				if (p.method.difficulty > skillLevel) {
-					Some("Insufficient skill")
-				} else if (!p.method.requirements.isTrueFor(view, p)) {
-					Some("Does not meet requirements")
-				} else {
-					None
-				}
+			case Some(p) => cantGatherReason(p)
 			case None => Some("No tool")
+		}
+
+	}
+
+	def cantGatherReason(prospect : GatherProspect)(implicit view : WorldView) : Option[String] = {
+		val skillLevel = SkillsLogic.effectiveSkillLevel(prospect.gatherer, prospect.method.skills)
+		if (prospect.method.difficulty > skillLevel) {
+			Some("Insufficient skill")
+		} else if (!prospect.method.requirements.isTrueFor(view, prospect)) {
+			Some("Does not meet requirements")
+		} else if (prospect.method.actionCost > CharacterLogic.curActionPoints(prospect.gatherer)) {
+			Some("Insufficient AP")
+		} else {
+			None
 		}
 	}
 
 	def canGather(prospect : GatherSelectionProspect)(implicit view : WorldView) : Boolean = {
-		prospect.toGatherProspect(view) match {
-			case Some(p) => canGather(p)
-			case _ => false
-		}
+		cantGatherReason(prospect).isEmpty
 	}
 
 	def canGather(prospect : GatherProspect)(implicit view : WorldView) : Boolean = {
-		import prospect._
-		val skillLevel = SkillsLogic.effectiveSkillLevel(gatherer, method.skills)
-		method.difficulty <= skillLevel &&
-		method.requirements.isTrueFor(view, prospect) &&
-		method.toolRequirements.isTrueFor(view, tool)
+		cantGatherReason(prospect).isEmpty
 	}
 }

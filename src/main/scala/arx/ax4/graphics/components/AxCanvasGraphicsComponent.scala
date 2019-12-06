@@ -15,7 +15,7 @@ abstract class AxCanvasGraphicsComponent extends AxGraphicsComponent {
 
 	val canvas : AxCanvas = new AxCanvas(128)
 	canvas.useHighCapacity(true)
-	canvas.useTexFilters(GL11.GL_NEAREST, GL11.GL_NEAREST)
+	canvas.useTexFilters(GL11.GL_LINEAR, GL11.GL_NEAREST)
 	var updatePending = new AtomicBoolean(false)
 	var lastDrawnWorldTimeMarker = new AtomicLong(0L)
 

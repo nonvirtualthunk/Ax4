@@ -56,19 +56,20 @@ Taxonomy {
     HayBale : [RawMaterial, AnimalFoodstuff]
 
     StaminaPotion : Potion
-  }
-  Weapon : Item
-  Axe : [Item, SturdyCuttingTool]
 
-  Weapons {
-    BattleAxe: [Weapon, Axe]
-    Sword: Weapon
-    Longsword: Sword
-    Shortsword: Sword
+    Weapon : Item
+    Axe : [Item, SturdyCuttingTool]
 
-    Spear : Weapon
-    Longspear : Spear
-    Shortspear : Spear
+    Weapons {
+      BattleAxe: [Weapon, Axe]
+      Sword: Weapon
+      Longsword: Sword
+      Shortsword: Sword
+
+      Spear : Weapon
+      Longspear : Spear
+      Shortspear : Spear
+    }
   }
 
   AttackType : []
@@ -116,6 +117,7 @@ Taxonomy {
     MoveAction : Action
     AttackAction : Action
     GatherAction : Action
+    SwitchSelectedCharacterAction : Action
   }
 
   Sex : []
@@ -150,4 +152,45 @@ Taxonomy {
     Dodge : Reaction
   }
 
+
+  GameConcept : []
+  GameConcepts {
+    AccuracyBonus : GameConcept
+    DefenseBonus : GameConcept
+    ArmorValue : GameConcept
+
+  }
+
+  DamageType : []
+  DamageTypes {
+    Physical : DamageType
+
+    Piercing : Physical
+    Bludgeoning : Physical
+    Slashing : Physical
+    Unknown : DamageType
+  }
+
+  BodyPart : []
+  BodyParts {
+    Gripping : BodyPart
+    Thinking : BodyPart
+    Appendage : BodyPart
+    Dextrous : BodyPart
+
+    Hand : Gripping
+    Pseudopod : [Gripping, Dextrous, Appendage]
+    Arm : [Dextrous, Appendage]
+    Leg : Appendage
+    Head : Thinking
+  }
+
+  CardType : []
+  CardTypes {
+    AttackCard : CardType
+    SkillCard : CardType
+    SpellCard : CardType
+    ActionCard : CardType
+    MoveCard : CardType
+  }
 }

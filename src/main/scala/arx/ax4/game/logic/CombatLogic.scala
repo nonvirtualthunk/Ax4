@@ -13,7 +13,7 @@ object CombatLogic {
 
 	import arx.core.introspection.FieldOperations._
 
-	def attack(world: World, attacker: Entity, targets: List[Entity], attackReference: AttackReference): Unit = {
+	def attack(world: World, attacker: Entity, targets: Seq[Entity], attackReference: AttackReference): Unit = {
 		implicit val view = world.view
 		implicit val randomizer = Randomizer(world)
 
@@ -30,7 +30,7 @@ object CombatLogic {
 					world.startEvent(StrikeEvent(AttackEventInfo(attacker, weapon, targets, untargetedAttackData)))
 
 					world.modify(attacker, CharacterInfo.stamina reduceBy untargetedAttackData.staminaCostPerStrike)
-					for (target <- targets) yield {
+					for (target <- targets) {
 						// resolve raw defense, assuming no information about the attack
 						val (rawDefenseData, _) = resolveUnconditionalDefenseData(view, target)
 						val (effAttack, _) = resolveConditionalAttackData(view, attacker, attackReference, target, targets, baseAttackData, rawDefenseData)
@@ -61,6 +61,32 @@ object CombatLogic {
 
 			case None => Noto.error("invalid attack reference")
 		}
+	}
+
+	def effectiveAttackData(attacker : Entity, from : AxialVec3, targets : Seq[Entity], attackReference: AttackReference)(implicit view : WorldView) = {
+		val weapon = attackReference.weapon
+
+		var strikesByTarget = Map[Entity,Vector[EffectiveStrikeData]]()
+
+		attackReference.resolve() match {
+			case Some(weaponAttackData) =>
+				val (baseAttackData, _) = resolveUnconditionalAttackData(view, attacker, weapon, weaponAttackData)
+				val (untargetedAttackData, _) = resolveConditionalAttackData(view, attacker, attackReference, Entity.Sentinel, targets, baseAttackData, new DefenseData)
+
+				for (_ <- 0 until untargetedAttackData.strikeCount) {
+					for (target <- targets) yield {
+						// resolve raw defense, assuming no information about the attack
+						val (rawDefenseData, _) = resolveUnconditionalDefenseData(view, target)
+						val (effAttack, _) = resolveConditionalAttackData(view, attacker, attackReference, target, targets, baseAttackData, rawDefenseData)
+						val (effDefense, _) = resolveConditionalDefenseData(view, attacker, attackReference, target, targets, effAttack, rawDefenseData)
+
+						strikesByTarget += (target -> (strikesByTarget.getOrElse(target, Vector()) :+ EffectiveStrikeData(effAttack, effDefense)))
+					}
+				}
+			case None => Noto.error("invalid attack reference")
+		}
+
+		EffectiveAttackData(strikesByTarget)
 	}
 
 	def doDamage(world: World, target: Entity, damage: Int, damageType: DamageType, defenseData: DefenseData, source: Option[String]): Unit = {
@@ -139,7 +165,7 @@ object CombatLogic {
 	}
 
 
-	def resolveConditionalAttackData(view: WorldView, attacker: Entity, attackReference: AttackReference, target: Entity, allTargets: List[Entity], baseAttackData: AttackData, baseDefenseData: DefenseData): (AttackData, Vector[(String, AttackModifier)]) = {
+	def resolveConditionalAttackData(view: WorldView, attacker: Entity, attackReference: AttackReference, target: Entity, allTargets: Seq[Entity], baseAttackData: AttackData, baseDefenseData: DefenseData): (AttackData, Vector[(String, AttackModifier)]) = {
 		implicit val implView = view
 
 		var modifiers = Vector[(String, AttackModifier)]()
@@ -174,7 +200,7 @@ object CombatLogic {
 		defenseData -> modifiers
 	}
 
-	def resolveConditionalDefenseData(view: WorldView, attacker: Entity, attackReference: AttackReference, target: Entity, allTargets: List[Entity], baseAttackData: AttackData, baseDefenseData: DefenseData): (DefenseData, Vector[(String, DefenseModifier)]) = {
+	def resolveConditionalDefenseData(view: WorldView, attacker: Entity, attackReference: AttackReference, target: Entity, allTargets: Seq[Entity], baseAttackData: AttackData, baseDefenseData: DefenseData): (DefenseData, Vector[(String, DefenseModifier)]) = {
 		implicit val implView = view
 
 		var modifiers = Vector[(String, DefenseModifier)]()
@@ -229,3 +255,7 @@ object CombatLogic {
 	}
 
 }
+
+
+case class EffectiveStrikeData(attackData : AttackData, defenseData : DefenseData)
+case class EffectiveAttackData(strikesByTarget : Map[Entity, Vector[EffectiveStrikeData]])

@@ -1,25 +1,33 @@
 package arx.ax4.control.components
 import arx.application.Noto
-import arx.ax4.game.action.{GameActionIntent, GameActionIntentInstance, GatherSelectionProspect, MoveIntent, ResourceGatherSelector, SelectionResultBuilder, Selector}
-import arx.ax4.game.entities.{AllegianceData, CharacterInfo, ResourceSourceData, Tiles, TurnData}
-import arx.ax4.game.logic.{ActionLogic, GatherLogic, IdentityLogic}
-import arx.ax4.graphics.data.{SpriteLibrary, TacticalUIData}
+import arx.ax4.game.action.{GameActionIntent, GameActionIntentInstance, GatherSelectionProspect, MoveIntent, ResourceGatherSelector, SelectionResultBuilder, Selector, SwitchSelectedCharacterAction}
+import arx.ax4.game.entities.Companions.CharacterInfo
+import arx.ax4.game.entities.{AllegianceData, CharacterInfo, GatherMethod, ResourceSourceData, Tiles, TurnData}
+import arx.ax4.game.event.ActiveIntentChanged
+import arx.ax4.game.logic.{ActionLogic, CharacterLogic, GatherLogic, IdentityLogic}
+import arx.ax4.graphics.components.GameActionIntentOverlay
+import arx.ax4.graphics.data.{SelectionConfirmationMethod, SpriteLibrary, TacticalUIData}
 import arx.core.CachedKeyedValue
 import arx.core.datastructures.Watcher
+import arx.core.introspection.ReflectionAssistant
 import arx.core.units.UnitOfTime
 import arx.core.vec.coordinates.AxialVec3
 import arx.engine.control.components.windowing.Widget
 import arx.engine.control.components.windowing.widgets.ListItemSelected
+import arx.engine.control.data.WindowingControlData
 import arx.engine.control.event.KeyReleaseEvent
 import arx.engine.data.Moddable
 import arx.engine.entity.Entity
-import arx.engine.world.{GameEventClock, HypotheticalWorldView, World}
+import arx.engine.world.{GameEventClock, HypotheticalWorldView, World, WorldView}
 import arx.graphics.helpers.{Color, RGBA}
 import arx.graphics.{Image, ScaledImage}
 import org.lwjgl.glfw.GLFW
 
 class TacticalUIActionControl(mainControl : TacticalUIControl) extends AxControlComponent {
 	import TacticalUIActionControl._
+	import arx.core.introspection.FieldOperations._
+
+	lazy val intentOverlays = ReflectionAssistant.instancesOfSubtypesOf[GameActionIntentOverlay]
 
 	var watcher : Watcher[(AxialVec3, Int, GameEventClock, Option[ActionSelectionContext])] = _
 
@@ -30,12 +38,15 @@ class TacticalUIActionControl(mainControl : TacticalUIControl) extends AxControl
 
 	var selectingResource = false
 
-	var selectionWidgets : Set[Widget] = Set()
+	var selectionWidgets : Map[Selector[_], Widget] = Map()
+	var cardWidget : Map[Entity, Widget] = Map()
 
 	override protected def onUpdate(gameView: HypotheticalWorldView, game: World, display: World, dt: UnitOfTime): Unit = {
 		if (watcher.hasChanged || gameView.currentTime != game.currentTime) {
+			updateActiveContext(gameView, display)
 			updateConsideredActions(gameView, game, display)
 		}
+		intentOverlays.foreach(_.update(gameView, display, display[TacticalUIData].consideringActionSelectionContext))
 	}
 
 	override protected def onInitialize(gameView : HypotheticalWorldView, game: World, display: World): Unit = {
@@ -48,8 +59,8 @@ class TacticalUIActionControl(mainControl : TacticalUIControl) extends AxControl
 		onControlEvent {
 			case HexMousePressEvent(button, hex, pos, modifiers) =>
 				val tuid = display[TacticalUIData]
-				for (sel <- tuid.consideringSelection) {
-					mainControl.selectCharcter(game, display, sel)
+				for (sel <- tuid.consideringCharacterSwitch) {
+					mainControl.selectCharacter(game, display, sel)
 				}
 
 				for (asc <- tuid.consideringActionSelectionContext) {
@@ -57,44 +68,104 @@ class TacticalUIActionControl(mainControl : TacticalUIControl) extends AxControl
 				}
 			case KeyReleaseEvent(GLFW.GLFW_KEY_ESCAPE, _) =>
 				tuid.actionSelectionContext match {
-					case Some(ActionSelectionContext(intent, selectionResults)) if !selectionResults.isEmpty =>
+					case Some(ActionSelectionContext(intent, selectionResults)) =>
+						(selectionResults.results.keys ++ intent.nextSelection(selectionResults).toList).foreach(sel => onPendingSelectionPopped(gameView, game, display, sel))
+
 						tuid.actionSelectionContext = Some(ActionSelectionContext(intent, SelectionResultBuilder()))
 						tuid.consideringActionSelectionContext = None
 
-						selectionWidgets.foreach(_.destroy())
-						selectionWidgets = Set()
+						for (selC <- tuid.selectedCharacter) {
+							CharacterLogic.setActiveIntent(selC, selC(CharacterInfo).defaultIntent)(game)
+						}
 						true
 					case _ => false
 				}
 		}
-//		val rsrcSelW =
-
 	}
 
 	def updateActionSelectionContext(game : World, display : World, asc : ActionSelectionContext): Unit = {
 		val tuid = display[TacticalUIData]
 
 		val ActionSelectionContext(intent, selectionResults) = asc
-		if (! intent.hasRemainingSelections(selectionResults)) {
-			for (action <- intent.createAction(selectionResults.build())) {
-				ActionLogic.performAction(action)(game)
-			}
-		} else {
-			// lock in the considered value here when we press
-			tuid.actionSelectionContext = Some(asc)
+		intent.nextSelection(selectionResults) match {
+			case None =>
+				for (action <- intent.createAction(selectionResults.build())) {
+					action match {
+						case SwitchSelectedCharacterAction(from, to) => tuid.selectedCharacter = Some(from)
+						case _ => ActionLogic.performAction(action)(game)
+					}
+				}
+				tuid.actionSelectionContext = None
+				for (selC <- tuid.selectedCharacter) {
+					implicit val view = game.view
+					if (selC(CharacterInfo).activeIntent != selC(CharacterInfo).defaultIntent) {
+						CharacterLogic.setActiveIntent(selC, selC(CharacterInfo).defaultIntent)(game)
+					}
+				}
+			case Some(nextSel) =>
+				// lock in the new value as our current context, then work on the next selector
+				tuid.actionSelectionContext = Some(asc)
+				onPendingSelectionPushed(game.view, game, display, nextSel)
 		}
 	}
 
-	def updateConsideredActions(gameView : HypotheticalWorldView, game: World, display: World): Unit = {
-		implicit val view = gameView.root // take the non-hypothetical, but still slowly advancing world view
+	def makeSelection(game : World, display : World, sel : Selector[_], value : Any): Boolean = {
+		display[TacticalUIData].actionSelectionContext match {
+			case Some(ActionSelectionContext(intent, selectionResults)) =>
+				sel.satisfiedBy(game.view, value) match {
+					case Some((value, amount)) =>
+						updateActionSelectionContext(game, display, ActionSelectionContext(intent, selectionResults.addResult(sel, value, amount)))
+						true
+					case None =>
+						Noto.warn("Attempted to make a selection, but the selected value did not actually match the selection")
+						false
+				}
+			case None =>
+				Noto.error(s"Attempted to make a selection, but no context is active at this time: $sel, $value")
+				false
+		}
+	}
+
+	def onPendingSelectionPushed(implicit gameView: WorldView, game : World, display: World, sel: Selector[_]): Unit = {
 		val tuid = display[TacticalUIData]
-		import tuid._
 
-		var newConsideredActionSelectionContext : Option[ActionSelectionContext] = None
-		var newPossibleSelection : Option[Entity] = None
+		sel match {
+			case rgs@ResourceGatherSelector(resources) if !lastSelector.contains(rgs) =>
+				val rsrcW = tuid.mainSectionWidget.createChild("ResourceSelectionWidgets.ResourceSelectionWidget")
 
-		val activeFaction = gameView.worldData[TurnData].activeFaction
-		selectedCharacter match {
+				rsrcW.bind("possibleResources", () => {
+					resources.map(p => {
+						val (textColor, iconColor) = p.toGatherProspect(gameView) match {
+							case Some(prospect) if GatherLogic.canGather(prospect) => (Color.Black, Color.White)
+							case _ => (RGBA(0.1f, 0.1f, 0.1f, 1.0f), Color.Grey)
+						}
+						val disabledReason = GatherLogic.cantGatherReason(p).map("[" + _.toLowerCase + "]").getOrElse("")
+						val remaining = p.target[ResourceSourceData].resources(p.key).amount.currentValue
+						ResourceSelectionInfo(p, p.method, p.key.kind.name, ScaledImage.scaleToPixelWidth(SpriteLibrary.iconFor(p.key.kind), 64), p.method.name, p.method.amount, remaining, textColor, iconColor, disabledReason)
+					})
+				})
+				rsrcW.onEvent {
+					case ListItemSelected(_, _, Some(data: ResourceSelectionInfo)) =>
+						if (makeSelection(game, display, sel, data.prospect)) {
+							rsrcW.destroy()
+						}
+				}
+				selectionWidgets += sel -> rsrcW
+			case _ =>
+		}
+	}
+
+	def onPendingSelectionPopped(implicit gameView: WorldView, game : World, display: World, sel: Selector[_]): Unit = {
+		for (selW <- selectionWidgets.get(sel)) { selW.destroy() }
+		selectionWidgets -= sel
+	}
+
+	/**
+	 * Updates the action selection context based on the selected character, their active intent and the like
+	 */
+	def updateActiveContext(implicit gameView : WorldView, display : World): Unit = {
+		val tuid = display[TacticalUIData]
+		tuid.selectedCharacter match {
 			case Some(selC) =>
 				val activeIntent = selC[CharacterInfo].activeIntent
 				val selKey = ActionSelectionCacheKey(selC, activeIntent, gameView.currentTime)
@@ -103,91 +174,46 @@ class TacticalUIActionControl(mainControl : TacticalUIControl) extends AxControl
 				// selection
 				if (!lastSelectionContextKey.contains(selKey) || tuid.actionSelectionContext.isEmpty) {
 					tuid.actionSelectionContext = activeIntent.instantiate(gameView, selC) match {
-						case Left(intentInstance) =>
-							Some(ActionSelectionContext(intentInstance, SelectionResultBuilder()))
+						case Left(intentInstance) => Some(ActionSelectionContext(intentInstance, SelectionResultBuilder()))
 						case Right(error) =>
 							Noto.error(s"Could not instantiate selection context: $error")
 							None
 					}
 					lastSelectionContextKey = Some(selKey)
+					tuid.consideringActionSelectionContext = None
 				}
+			case None =>
+				tuid.actionSelectionContext = None
+				tuid.consideringActionSelectionContext = None
+		}
+	}
 
+	/**
+	 * Updates considered actions to preview based on the current position of the mouse, etc
+	 */
+	def updateConsideredActions(gameView : HypotheticalWorldView, game: World, display: World): Unit = {
+		implicit val view = gameView.root // take the non-hypothetical, but still slowly advancing world view
+		val tuid = display[TacticalUIData]
+		import tuid._
+
+		var newPossibleSelection : Option[Entity] = None
+
+		val activeFaction = gameView.worldData[TurnData].activeFaction
+		selectedCharacter match {
+			case Some(selC) =>
 				actionSelectionContext match {
-					case Some(ActionSelectionContext(intent, selectionResults)) =>
+					case Some(ActionSelectionContext(mainIntent, selectionResults)) =>
+
 						var selectionIdentified = false
-						val nextSel = intent.nextSelection(selectionResults)
-						nextSel match {
-							case Some(sel) =>
-								sel match {
-									case rgs @ ResourceGatherSelector(resources) if ! lastSelector.contains(rgs) =>
-										val rsrcW = tuid.mainSectionWidget.createChild("ResourceSelectionWidgets.ResourceSelectionWidget")
-
-										rsrcW.bind("possibleResources", () => {
-											resources.map(p => {
-												val (textColor, iconColor) = p.toGatherProspect(view) match {
-													case Some(prospect) if GatherLogic.canGather(prospect) => (Color.Black, Color.White)
-													case _ => (RGBA(0.55f,0.1f,0.1f,1.0f), Color.Grey)
-												}
-												val disabledReason = GatherLogic.cantGatherReason(p).map("[" + _.toLowerCase + "]").getOrElse("")
-												val remaining = p.target[ResourceSourceData].resources(p.key).amount.currentValue
-												ResourceSelectionInfo(p, p.key.kind.name, ScaledImage.scaleToPixelWidth(SpriteLibrary.iconFor(p.key.kind), 64), p.method.name, p.method.amount, remaining, textColor, iconColor, disabledReason)
-											})
-										})
-										rsrcW.onEvent {
-											case ListItemSelected(_,_,Some(data : ResourceSelectionInfo)) =>
-												rgs.satisfiedBy(view, data.prospect) match {
-													case Some((value, amount)) =>
-														val newAsc = ActionSelectionContext(intent, selectionResults.addResult(rgs, value, amount))
-														updateActionSelectionContext(game, display, newAsc)
-														rsrcW.destroy()
-													case None => Noto.info("picked unpickable resource selection")
-												}
-										}
-										selectionWidgets += rsrcW
-									case _ =>
-										val toConsiderForSelection : List[Any] = Tiles.entitiesOnTile(mousedOverHex).toList ::: mousedOverBiasedHex :: mousedOverHex :: Nil
-										for (thing <- toConsiderForSelection; if ! selectionIdentified) {
-											val consideredSelectionResults = sel.satisfiedBy(view, thing) match {
-												case Some((satisfyingThing, amount)) => selectionResults.addResult(sel, satisfyingThing, amount)
-												case _ => selectionResults
-											}
-											if (consideredSelectionResults != selectionResults) {
-												selectionIdentified = true
-												updateConsideringActionSelectionContext(tuid, ActionSelectionContext(intent, consideredSelectionResults))
-											}
-										}
-								}
-							case None => // do nothing, fully selected already
-						}
-						lastSelector = nextSel
-
-
-
-						// if we haven't identified anything, see if this can be a character switch
-						if (! selectionIdentified) {
-							for (mousedEnt <- Tiles.entitiesOnTile(mousedOverHex)) {
-								if (mousedEnt.dataOpt[AllegianceData].exists(ad => ad.faction == activeFaction)) {
-									newPossibleSelection = Some(mousedEnt)
-									selectionIdentified = true
-								}
-							}
-						}
-						// if we still haven't identified anything, see if this can be a simple move. Only consider this if we're not in the middle
-						// of selecting something more complicated
-						if (!selectionIdentified && (actionSelectionContext.isEmpty || actionSelectionContext.exists(asc => asc.selectionResults.isEmpty))) {
-							MoveIntent.instantiate(view, selC) match {
-								case Left(moveIntent) =>
-									var selectionResultBuilder = SelectionResultBuilder()
-									for (thing <- List(mousedOverBiasedHex, mousedOverHex); sel <- moveIntent.nextSelection(selectionResultBuilder)) {
-										sel.satisfiedBy(view, thing) match {
-											case Some((value, amount)) => selectionResultBuilder = selectionResultBuilder.addResult(sel, value, amount)
-											case None => // do nothing
-										}
+						for (intent <- Stream(mainIntent) ++ selC(CharacterInfo).fallbackIntents.toStream.map(_.instantiate(view, selC)).collect { case Left(value) => value }) {
+							for (sel <- intent.nextSelection(selectionResults)) {
+								val toConsiderForSelection: List[Any] = Tiles.entitiesOnTile(mousedOverHex).toList ::: mousedOverBiasedHex :: mousedOverHex :: Nil
+								for (thing <- toConsiderForSelection; if !selectionIdentified) yield {
+									for ((satisfyingThing, amount) <- sel.satisfiedBy(view, thing)) yield {
+										selectionIdentified = true
+										tuid.consideringActionSelectionContext = Some(ActionSelectionContext(intent, selectionResults.addResult(sel, satisfyingThing, amount)))
 									}
-									if (moveIntent.nextSelection(selectionResultBuilder).isEmpty) {
-										updateConsideringActionSelectionContext(tuid, ActionSelectionContext(moveIntent, selectionResultBuilder))
-									}
-								case Right(_) => // do nothing
+								}
 							}
 						}
 					case None => // if we can't set up a context for whatever reason, fall back on allowing switching active character
@@ -197,16 +223,14 @@ class TacticalUIActionControl(mainControl : TacticalUIControl) extends AxControl
 							}
 						}
 				}
+
+				intentOverlays.foreach(_.updateUI(gameView, display, consideringActionSelectionContext, display[WindowingControlData].desktop))
 			case None =>
 				tuid.actionSelectionContext = None
 		}
 
-		tuid.consideringSelection = newPossibleSelection
-	}
 
-
-	def updateConsideringActionSelectionContext(tuid : TacticalUIData, asc : ActionSelectionContext): Unit = {
-		tuid.consideringActionSelectionContext = Some(asc)
+		tuid.consideringCharacterSwitch = newPossibleSelection
 	}
 }
 
@@ -215,7 +239,14 @@ object TacticalUIActionControl {
 
 }
 
-case class ActionSelectionContext(intent : GameActionIntentInstance, selectionResults: SelectionResultBuilder)
+case class ActionSelectionContext(intent : GameActionIntentInstance, selectionResults: SelectionResultBuilder) {
+	def fullySatisfied = intent.nextSelection(selectionResults).isEmpty
+	def completeAction = if (fullySatisfied) {
+		Some(intent.createAction(selectionResults.build()))
+	} else {
+		None
+	}
+}
 
 
-case class ResourceSelectionInfo(prospect : GatherSelectionProspect, resourceName : String, resourceIcon : ScaledImage, methodName : String, amount : Int, remainingAmount : Int, fontColor : Color, iconColor : Color, disabledReason : String)
+case class ResourceSelectionInfo(prospect : GatherSelectionProspect, method : GatherMethod, resourceName : String, resourceIcon : ScaledImage, methodName : String, amount : Int, remainingAmount : Int, fontColor : Color, iconColor : Color, disabledReason : String)

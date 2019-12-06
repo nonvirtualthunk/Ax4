@@ -19,18 +19,18 @@ import arx.Prelude.toArxList
 import arx.ax4.control.components.widgets.InventoryWidget
 import arx.ax4.game.action.{AttackIntent, BiasedAxialVec3, DoNothingIntent, GameAction, GatherIntent, MoveIntent}
 import arx.ax4.game.event.TurnEvents.{TurnEndedEvent, TurnStartedEvent}
-import arx.ax4.game.logic.{ActionLogic, CombatLogic, SkillsLogic}
+import arx.ax4.game.logic.{ActionLogic, CharacterLogic, CombatLogic, SkillsLogic}
 import arx.ax4.graphics.data.TacticalUIMode.ChooseSpecialAttackMode
 import arx.core.datastructures.{Watcher, Watcher2}
 import arx.core.math.Sext
 import arx.engine.control.components.windowing.widgets.DimensionExpression.ExpandTo
 import arx.engine.control.components.windowing.{SimpleWidget, WindowingControlComponent}
-import arx.engine.control.components.windowing.widgets.{DimensionExpression, ListItemSelected}
+import arx.engine.control.components.windowing.widgets.{DimensionExpression, ListItemSelected, SpriteDefinition}
 import arx.engine.control.data.WindowingControlData
 import arx.engine.data.Moddable
 import arx.engine.entity.{Entity, IdentityData}
 import arx.engine.event.Event
-import arx.graphics.helpers.{Color, RGBA}
+import arx.graphics.helpers.{Color, ImageSection, RGBA, RichText, RichTextRenderSettings, RichTextSection, THasRichTextRepresentation, TextSection}
 import arx.resource.ResourceManager
 import org.lwjgl.glfw.GLFW
 
@@ -86,9 +86,9 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 			w.onEvent {
 				case ListItemSelected(_, _, Some(attackDisplayInfo: SimpleAttackDisplayInfo)) =>
 					val selC = display[TacticalUIData].selectedCharacter.get
-					val newIntent = AttackIntent(attackDisplayInfo.attackRef)
-					game.modify(selC, CharacterInfo.activeIntent -> newIntent)
-					game.addEvent(ActiveIntentChanged(selC, newIntent))
+					game.modify(selC, CharacterInfo.activeAttack -> Some(attackDisplayInfo.attackRef))
+					game.modify(selC, CharacterInfo.defaultIntent -> AttackIntent(attackDisplayInfo.attackRef))
+					CharacterLogic.setActiveIntent(selC, AttackIntent(attackDisplayInfo.attackRef))(game)
 			}
 		)
 		tuid.specialAttacksList.showing = Moddable(() => tuid.activeUIMode == TacticalUIMode.ChooseSpecialAttackMode)
@@ -102,7 +102,7 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 		for (selectChar <- gameView.entitiesWithData[CharacterInfo]
 			.filter(e => e[AllegianceData].faction == activeFaction)
 			.find(e => e[CharacterInfo].actionPoints.currentValue > 0 || e[CharacterInfo].movePoints > Sext(0))) {
-			selectCharcter(game, display, selectChar)
+			selectCharacter(game, display, selectChar)
 		}
 
 
@@ -144,12 +144,12 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 			case KeyReleaseEvent(GLFW.GLFW_KEY_G, _) =>
 				val tuid = display[TacticalUIData]
 				for (selC <- tuid.selectedCharacter) {
-					selC(CharacterInfo).activeIntent = GatherIntent
+					CharacterLogic.setActiveIntent(selC, GatherIntent)(game)
 				}
 		}
 	}
 
-	def selectCharcter(game : World, display : World, selC: Entity) = {
+	def selectCharacter(game : World, display : World, selC: Entity) = {
 		implicit val view = game.view
 		val tuid = display[TacticalUIData]
 		tuid.selectedCharacter = Some(selC)
@@ -164,6 +164,7 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 
 			game.startEvent(ActiveIntentChanged(selC, newIntent))
 			game.modify(selC, CharacterInfo.activeIntent -> newIntent)
+			game.modify(selC, CharacterInfo.defaultIntent -> newIntent)
 			game.endEvent(ActiveIntentChanged(selC, newIntent))
 		}
 	}
@@ -225,7 +226,7 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 	}
 }
 
-case class DamageExpression(damageElements : Map[AnyRef, DamageElement]) {
+case class DamageExpression(damageElements : Map[AnyRef, DamageElement]) extends THasRichTextRepresentation  {
 	import arx.Prelude.int2RicherInt
 	override def toString: String = {
 		damageElements.values.map(de => {
@@ -240,6 +241,27 @@ case class DamageExpression(damageElements : Map[AnyRef, DamageElement]) {
 			sections ::= de.damageType.name
 			sections.reverse.reduce(_ + " " + _)
 		}).foldLeft("")(_ + " " + _).trim
+	}
+
+	override def toRichText(settings: RichTextRenderSettings): RichText = {
+		val sections = damageElements.values.flatMap(de => {
+			var sections = List[RichTextSection]()
+			sections ::= TextSection(de.damageDice.toString)
+			if (de.damageMultiplier != 1.0f) {
+				sections ::= TextSection(s"x${de.damageMultiplier}")
+			}
+			if (de.damageBonus != 0) {
+				sections ::= TextSection(de.damageBonus.toSignedString)
+			}
+			sections ::= (SpriteLibrary.getSpriteDefinitionFor(de.damageType) match {
+				case Some(SpriteDefinition(icon, icon16)) if !settings.noSymbols => ImageSection(icon,2, Color.White)
+				case _ => TextSection(" " + de.damageType.name)
+			})
+
+			sections.reverse
+		})
+
+		RichText(sections.toList)
 	}
 }
 case class AttackBonus(bonus : Int) {

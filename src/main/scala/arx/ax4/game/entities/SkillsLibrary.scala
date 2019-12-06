@@ -37,22 +37,22 @@ object SkillsLibrary {
 
 	def apply(skill : Taxon) : Option[Skill] = byTaxon.get(skill)
 
-	byTaxon += Taxonomy("spearSkill") -> Skill("Spear",
+	byTaxon += Taxonomy("spearSkill", "Skills") -> Skill("Spear",
 		List(
 			SkillLevel(
-				(world, entity) => world.modify(entity, CombatData.conditionalAttackModifiers append (AttackConditionals.WeaponIs(Taxonomy("spear")) -> AttackModifier(accuracyBonus = 1))),
+				(world, entity) => world.modify(entity, CombatData.conditionalAttackModifiers append (AttackConditionals.WeaponIs(Taxonomy("spear", "Items.Weapons")) -> AttackModifier(accuracyBonus = 1))),
 				(world, entity) => world.modify(entity, CombatData.specialAttacks.put("piercing stab", SpecialAttack.PiercingStab))
 			), SkillLevel(
-				(world, entity) => world.modify(entity, CombatData.conditionalAttackModifiers append (AttackConditionals.WeaponIs(Taxonomy("spear")) -> AttackModifier(damageBonuses = Map("primary" -> DamageElementDelta.damageBonus(2)))))
+				(world, entity) => world.modify(entity, CombatData.conditionalAttackModifiers append (AttackConditionals.WeaponIs(Taxonomy("spear", "Items.Weapons")) -> AttackModifier(damageBonuses = Map("primary" -> DamageElementDelta.damageBonus(2)))))
 			), SkillLevel(
-				(world, entity) => world.modify(entity, CombatData.conditionalAttackModifiers append (AttackConditionals.WeaponIs(Taxonomy("spear")) -> AttackModifier(minRangeOverride = Some(1))))
+				(world, entity) => world.modify(entity, CombatData.conditionalAttackModifiers append (AttackConditionals.WeaponIs(Taxonomy("spear", "Items.Weapons")) -> AttackModifier(minRangeOverride = Some(1))))
 			)
 		)
 	)
-	byTaxon += Taxonomy("swordSkill") -> Skill("Sword",
+	byTaxon += Taxonomy("swordSkill", "Skills") -> Skill("Sword",
 		List(
 			SkillLevel()
-				.withModifier(CombatData.conditionalAttackModifiers append (WeaponIs(Taxonomy("sword")) -> AttackModifier(accuracyBonus = 1)))
+				.withModifier(CombatData.conditionalAttackModifiers append (WeaponIs(Taxonomy("sword", "Items.Weapons")) -> AttackModifier(accuracyBonus = 1)))
 //   			.withModifier(CombatData.specialAttacks.put(""))
 		)
 	)

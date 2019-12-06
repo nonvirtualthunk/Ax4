@@ -1,7 +1,7 @@
 
 
 InventoryWidget {
-  type : Div
+  type : Window
 
   position : [centered, centered]
   dimensions : [45%, 80%]
@@ -36,7 +36,7 @@ InventoryWidget {
 }
 
 ItemListItem {
-  type : Div
+  type : Window
 
   background.image : "ui/fancyBackground_ns.png"
   width : 100%

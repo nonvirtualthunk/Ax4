@@ -1,5 +1,7 @@
 DHGZ : "third-party/DHGZ"
 shikashi : "third-party/shikashiModified"
+kyrise: third-party/kyrise
+blood : third-party/runningBlood
 
 Sprites {
   spearSkill: {
@@ -31,5 +33,26 @@ Sprites {
 
   HayBale : {
     icon: ${DHGZ}"/items/hay_bale.png"
+  }
+
+
+  Piercing : {
+//    icon: ${kyrise}"/staff_01b.png"
+//    icon: ${blood}"/piercing.png"
+    icon: "graphics/ui/piercing.png"
+  }
+  Slashing : {
+//    icon: ${kyrise}"/sword_02b.png"
+//    icon: ${blood}"/slashing.png"
+    icon: "graphics/ui/slashing.png"
+  }
+  Bludgeoning : {
+//    icon: ${kyrise}"/staff_03b.png"
+//    icon: ${blood}"/bludgeoning.png"
+    icon: "graphics/ui/bludgeoning.png"
+  }
+
+  DefenseBonus : {
+    icon: "graphics/ui/defense.png"
   }
 }

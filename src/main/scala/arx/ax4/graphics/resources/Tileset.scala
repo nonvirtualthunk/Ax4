@@ -74,17 +74,17 @@ object Tileset {
 	def load(config : ConfigValue) = {
 		val tileset = new Tileset
 		for (fullTerrainConf <- config.expectField("Terrain"); (terrainName, terrainConf) <- fullTerrainConf.fields) {
-			for (terrainTaxon <- Taxonomy.getByName(terrainName)) {
+			for (terrainTaxon <- Taxonomy.getByName(terrainName, namespace = "Terrains")) {
 				val defaultImageset = Imageset.loadFrom(terrainConf.Default)
-				val byTerrainImagesets = terrainConf.fields.filter(k => k._1 != "Default").flatMap {
-					case (k,v) => Taxonomy.getByName(k).map(ttx => ttx -> loadVegetationImageset(v))
+				val byVegetationImagesets = terrainConf.fields.filter(k => k._1 != "Default").flatMap {
+					case (k,v) => Taxonomy.getByName(k, "Vegetations").map(ttx => ttx -> loadVegetationImageset(v))
 				}
-				tileset.terrain += terrainTaxon -> TerrainImageset(defaultImageset, byTerrainImagesets)
+				tileset.terrain += terrainTaxon -> TerrainImageset(defaultImageset, byVegetationImagesets)
 			}
 		}
 
 		for (terrainConf <- config.expectField("Vegetation"); (vegName, vegConfig) <- terrainConf.fields) {
-			for (vegTaxon <- Taxonomy.getByName(vegName)) {
+			for (vegTaxon <- Taxonomy.getByName(vegName, namespace = "Vegetations")) {
 				tileset.vegetation += vegTaxon -> loadVegetationImageset(vegConfig)
 			}
 		}

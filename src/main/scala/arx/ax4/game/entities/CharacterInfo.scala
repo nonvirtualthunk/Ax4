@@ -2,7 +2,7 @@ package arx.ax4.game.entities
 
 import arx.Prelude
 import arx.application.Noto
-import arx.ax4.game.action.{DoNothingIntent, GameActionIntent, MoveIntent, WaypointMoveIntent}
+import arx.ax4.game.action.{AttackIntent, DoNothingIntent, GameActionIntent, MoveIntent, SwitchSelectedCharacterIntent, WaypointMoveIntent}
 import arx.ax4.game.entities.Conditionals.BaseAttackConditional
 import arx.core.macros.GenerateCompanion
 import arx.core.math.Sext
@@ -15,7 +15,7 @@ import arx.graphics.helpers.{Color, RGBA}
 
 @GenerateCompanion
 class CharacterInfo extends AxAuxData {
-	var species : Taxon = Species.Human
+	var species : Taxon = Taxonomy("Specieses.Human")
 	var sex : Taxon = if (Prelude.random.nextInt() % 2 == 0) { Taxonomy("female") } else { Taxonomy("male") }
 
 	var health = Reduceable(6)
@@ -28,7 +28,7 @@ class CharacterInfo extends AxAuxData {
 	var stamina = Reduceable(6)
 	var staminaRecoveryRate = 1
 
-	var bodyParts : Set[BodyPart] = Set()
+	var bodyParts : Set[Taxon] = Set()
 
 	var skillXP : Map[Taxon, Int] = Map()
 	var skillLevels : Map[Taxon, Int] = Map()
@@ -40,6 +40,8 @@ class CharacterInfo extends AxAuxData {
 
 	var activeAttack : Option[AttackReference] = None
 	var activeIntent : GameActionIntent = DoNothingIntent
+	var defaultIntent : GameActionIntent = DoNothingIntent
+	var fallbackIntents : List[GameActionIntent] = List(MoveIntent, SwitchSelectedCharacterIntent)
 
 	def maxPossibleMovePoints = actionPoints.maxValue * moveSpeed
 	def curPossibleMovePoints = movePoints + actionPoints.currentValue * moveSpeed
@@ -61,21 +63,6 @@ class CombatData extends AxAuxData {
 	var defenseModifier = DefenseModifier()
 	var conditionalDefenseModifiers: List[(BaseAttackConditional, DefenseModifier)] = List()
 	var specialAttacks = Map[AnyRef, SpecialAttack]()
-}
-
-class BodyPart(nomen_ : String, parents_ : Taxon*) extends Taxon(nomen_, parents_.toList)
-object BodyPart {
-	case object BaseBodyPart extends BodyPart("body part")
-	case object Gripping extends BodyPart("gripping body part", BaseBodyPart)
-	case object Thinking extends BodyPart("thinking body part", BaseBodyPart)
-	case object Appendage extends BodyPart("appendage", BaseBodyPart)
-	case object DextrousAppendage extends BodyPart("dextrous appendage", Appendage)
-
-	case object Hand extends BodyPart("hand", Gripping)
-	case object Pseudopod extends BodyPart("pseudopod", Gripping, DextrousAppendage)
-	case object Arm extends BodyPart("arm", DextrousAppendage)
-	case object Leg extends BodyPart("leg", Appendage)
-	case object Head extends BodyPart("head", Thinking)
 }
 
 case class AttackReference(weapon : Entity, attackKey : AnyRef, specialSource : Option[Entity], specialKey : AnyRef) {

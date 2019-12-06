@@ -60,6 +60,8 @@ class Weapon extends AxAuxData {
 object WeaponLibrary extends EntityArchetypeLibrary {
 	override protected def topLevelField: String = "Weapons"
 
+	override def defaultNamespace: String = "Items.Weapons"
+
 	override protected def fixedDataTypes: Seq[_ <: Clazz[_ <: TAuxData]] = List(Item, Equipment, Weapon)
 
 	override protected def conditionalDataTypes: Map[String, _ <: Clazz[_ <: TAuxData]] = Map("heldItemCountLimit" -> Inventory)
@@ -75,6 +77,8 @@ object ItemLibrary extends EntityArchetypeLibrary {
 	override protected def conditionalDataTypes: Map[String, _ <: Clazz[_ <: TAuxData]] = Map("uses" -> Consumable)
 
 	override protected def topLevelField: String = "Items"
+
+	override def defaultNamespace: String = "Items"
 
 	override def initialLoad(): Unit = {
 		load("game/data/items/Items.sml")

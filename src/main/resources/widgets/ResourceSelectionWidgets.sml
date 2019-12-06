@@ -1,7 +1,7 @@
 
 
 ResourceSelectionWidget {
-  type : Div
+  type : Window
 
   position : [centered, centered]
   dimensions : [60%, WrapContent]
@@ -34,11 +34,14 @@ ResourceSelectionWidget {
 
 
 ResourceSelectionItem {
-  type : Div
+  type : Window
 
   background.image : "ui/fancyBackground_ns.png"
   height : WrapContent
   width : 100%
+
+  backgroundColor : "%(resource.iconColor)"
+  edgeColor : "%(resource.iconColor)"
 
   children {
     ResourceIcon {
@@ -90,6 +93,46 @@ ResourceSelectionItem {
       drawBackground : false
 
       fontScale : 1.5
+    }
+
+    CostDiv {
+      type : Div
+
+      x : 0 from right
+      y : centered
+
+      children {
+        ActionPointCost {
+          type : TextDisplayWidget
+
+          x : 0
+
+          drawBackground : false
+
+          fontScale : 1.5
+
+          text : [
+            {text : "%(resource.method.actionCost)"}
+            {horizontalPadding : 6}
+            {image : "graphics/ui/action_point.png", scale : 2, color : "%(resource.iconColor)"}
+          ]
+        }
+        StaminaCost {
+          type : TextDisplayWidget
+
+          x : 10 right of ActionPointCost
+
+          drawBackground : false
+
+          fontScale : 1.5
+
+          text : [
+            {text : "%(resource.method.staminaCost)"}
+            {horizontalPadding : 6}
+            {image : "graphics/ui/stamina_point.png", scale : 2, color : "%(resource.iconColor)"}
+          ]
+        }
+      }
     }
   }
 }

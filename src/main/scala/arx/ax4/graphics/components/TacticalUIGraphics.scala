@@ -23,12 +23,16 @@ class TacticalUIGraphics(anim : AnimationGraphicsComponent) extends AxCanvasGrap
 
 	lazy val actionRenderers = ReflectionAssistant.instancesOfSubtypesOf[TacticalActionPreviewRenderer]
 	lazy val selectorRenderers = ReflectionAssistant.instancesOfSubtypesOf[TacticalSelectorRenderer]
+	lazy val intentOverlays = ReflectionAssistant.instancesOfSubtypesOf[GameActionIntentOverlay]
 
 	override protected def onInitialize(game: World, display: World): Unit = {
 
 	}
 
 	override def requiresUpdate(game: HypotheticalWorldView, display: World): Boolean = true
+
+
+
 
 	override def updateCanvas(game: HypotheticalWorldView, display: World, canvas: AxCanvas, dt: UnitOfTime): Unit = {
 		implicit  val view = game
@@ -79,6 +83,9 @@ class TacticalUIGraphics(anim : AnimationGraphicsComponent) extends AxCanvasGrap
 					}
 				case None => // do nothing
 			}
+
+			intentOverlays.foreach(overlay => overlay.
+				draw(view, display, selC[CharacterInfo].activeIntent, consideringActionSelectionContext, canvas))
 		}
 
 //		canvas.quad(mousedOverHex)

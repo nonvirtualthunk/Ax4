@@ -1,12 +1,13 @@
 package arx.ax4.graphics.data
 
+import arx.engine.control.components.windowing.widgets.{SpriteDefinition, SpriteProvider}
 import arx.engine.entity.{Taxon, Taxonomy}
 import arx.graphics.TToImage
 import arx.resource.ResourceManager
 
 import scala.collection.mutable
 
-object SpriteLibrary {
+object SpriteLibrary extends SpriteProvider {
 	var sprites : Map[Taxon, SpriteDefinition] = Map()
 
 
@@ -16,7 +17,7 @@ object SpriteLibrary {
 		while (examineQueue.nonEmpty) {
 			val nextT = examineQueue.dequeue()
 			sprites.get(nextT) match {
-				case Some(SpriteDefinition(icon)) => return icon
+				case Some(SpriteDefinition(icon,_)) => return icon
 				case _ => // do nothing
 			}
 			nextT.parents.foreach(p => examineQueue.enqueue(p))
@@ -24,14 +25,30 @@ object SpriteLibrary {
 		ResourceManager.defaultImage
 	}
 
+	override def getSpriteDefinitionFor(t : Taxon) : Option[SpriteDefinition] = {
+		val examineQueue = new mutable.Queue[Taxon]()
+		examineQueue.enqueue(t)
+		while (examineQueue.nonEmpty) {
+			val nextT = examineQueue.dequeue()
+			sprites.get(nextT) match {
+				case sd @ Some(_) => return sd
+				case _ => // do nothing
+			}
+			nextT.parents.foreach(p => examineQueue.enqueue(p))
+		}
+		None
+	}
+	override def spriteDefinitionFor(t : Taxon) : SpriteDefinition = {
+		getSpriteDefinitionFor(t).getOrElse(SpriteDefinition(ResourceManager.defaultImage, ResourceManager.defaultImage))
+	}
+
 	{
 		for (overallSpritesConf <- ResourceManager.sml("graphics/data/entity/Sprites.sml").fieldOpt("Sprites")) {
 			for ((spriteTaxon, spriteConf) <- overallSpritesConf.fields) {
-				sprites += (Taxonomy(spriteTaxon) -> SpriteDefinition(spriteConf.icon.str))
+				val iconStr = spriteConf.icon.str
+				val icon16Str = spriteConf.icon16.strOrElse(iconStr)
+				sprites += (Taxonomy.byNameExpr(spriteTaxon) -> SpriteDefinition(iconStr, icon16Str))
 			}
 		}
 	}
 }
-
-
-case class SpriteDefinition(icon : TToImage) {}

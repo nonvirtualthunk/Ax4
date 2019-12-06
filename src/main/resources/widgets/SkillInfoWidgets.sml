@@ -6,7 +6,7 @@ BasicSkillText {
 }
 
 BasicSkillInfo : {
-  type : Div
+  type : Window
 
   dimensions : [100%, WrapContent]
   backgroundPixelScale : 1

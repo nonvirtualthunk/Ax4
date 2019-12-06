@@ -19,7 +19,7 @@ case class DeflectEvent(entity : Entity, originalDamage : Int) extends GameEvent
 
 
 
-case class AttackEventInfo(attacker : Entity, weapon : Entity, allTargets : List[Entity], attackData : AttackData)
+case class AttackEventInfo(attacker : Entity, weapon : Entity, allTargets : Seq[Entity], attackData : AttackData)
 
 
 case class EquipItem(entity : Entity, item : Entity) extends GameEvent
@@ -40,3 +40,4 @@ case class SwitchReactionEvent(entity : Entity, from : ReactionType, to : Reacti
 case class GatherEvent(prospect : GatherProspect) extends GameEvent
 
 case class ResourceGatheredEvent(entity : Entity, kind : Taxon, gained : Int) extends GameEvent
+

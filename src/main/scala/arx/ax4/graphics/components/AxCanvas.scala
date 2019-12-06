@@ -36,6 +36,8 @@ class AxQuadBuilder(hexSize : Int, blankTC : Array[ReadVec2f]) extends TQuadBuil
 
 	def copy() = CopyAssistant.copyShallow(this)
 
+
+	def offset(v : ReadVec2f) : this.type = {_position += v; this }
 	def forward(v : ReadVec2f) = { _forward = v; this }
 	def ortho(v : ReadVec2f) = { _ortho = v; this }
 	def dimensions(v : CartVec) = { _dimensions = v * hexSize; this }
@@ -82,20 +84,20 @@ class AxQuadBuilder(hexSize : Int, blankTC : Array[ReadVec2f]) extends TQuadBuil
 		val originY = (posY + _forward.y * _dimensions.x * _relativeOrigin.x * -0.5f + _ortho.y  * _dimensions.y * _relativeOrigin.y * -0.5f + _hexOffset.y * Hex.heightForSize(hexSize)).toInt
 
 		vbo.setA(AxAttributeProfile.VertexAttribute, vi + 0,
-			(originX + _forward.x * _dimensions.x * -0.5f + _ortho.x * _dimensions.y * -0.5f).toInt,
-			(originY + _forward.y * _dimensions.x * -0.5f + _ortho.y * _dimensions.y * -0.5f).toInt,
+			((originX + _forward.x * _dimensions.x * -0.5f + _ortho.x * _dimensions.y * -0.5f).toInt / 2) * 2,
+			((originY + _forward.y * _dimensions.x * -0.5f + _ortho.y * _dimensions.y * -0.5f).toInt / 2) * 2,
 			_layer.depth)
 		vbo.setA(AxAttributeProfile.VertexAttribute, vi + 1,
-			(originX + _forward.x * _dimensions.x * +0.5f + _ortho.x * _dimensions.y * -0.5f).toInt,
-			(originY + _forward.y * _dimensions.x * +0.5f + _ortho.y * _dimensions.y * -0.5f).toInt,
+			((originX + _forward.x * _dimensions.x * +0.5f + _ortho.x * _dimensions.y * -0.5f).toInt / 2) * 2,
+			((originY + _forward.y * _dimensions.x * +0.5f + _ortho.y * _dimensions.y * -0.5f).toInt / 2) * 2,
 			_layer.depth)
 		vbo.setA(AxAttributeProfile.VertexAttribute, vi + 2,
-			(originX + _forward.x * _dimensions.x * +0.5f + _ortho.x * _dimensions.y * +0.5f).toInt,
-			(originY + _forward.y * _dimensions.x * +0.5f + _ortho.y * _dimensions.y * +0.5f).toInt,
+			((originX + _forward.x * _dimensions.x * +0.5f + _ortho.x * _dimensions.y * +0.5f).toInt / 2) * 2,
+			((originY + _forward.y * _dimensions.x * +0.5f + _ortho.y * _dimensions.y * +0.5f).toInt / 2) * 2,
 			_layer.depth)
 		vbo.setA(AxAttributeProfile.VertexAttribute, vi + 3,
-			(originX + _forward.x * _dimensions.x * -0.5f + _ortho.x * _dimensions.y * +0.5f).toInt,
-			(originY + _forward.y * _dimensions.x * -0.5f + _ortho.y * _dimensions.y * +0.5f).toInt,
+			((originX + _forward.x * _dimensions.x * -0.5f + _ortho.x * _dimensions.y * +0.5f).toInt / 2) * 2,
+			((originY + _forward.y * _dimensions.x * -0.5f + _ortho.y * _dimensions.y * +0.5f).toInt / 2) * 2,
 			_layer.depth)
 		var i = 0
 		while (i < 4) {

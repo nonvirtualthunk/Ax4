@@ -38,8 +38,8 @@ object VegetationLibrary {
 		for (vegConf <- config.fieldOpt("Vegetation")) {
 			for ((kind, dataConf) <- vegConf.fields) {
 				val vlayer = VegetationLayer().loadFromConfig(dataConf)
-				vlayer.kind = Taxonomy(kind)
-				vegetationLayersByKind += Taxonomy(kind) -> vlayer
+				vlayer.kind = Taxonomy(kind, "Vegetations")
+				vegetationLayersByKind += Taxonomy(kind, "Vegetations") -> vlayer
 			}
 		}
 	}
@@ -84,7 +84,7 @@ case class Resource(var kind : Taxon = Taxonomy.UnknownThing,
 
 @GenerateCompanion
 case class GatherMethod(var name : String = "unnamed",
-								var toolRequirements : EntityConditional = Conditionals.all,
+								var toolRequirements : Option[EntityConditional] = None,
 								var requirements : BaseGatherConditional = Conditionals.all,
 								var actionCost : Int = 1,
 								var staminaCost : Int = 1,
@@ -99,7 +99,7 @@ trait BaseGatherProspect {
 	def key : ResourceKey
 }
 case class UntargetedGatherProspect(gatherer : Entity, target : Entity, key : ResourceKey) extends BaseGatherProspect
-case class GatherProspect(gatherer : Entity, target : Entity, key : ResourceKey, method : GatherMethod, tool : Entity) extends BaseGatherProspect
+case class GatherProspect(gatherer : Entity, target : Entity, key : ResourceKey, method : GatherMethod, tool : Option[Entity]) extends BaseGatherProspect
 
 object GatherConditionals {
 

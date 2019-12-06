@@ -12,7 +12,7 @@ import arx.core.math.Sext
 import arx.core.representation.ConfigValue
 import arx.core.vec.coordinates.{AxialVec, AxialVec3, CartVec}
 import arx.engine.data.{ConfigLoadable, TNestedData}
-import arx.engine.entity.{Entity, Taxon}
+import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.world.{Breakdown, WorldView}
 import arx.game.data.DicePool
 
@@ -133,21 +133,26 @@ object SpecialAttack {
 	}
 }
 
-class DamageType(nomen_ : String, parents_ : List[Taxon]) extends Taxon(nomen_, parents_) with TEagerSingleton {
-	DamageTypes.damageTypesByName += nomen_.toLowerCase() -> this
+case class DamageType(taxon : Taxon) {
+	def name: String = taxon.name
+	def isA(dt : DamageType) : Boolean = taxon.isA(dt.taxon)
+	def isA(t : Taxon) : Boolean = taxon.isA(t)
+
+	DamageTypes.damageTypesByName += taxon.name -> this
 }
 
-object DamageType extends DamageType("damage type", Nil) {
-	case object Physical extends DamageType("physical", DamageType :: Nil)
+object DamageType extends TEagerSingleton {
+	val Physical = DamageType(Taxonomy("DamageType"))
 
-	case object Bludgeoning extends DamageType("bludgeoning", Physical :: Nil)
+	val Bludgeoning = DamageType(Taxonomy("DamageTypes.Bludgeoning"))
 
-	case object Piercing extends DamageType("piercing", Physical :: Nil)
+	val Piercing = DamageType(Taxonomy("DamageTypes.Piercing"))
 
-	case object Slashing extends DamageType("slashing", Physical :: Nil)
+	val Slashing = DamageType(Taxonomy("DamageTypes.Slashing"))
 
-	case object Unknown extends DamageType("unknown", DamageType :: Nil)
+	val Unknown = DamageType(Taxonomy("DamageTypes.Unknown"))
 
+	implicit def toTaxon(dt : DamageType) : Taxon = dt.taxon
 }
 object DamageTypes {
 	var damageTypesByName = Map[String, DamageType]()
@@ -192,7 +197,7 @@ trait BaseAttackProspect {
 }
 
 case class UntargetedAttackProspect(attacker : Entity, attackReference: AttackReference) extends BaseAttackProspect
-case class AttackProspect(attacker : Entity, attackReference: AttackReference, target : Entity, allTargets : List[Entity], attackData : AttackData, defenseData : DefenseData) extends BaseAttackProspect
+case class AttackProspect(attacker : Entity, attackReference: AttackReference, target : Entity, allTargets : Seq[Entity], attackData : AttackData, defenseData : DefenseData) extends BaseAttackProspect
 
 
 //case class AttackResult(attacker: Entity, defender: Entity, strikes: List[StrikeResult])

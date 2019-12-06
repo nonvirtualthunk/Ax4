@@ -3,7 +3,7 @@ package arx.ax4.game.action
 import arx.ai.search.Path
 import arx.application.Noto
 import arx.ax4.game.entities.Companions.{CharacterInfo, Physical}
-import arx.ax4.game.entities.{AllegianceData, AttackProspect, AttackReference, CharacterInfo, EntityTarget, HexTargetPattern, Physical, TargetPattern, Tile, Tiles}
+import arx.ax4.game.entities.{AllegianceData, AttackProspect, AttackReference, CharacterInfo, EntityTarget, FactionData, HexTargetPattern, Physical, TargetPattern, Tile, Tiles}
 import arx.ax4.game.event.AttackEventInfo
 import arx.ax4.game.logic.{AllegianceLogic, AxPathfinder, CombatLogic, MovementLogic}
 import arx.core.vec.coordinates.{AxialVec, AxialVec3, HexDirection}
@@ -17,13 +17,13 @@ abstract class GameAction {
 }
 
 case class DoNothingAction(character: Entity) extends GameAction {
-	val identity: Taxon = Taxonomy("DoNothing")
+	val identity: Taxon = Taxonomy("DoNothing", "Actions")
 
 	override def entity: Entity = character
 }
 
 case class MoveAction(character: Entity, path: Path[AxialVec3]) extends GameAction {
-	val identity: Taxon = Taxonomy("MoveAction")
+	val identity: Taxon = Taxonomy("MoveAction", "Actions")
 
 	override def entity: Entity = character
 }
@@ -34,11 +34,17 @@ case class AttackAction(attacker: Entity,
 								targets: Either[Seq[Entity], Seq[AxialVec3]],
 								preMove: Option[Path[AxialVec3]],
 								postMove: Option[Path[AxialVec3]]) extends GameAction {
-	val identity: Taxon = Taxonomy("AttackAction")
+	val identity: Taxon = Taxonomy("AttackAction", "Actions")
 
 	override def entity: Entity = attacker
 }
 
+
+case class SwitchSelectedCharacterAction(from : Entity, to : Entity) extends GameAction {
+	val identity: Taxon = Taxonomy("SwitchSelectedCharacterAction", "Actions")
+
+	override def entity: Entity = from
+}
 
 abstract class GameActionIntent {
 	def instantiate(implicit view: WorldView, entity: Entity): Either[GameActionIntentInstance, String]
@@ -66,6 +72,20 @@ case object DoNothingIntent extends GameActionIntent {
 	override def instantiate(implicit view: WorldView, entity: Entity): Either[GameActionIntentInstance, String] = Left(new GameActionIntentInstance {
 		override def nextSelection(resultsSoFar: SelectionResultBuilder): Option[Selector[_]] = None
 		override def createAction(selectionResult: SelectionResult): Seq[GameAction] = Nil
+	})
+}
+
+case object SwitchSelectedCharacterIntent extends GameActionIntent {
+	override def instantiate(implicit view: WorldView, entity: Entity): Either[GameActionIntentInstance, String] = Left(new GameActionIntentInstance {
+		val selector = EntitySelector((view, other) => AllegianceLogic.areInSameFaction(entity, other)(view), "Entity with same faction")
+
+		override def nextSelection(resultsSoFar: SelectionResultBuilder): Option[Selector[_]] = if (!resultsSoFar.fullySatisfied(selector)) {
+			Some(selector)
+		} else {
+			None
+		}
+
+		override def createAction(selectionResult: SelectionResult): Seq[GameAction] = SwitchSelectedCharacterAction(entity, selectionResult.single(selector)) :: Nil
 	})
 }
 

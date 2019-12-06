@@ -35,6 +35,8 @@ object TerrainLibrary extends AuxDataLibrary(Terrain) {
 	override def initialLoad(): Unit = {
 		load("game/data/terrain/Terrains.sml")
 	}
+
+	override def defaultNamespace: String = "Terrains"
 }
 
 
@@ -67,14 +69,16 @@ trait Library[T] extends TEagerSingleton {
 
 abstract class AuxDataLibrary[T <: TAuxData](clazz : Clazz[T]) extends Library[T] {
 
+	def defaultNamespace : String
+
 	def load(config : ConfigValue) : Unit = synchronized {
 		for (topLevelConf <- config.fieldOpt(topLevelField)) {
 			for ((kind, dataConf) <- topLevelConf.fields) {
 				val auxData = createBlank().loadFromConfig(dataConf)
 				for (kindField <- clazz.fields.get("kind")) {
-					kindField.setValue(auxData, Taxonomy(kind))
+					kindField.setValue(auxData, Taxonomy(kind, defaultNamespace))
 				}
-				byKind += Taxonomy(kind) -> auxData
+				byKind += Taxonomy(kind, defaultNamespace) -> auxData
 			}
 		}
 	}
@@ -118,12 +122,14 @@ abstract class EntityArchetypeLibrary extends Library [EntityArchetype] {
 		byKind(kind)
 	}
 
+	def defaultNamespace : String
+
 	def load(config : ConfigValue) : Unit = synchronized {
 		for (topLevelConf <- config.fieldOpt(topLevelField)) {
 			for ((kind, dataConf) <- topLevelConf.fields) {
 				val arch = createBlank()
 
-				val ident = new IdentityData(Taxonomy(kind))
+				val ident = new IdentityData(Taxonomy(kind, defaultNamespace))
 				arch.attachData(IdentityData, ident)
 
 				val matchedConditionalTypes = conditionalDataTypes.filter {
@@ -136,7 +142,7 @@ abstract class EntityArchetypeLibrary extends Library [EntityArchetype] {
 					arch.attachData(clazz, data)
 				}
 
-				byKind += Taxonomy(kind) -> arch
+				byKind += Taxonomy(kind, defaultNamespace) -> arch
 			}
 		}
 	}
