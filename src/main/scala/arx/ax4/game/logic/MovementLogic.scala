@@ -80,17 +80,12 @@ object MovementLogic {
 		implicit val view = world.view
 
 		val physical = character[Physical]
-		val characterData = character[CharacterInfo]
 
 		if (path.steps.headOption.exists(h => h.node == physical.position)) {
 			for ((from,to) <- path.steps.map(p => p.node).sliding2) {
 				moveCostTo(character, to) match {
-					case Some(moveCost) if characterData.curPossibleMovePoints >= moveCost =>
-						world.startEvent(EntityMoved(character, from, to))
-						while (characterData.movePoints < moveCost && characterData.actionPoints.currentValue > 0) {
-							world.modify(character, CharacterInfo.movePoints + characterData.moveSpeed)
-							world.modify(character, CharacterInfo.actionPoints reduceBy 1)
-						}
+					case Some(moveCost) if CharacterLogic.curMovePoints(character) >= moveCost =>
+						world.eventStmt(EntityMoved(character, from, to))
 						val positionChangedSuccessfully = setCharacterPosition(character, to)
 						if (!positionChangedSuccessfully) {
 							return false
@@ -134,22 +129,15 @@ object MovementLogic {
 		}
 	}
 
-	def actionPointsRequiredForPath(character : Entity, path : Path[AxialVec3])(implicit view : WorldView) : Int = {
+	def movePointsRequiredForPath(character : Entity, path : Path[AxialVec3])(implicit view : WorldView) : Sext = {
 		val charInf = character(CharacterInfo)
-		val speed = charInf.moveSpeed
-		var points = charInf.movePoints
-		var actionsRequired = 0
+		var mp = Sext(0)
 		for ((from,to) <- path.steps.sliding2) {
 			moveCostTo(character, to.node) match {
-				case Some(stepCost) =>
-					while (points < stepCost) {
-						points += speed
-						actionsRequired += 1
-					}
-					points -= stepCost
+				case Some(stepCost) => mp += stepCost
 				case None => Noto.warn("Checking action cost of untravellable path")
 			}
 		}
-		actionsRequired
+		mp
 	}
 }

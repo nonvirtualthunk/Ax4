@@ -53,7 +53,7 @@ SelectedCharacterInfo {
     }
     Move : ${StatDisplay} {
       y : "0 below Actions"
-      text : "Move: %(selectedCharacter.move.cur) / %(selectedCharacter.move.max)"
+      text : "Move: %(selectedCharacter.move.cur)"
     }
     Speed : ${StatDisplay} {
       y : "0 below Move"

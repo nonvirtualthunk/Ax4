@@ -2,7 +2,7 @@ package arx.ax4.game.entities
 
 import arx.Prelude
 import arx.application.Noto
-import arx.ax4.game.action.{AttackIntent, DoNothingIntent, GameActionIntent, MoveIntent, SwitchSelectedCharacterIntent, WaypointMoveIntent}
+import arx.ax4.game.action.{AttackIntent, DoNothingIntent, GameActionIntent, MoveIntent, SwitchSelectedCharacterIntent}
 import arx.ax4.game.entities.Conditionals.BaseAttackConditional
 import arx.core.macros.GenerateCompanion
 import arx.core.math.Sext
@@ -42,9 +42,6 @@ class CharacterInfo extends AxAuxData {
 	var activeIntent : GameActionIntent = DoNothingIntent
 	var defaultIntent : GameActionIntent = DoNothingIntent
 	var fallbackIntents : List[GameActionIntent] = List(MoveIntent, SwitchSelectedCharacterIntent)
-
-	def maxPossibleMovePoints = actionPoints.maxValue * moveSpeed
-	def curPossibleMovePoints = movePoints + actionPoints.currentValue * moveSpeed
 }
 
 @GenerateCompanion

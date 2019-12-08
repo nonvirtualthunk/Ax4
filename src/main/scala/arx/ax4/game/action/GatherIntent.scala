@@ -16,7 +16,7 @@ object GatherIntent extends GameActionIntent {
 
 			var resourceSelector = ResourceGatherSelector(Nil)
 
-			override def nextSelection(resultsSoFar: SelectionResultBuilder): Option[Selector[_]] = {
+			override def nextSelection(resultsSoFar: SelectionResult): Option[Selector[_]] = {
 				if (!resultsSoFar.fullySatisfied(hexSelector)) {
 					Some(hexSelector)
 				} else if (resourceSelector.resources.isEmpty || !resultsSoFar.fullySatisfied(resourceSelector)) {
@@ -37,6 +37,8 @@ object GatherIntent extends GameActionIntent {
 			}
 		})
 	}
+
+	override def displayName(implicit view: WorldView): String = "Gather"
 }
 
 

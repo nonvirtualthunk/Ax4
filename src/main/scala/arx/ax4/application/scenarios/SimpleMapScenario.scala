@@ -2,7 +2,7 @@ package arx.ax4.application.scenarios
 
 import arx.Prelude
 import arx.application.Noto
-import arx.ax4.control.components.{TacticalUIActionControl, TacticalUIControl}
+import arx.ax4.control.components.{CardControl, TacticalUIActionControl, TacticalUIControl}
 import arx.ax4.game.action.{AttackIntent, MoveIntent}
 import arx.ax4.game.components.TurnComponent
 import arx.ax4.game.entities.Companions.{CharacterInfo, DeckData, Physical, Tile, TurnData}
@@ -43,6 +43,7 @@ object SimpleMapScenario extends Scenario {
 	import arx.core.introspection.FieldOperations._
 
 	var playerCharacter : Entity = _
+	var player : Entity = _
 
 	override def gameWorld(universe: Universe): World = {
 		val world = new World
@@ -114,7 +115,7 @@ object SimpleMapScenario extends Scenario {
 		}
 		Metrics.checkpoint("SimpleMap hexes created")
 
-		val player = world.createEntity()
+		player = world.createEntity()
 		world.attachDataWith[FactionData](player, fd => {
 			fd.playerControlled = true
 			fd.color = RGBA(0.8f,0.1f,0.2f,1.0f)
@@ -177,9 +178,15 @@ object SimpleMapScenario extends Scenario {
 
 		world.attachWorldData(new RandomizationWorldData)
 
-		world.addEvent(TurnStartedEvent(player, 0))
-
 		world
+	}
+
+
+	/**
+	 * Called after all other setup has completed
+	 */
+	override def start(world: World): Unit = {
+		world.addEvent(TurnStartedEvent(player, 0))
 	}
 
 	def createCreature(world : World, faction : Entity) = {
@@ -228,6 +235,7 @@ object SimpleMapScenario extends Scenario {
 		controlEngine.register[QueryControlComponent]
 		controlEngine.register[TacticalUIControl]
 		controlEngine.register[TacticalUIActionControl]
+		controlEngine.register[CardControl]
 	}
 
 	override def serialGraphicsEngine(universe: Universe): Boolean = true

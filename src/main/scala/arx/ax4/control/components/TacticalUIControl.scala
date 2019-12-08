@@ -72,13 +72,13 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 		tuid.mainSectionWidget = mainSection
 
 
-		val actionSelBar = mainSection.createChild("widgets/ActionSelectionWidgets.sml", "ActionSelectionButtonBar")
-		actionSelBar.showing = Moddable(() => tuid.selectedCharacter.isDefined)
-		for (w <- actionSelBar.descendantsWithIdentifier("SpecialAttackButton")) {
-			w.consumeEvent {
-				case MouseReleaseEvent(_,_,_) => tuid.toggleUIMode(ChooseSpecialAttackMode)
-			}
-		}
+//		val actionSelBar = mainSection.createChild("widgets/ActionSelectionWidgets.sml", "ActionSelectionButtonBar")
+//		actionSelBar.showing = Moddable(() => tuid.selectedCharacter.isDefined)
+//		for (w <- actionSelBar.descendantsWithIdentifier("SpecialAttackButton")) {
+//			w.consumeEvent {
+//				case MouseReleaseEvent(_,_,_) => tuid.toggleUIMode(ChooseSpecialAttackMode)
+//			}
+//		}
 
 		tuid.specialAttacksList = mainSection.createChild("widgets/ActionSelectionWidgets.sml", "SpecialAttackSelectionList")
 //		specialAttackList.showing = Moddable(() => )
@@ -91,7 +91,7 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 					CharacterLogic.setActiveIntent(selC, AttackIntent(attackDisplayInfo.attackRef))(game)
 			}
 		)
-		tuid.specialAttacksList.showing = Moddable(() => tuid.activeUIMode == TacticalUIMode.ChooseSpecialAttackMode)
+		tuid.specialAttacksList.showing = Moddable(false)//Moddable(() => tuid.activeUIMode == TacticalUIMode.ChooseSpecialAttackMode)
 
 		tuid.inventoryWidget = new InventoryWidget(mainSection)
 		tuid.inventoryWidget.widget.showing = Moddable(() => tuid.activeUIMode == TacticalUIMode.InventoryMode)
@@ -113,6 +113,12 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 				val pressedHex = AxialVec.fromCartesian(unprojected.xy, const.HexSize)
 
 				fireEvent(HexMousePressEvent(button,pressedHex,pos,modifiers))
+			case MouseReleaseEvent(button, pos, modifiers) =>
+				val unprojected = display[PovData].pov.unproject(Vec3f(pos,0.0f), GL.viewport)
+				val const = display[AxDrawingConstants]
+				val pressedHex = AxialVec.fromCartesian(unprojected.xy, const.HexSize)
+
+				fireEvent(HexMouseReleaseEvent(button,pressedHex,pos,modifiers))
 			case MouseMoveEvent(pos, delta, modifiers) =>
 				val unprojected = display[PovData].pov.unproject(Vec3f(pos,0.0f), GL.viewport)
 				val const = display[AxDrawingConstants]
@@ -182,8 +188,7 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 			desktop.bind("selectedCharacter.actions.cur", () => selC[CharacterInfo].actionPoints.currentValue)
 			desktop.bind("selectedCharacter.actions.max", () => selC[CharacterInfo].actionPoints.maxValue)
 
-			desktop.bind("selectedCharacter.move.cur", () => selC[CharacterInfo].curPossibleMovePoints)
-			desktop.bind("selectedCharacter.move.max", () => selC[CharacterInfo].maxPossibleMovePoints)
+			desktop.bind("selectedCharacter.move.cur", () => CharacterLogic.curMovePoints(selC))
 
 			desktop.bind("selectedCharacter.speed", () => selC[CharacterInfo].moveSpeed)
 
@@ -279,4 +284,5 @@ object SimpleAttackDisplayInfo {
 case class SimpleSkillDisplayInfo(name : String, level : Int, icon : TToImage, currentXp : Int, requiredXp : Int)
 
 case class HexMousePressEvent(button : MouseButton, hex : AxialVec, pos : ReadVec2f, modifiers : KeyModifiers) extends UIEvent
+case class HexMouseReleaseEvent(button : MouseButton, hex : AxialVec, pos : ReadVec2f, modifiers : KeyModifiers) extends UIEvent
 case class HexMouseMoveEvent(hex : AxialVec, pos : ReadVec2f, modifiers: KeyModifiers) extends UIEvent

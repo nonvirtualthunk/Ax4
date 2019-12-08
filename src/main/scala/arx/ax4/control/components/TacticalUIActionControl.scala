@@ -1,8 +1,9 @@
 package arx.ax4.control.components
+import arx.Prelude
 import arx.application.Noto
-import arx.ax4.game.action.{GameActionIntent, GameActionIntentInstance, GatherSelectionProspect, MoveIntent, ResourceGatherSelector, SelectionResultBuilder, Selector, SwitchSelectedCharacterAction}
-import arx.ax4.game.entities.Companions.CharacterInfo
-import arx.ax4.game.entities.{AllegianceData, CharacterInfo, GatherMethod, ResourceSourceData, Tiles, TurnData}
+import arx.ax4.game.action.{GameActionIntent, GameActionIntentInstance, GatherSelectionProspect, MoveIntent, ResourceGatherSelector, SelectionResult, Selector, SwitchSelectedCharacterAction}
+import arx.ax4.game.entities.Companions.{CharacterInfo, DeckData}
+import arx.ax4.game.entities.{AllegianceData, CardData, CharacterInfo, DeckData, GatherMethod, ResourceSourceData, Tiles, TurnData}
 import arx.ax4.game.event.ActiveIntentChanged
 import arx.ax4.game.logic.{ActionLogic, CharacterLogic, GatherLogic, IdentityLogic}
 import arx.ax4.graphics.components.GameActionIntentOverlay
@@ -11,16 +12,19 @@ import arx.core.CachedKeyedValue
 import arx.core.datastructures.Watcher
 import arx.core.introspection.ReflectionAssistant
 import arx.core.units.UnitOfTime
+import arx.core.vec.{ReadVec2i, Vec2f, Vec2i}
 import arx.core.vec.coordinates.AxialVec3
+import arx.engine.EngineCore
 import arx.engine.control.components.windowing.Widget
-import arx.engine.control.components.windowing.widgets.ListItemSelected
+import arx.engine.control.components.windowing.widgets.{BottomLeft, ListItemSelected, PositionExpression, TopLeft}
 import arx.engine.control.data.WindowingControlData
-import arx.engine.control.event.KeyReleaseEvent
+import arx.engine.control.event.{KeyReleaseEvent, Mouse, MousePressEvent, MouseReleaseEvent}
 import arx.engine.data.Moddable
 import arx.engine.entity.Entity
 import arx.engine.world.{GameEventClock, HypotheticalWorldView, World, WorldView}
 import arx.graphics.helpers.{Color, RGBA}
-import arx.graphics.{Image, ScaledImage}
+import arx.graphics.{GL, Image, ScaledImage}
+import arx.resource.ResourceManager
 import org.lwjgl.glfw.GLFW
 
 class TacticalUIActionControl(mainControl : TacticalUIControl) extends AxControlComponent {
@@ -39,14 +43,15 @@ class TacticalUIActionControl(mainControl : TacticalUIControl) extends AxControl
 	var selectingResource = false
 
 	var selectionWidgets : Map[Selector[_], Widget] = Map()
-	var cardWidget : Map[Entity, Widget] = Map()
+
 
 	override protected def onUpdate(gameView: HypotheticalWorldView, game: World, display: World, dt: UnitOfTime): Unit = {
 		if (watcher.hasChanged || gameView.currentTime != game.currentTime) {
 			updateActiveContext(gameView, display)
 			updateConsideredActions(gameView, game, display)
 		}
-		intentOverlays.foreach(_.update(gameView, display, display[TacticalUIData].consideringActionSelectionContext))
+		val tuid = display[TacticalUIData]
+		intentOverlays.foreach(_.update(gameView, display, tuid.consideringActionSelectionContext))
 	}
 
 	override protected def onInitialize(gameView : HypotheticalWorldView, game: World, display: World): Unit = {
@@ -55,9 +60,8 @@ class TacticalUIActionControl(mainControl : TacticalUIControl) extends AxControl
 		val tuid = display[TacticalUIData]
 		watcher = Watcher((tuid.mousedOverHex, tuid.mousedOverHexBiasDir, gameView.currentTime, tuid.actionSelectionContext))
 
-
 		onControlEvent {
-			case HexMousePressEvent(button, hex, pos, modifiers) =>
+			case HexMouseReleaseEvent(button, hex, pos, modifiers) =>
 				val tuid = display[TacticalUIData]
 				for (sel <- tuid.consideringCharacterSwitch) {
 					mainControl.selectCharacter(game, display, sel)
@@ -71,7 +75,7 @@ class TacticalUIActionControl(mainControl : TacticalUIControl) extends AxControl
 					case Some(ActionSelectionContext(intent, selectionResults)) =>
 						(selectionResults.results.keys ++ intent.nextSelection(selectionResults).toList).foreach(sel => onPendingSelectionPopped(gameView, game, display, sel))
 
-						tuid.actionSelectionContext = Some(ActionSelectionContext(intent, SelectionResultBuilder()))
+						tuid.actionSelectionContext = Some(ActionSelectionContext(intent, SelectionResult()))
 						tuid.consideringActionSelectionContext = None
 
 						for (selC <- tuid.selectedCharacter) {
@@ -89,7 +93,7 @@ class TacticalUIActionControl(mainControl : TacticalUIControl) extends AxControl
 		val ActionSelectionContext(intent, selectionResults) = asc
 		intent.nextSelection(selectionResults) match {
 			case None =>
-				for (action <- intent.createAction(selectionResults.build())) {
+				for (action <- intent.createAction(selectionResults)) {
 					action match {
 						case SwitchSelectedCharacterAction(from, to) => tuid.selectedCharacter = Some(from)
 						case _ => ActionLogic.performAction(action)(game)
@@ -174,7 +178,7 @@ class TacticalUIActionControl(mainControl : TacticalUIControl) extends AxControl
 				// selection
 				if (!lastSelectionContextKey.contains(selKey) || tuid.actionSelectionContext.isEmpty) {
 					tuid.actionSelectionContext = activeIntent.instantiate(gameView, selC) match {
-						case Left(intentInstance) => Some(ActionSelectionContext(intentInstance, SelectionResultBuilder()))
+						case Left(intentInstance) => Some(ActionSelectionContext(intentInstance, SelectionResult()))
 						case Right(error) =>
 							Noto.error(s"Could not instantiate selection context: $error")
 							None
@@ -239,7 +243,8 @@ object TacticalUIActionControl {
 
 }
 
-case class ActionSelectionContext(intent : GameActionIntentInstance, selectionResults: SelectionResultBuilder) {
+case class ActionSelectionContext(intent : GameActionIntentInstance, selectionResults: SelectionResult) {
+
 	def fullySatisfied = intent.nextSelection(selectionResults).isEmpty
 	def completeAction = if (fullySatisfied) {
 		Some(intent.createAction(selectionResults.build()))
@@ -250,3 +255,16 @@ case class ActionSelectionContext(intent : GameActionIntentInstance, selectionRe
 
 
 case class ResourceSelectionInfo(prospect : GatherSelectionProspect, method : GatherMethod, resourceName : String, resourceIcon : ScaledImage, methodName : String, amount : Int, remainingAmount : Int, fontColor : Color, iconColor : Color, disabledReason : String)
+
+case class CardInfo(name : String)
+object CardInfo {
+	def apply(entity : Entity)(implicit view : WorldView) : CardInfo = {
+		val CD = entity[CardData]
+
+		CardInfo(CD.action match {
+			case Some(value) => value.displayName
+			case None => "No Card Name"
+		})
+	}
+}
+

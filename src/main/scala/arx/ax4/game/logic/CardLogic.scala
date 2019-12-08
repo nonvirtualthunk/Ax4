@@ -59,7 +59,7 @@ object CardLogic {
 				world.modify(entity, DeckData.hand.append(drawn))
 			}
 		} else {
-			Noto.warn("no cards in deck, not much to do here")
+			Noto.warn("no cards in deck, cannot draw")
 		}
 	}
 
@@ -67,7 +67,7 @@ object CardLogic {
 		discardCards(entity, world.view.data[DeckData](entity).hand, false)
 	}
 
-	def discardCards(entity : Entity, cards : Vector[Entity], explicit : Boolean)(implicit world : World): Unit = {
+	def discardCards(entity : Entity, cards : Seq[Entity], explicit : Boolean)(implicit world : World): Unit = {
 		implicit val view = world.view
 
 		var remaining = cards
@@ -75,6 +75,7 @@ object CardLogic {
 			val card = remaining.head
 			world.startEvent(CardDiscarded(entity, card, explicitDiscard = explicit))
 			world.modify(entity, DeckData.discardPile append card)
+			world.modify(entity, DeckData.hand remove card)
 			world.endEvent(CardDiscarded(entity, card, explicitDiscard = explicit))
 			remaining = remaining.tail
 		}
