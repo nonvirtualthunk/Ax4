@@ -85,7 +85,7 @@ object MovementLogic {
 			for ((from,to) <- path.steps.map(p => p.node).sliding2) {
 				moveCostTo(character, to) match {
 					case Some(moveCost) if CharacterLogic.curMovePoints(character) >= moveCost =>
-						world.eventStmt(EntityMoved(character, from, to))
+						world.startEvent(EntityMoved(character, from, to))
 						val positionChangedSuccessfully = setCharacterPosition(character, to)
 						if (!positionChangedSuccessfully) {
 							return false

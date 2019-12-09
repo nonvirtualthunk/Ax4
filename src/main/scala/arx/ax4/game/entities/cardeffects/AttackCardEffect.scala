@@ -1,11 +1,10 @@
 package arx.ax4.game.entities.cardeffects
 
 import arx.application.Noto
-import arx.ax4.game.action.{AttackAction, BiasedHexSelector, EntitySelector, GameAction, GameActionIntentInstance, MoveAction, SelectionResult, Selector}
-import arx.ax4.game.entities.Companions.{Physical, Tile}
-import arx.ax4.game.entities.{AttackData, AttackReference, CardEffect, EntityTarget, HexTargetPattern, Tiles}
-import arx.ax4.game.logic.{AllegianceLogic, AxPathfinder, CharacterLogic, CombatLogic, MovementLogic}
-import arx.core.vec.coordinates.AxialVec3
+import arx.ax4.game.action.{BiasedHexSelector, EntitySelector, SelectionResult, Selector}
+import arx.ax4.game.entities.Companions.Tile
+import arx.ax4.game.entities._
+import arx.ax4.game.logic.{AllegianceLogic, CombatLogic}
 import arx.engine.entity.Entity
 import arx.engine.world.{World, WorldView}
 

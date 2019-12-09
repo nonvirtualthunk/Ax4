@@ -1,19 +1,10 @@
 package arx.ax4.game.entities
 
-import arx.application.Noto
-import arx.ax4.game.action.{DoNothingIntent, EntitySelector, GameActionIntent, GameActionIntentInstance, HexSelector, ResourceGatherSelector, SelectionResult, Selector}
-import arx.ax4.game.entities.Companions.{DeckData, Physical}
-import arx.ax4.game.event.MovePointsGained
-import arx.ax4.game.logic.{CardLogic, CharacterLogic, GatherLogic}
-import arx.core.introspection.Field
-import arx.core.introspection.FieldOperations.{Add, Sub}
+import arx.ax4.game.action.{CompoundSelectable, EntitySelector, Selectable}
+import arx.ax4.game.entities.cardeffects.CardEffect
 import arx.core.macros.GenerateCompanion
-import arx.core.vec.coordinates.{AxialVec3, HexRingIterator}
-import arx.engine.data.TAuxData
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
-import arx.engine.world.{FieldOperationModifier, World, WorldView}
-
-import scala.reflect.ClassTag
+import arx.engine.world.WorldView
 
 @GenerateCompanion
 class DeckData extends AxAuxData {
@@ -24,12 +15,12 @@ class DeckData extends AxAuxData {
 	var drawCount : Int = 5
 }
 
-
 @GenerateCompanion
 class CardData extends AxAuxData {
-	var action : Option[GameActionIntent] = None
-	var costs : Vector[Cost] = Vector()
+	var costs : Vector[CardEffect] = Vector()
+	var effects : Vector[CardEffect] = Vector()
 	var cardType : Taxon = CardTypes.GenericCardType
+	var name : String = "Card"
 }
 
 object CardTypes {
@@ -39,22 +30,6 @@ object CardTypes {
 	val SkillCard = Taxonomy("SkillCard")
 }
 
-
-trait Cost {
-	def selectors : List[Selector[_]] = Nil
-	def pay(world : World, entity : Entity, selectionResult: SelectionResult)
-	def canPay(world : WorldView, entity: Entity) : Boolean
-}
-
-case class ActionPointCost(ap : Int) extends Cost {
-	override def pay(world : World, entity: Entity, selectionResult: SelectionResult): Unit = {
-		CharacterLogic.useActionPoints(entity, ap)(world)
-	}
-
-	override def canPay(world: WorldView, entity: Entity): Boolean = {
-		CharacterLogic.curActionPoints(entity)(world) >= ap
-	}
-}
 
 object CardSelector {
 	def apply(criteria : CardData => Boolean, description : String) : EntitySelector = {
@@ -67,28 +42,6 @@ object CardSelector {
 	}
 }
 
-case class DiscardCardsCost(numCards : Int, random : Boolean) extends Cost {
-	val cardSelector = CardSelector(_ => true, "Card to discard").withAmount(numCards)
-	override def selectors: List[Selector[_]] = List(cardSelector)
-
-	override def pay(world: World, entity: Entity, selectionResult: SelectionResult): Unit = {
-		world.dataOpt[DeckData](entity) match {
-			case Some(_) =>
-				val cards = selectionResult(cardSelector)
-				CardLogic.discardCards(entity, cards, explicit = true)(world)
-			case None =>
-				Noto.error("No deck to discard from")
-		}
-	}
-
-	override def canPay(world: WorldView, entity: Entity): Boolean = {
-		world.dataOpt[DeckData](entity) match {
-			case Some(deck) => deck.hand.size >= numCards
-			case None => false
-		}
-	}
-}
-
 trait CardTrigger
 object CardTrigger {
 	case object OnDraw extends CardTrigger
@@ -96,15 +49,12 @@ object CardTrigger {
 	case object OnDiscard extends CardTrigger
 }
 
-//trait CardEffect {
-//	def instantiate(entity: Entity): Either[CardEffectInst, String]
-//
-//	def displayName(implicit view : WorldView) : String
-//}
-//
-//trait CardEffectInst {
-//	def nextSelector(world : WorldView, entity : Entity, results : SelectionResultBuilder) : Option[Selector[_]]
-//	def applyEffect(world : World, entity : Entity, selectionResult: SelectionResult)
-//	def canApplyEffect(world : WorldView, entity: Entity) : Boolean
-//}
-
+case class CardPlay(entity : Entity, card : Entity, view : WorldView) extends CompoundSelectable {
+	val subParts = {
+		val CD = view.data[CardData](card)
+		CD.costs.map(_.instantiate(view, entity)) ++ CD.effects.map(_.instantiate(view, entity))
+	}
+	override def subSelectables(view : WorldView): Traversable[Selectable] = {
+		subParts
+	}
+}

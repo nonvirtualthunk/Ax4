@@ -1,5 +1,9 @@
+WeaponBase {
+  equipable : true
+}
+
 Weapons {
-  Longspear : {
+  Longspear : ${WeaponBase} {
     durability : 25
 
     weaponSkills : [spearSkill]

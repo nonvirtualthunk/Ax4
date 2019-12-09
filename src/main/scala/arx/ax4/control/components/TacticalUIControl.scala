@@ -159,20 +159,22 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 		implicit val view = game.view
 		val tuid = display[TacticalUIData]
 		tuid.selectedCharacter = Some(selC)
-		if (selC.data[CharacterInfo].activeIntent == DoNothingIntent) {
-			val availableAttacks = CombatLogic.availableAttacks(game.view, selC, includeBaseAttacks = true, includeSpecialAttacks = false)
-			val newIntent = availableAttacks.find(a => a.attackKey == "primary")
-   			.orElse(availableAttacks.headOption) match {
-				case Some(attackRef) => AttackIntent(attackRef)
-				case None => MoveIntent
-			}
-			println(s"New Intent: $newIntent")
 
-			game.startEvent(ActiveIntentChanged(selC, newIntent))
-			game.modify(selC, CharacterInfo.activeIntent -> newIntent)
-			game.modify(selC, CharacterInfo.defaultIntent -> newIntent)
-			game.endEvent(ActiveIntentChanged(selC, newIntent))
-		}
+
+//		if (selC.data[CharacterInfo].activeIntent == DoNothingIntent) {
+//			val availableAttacks = CombatLogic.availableAttacks(game.view, selC, includeBaseAttacks = true, includeSpecialAttacks = false)
+//			val newIntent = availableAttacks.find(a => a.attackKey == "primary")
+//   			.orElse(availableAttacks.headOption) match {
+//				case Some(attackRef) => AttackIntent(attackRef)
+//				case None => MoveIntent
+//			}
+//			println(s"New Intent: $newIntent")
+//
+//			game.startEvent(ActiveIntentChanged(selC, newIntent))
+//			game.modify(selC, CharacterInfo.activeIntent -> newIntent)
+//			game.modify(selC, CharacterInfo.defaultIntent -> newIntent)
+//			game.endEvent(ActiveIntentChanged(selC, newIntent))
+//		}
 	}
 
 	def updateBindings(implicit game : WorldView, display : World, character : Option[Entity]): Unit = {

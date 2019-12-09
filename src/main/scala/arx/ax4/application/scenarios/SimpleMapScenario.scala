@@ -2,7 +2,7 @@ package arx.ax4.application.scenarios
 
 import arx.Prelude
 import arx.application.Noto
-import arx.ax4.control.components.{CardControl, TacticalUIActionControl, TacticalUIControl}
+import arx.ax4.control.components.{CardControl, SelectionControl, TacticalUIActionControl, TacticalUIControl}
 import arx.ax4.game.action.{AttackIntent, MoveIntent}
 import arx.ax4.game.components.TurnComponent
 import arx.ax4.game.entities.Companions.{CharacterInfo, DeckData, Physical, Tile, TurnData}
@@ -34,6 +34,7 @@ import arx.graphics.helpers.RGBA
 import arx.graphics.pov.{PixelCamera, TopDownCamera}
 import org.lwjgl.glfw.GLFW
 import arx.ax4.game.entities.UnitOfGameTimeFloat._
+import arx.ax4.game.entities.cardeffects.{AttackCardEffect, GainMove, PayActionPoints}
 import arx.ax4.game.event.TurnEvents.TurnStartedEvent
 import arx.core.gen.SimplexNoise
 
@@ -148,8 +149,10 @@ object SimpleMapScenario extends Scenario {
 			val moveCards = (0 until 3).map(_ => {
 				val moveCard = world.createEntity()
 				world.attachDataWith[CardData](moveCard, cd => {
-					cd.action = Some(MoveIntent)
+					cd.costs = Vector(PayActionPoints(1))
+					cd.effects = Vector(GainMove(3))
 					cd.cardType = CardTypes.MoveCard
+					cd.name = "Move"
 				})
 				moveCard
 			})
@@ -157,8 +160,12 @@ object SimpleMapScenario extends Scenario {
 			val attackCards = (0 until 3).map(_ => {
 				val attackCard = world.createEntity()
 				world.attachDataWith[CardData](attackCard, cd => {
-					cd.action = Some(AttackIntent(AttackReference(longspear, "primary", None, None)))
+					val attackRef = AttackReference(longspear, "primary", None, None)
+					val attackData = attackRef.resolve()(world.view)
+					cd.costs = Vector(PayActionPoints(attackData.get.actionCost))
+					cd.effects = Vector(AttackCardEffect(attackRef))
 					cd.cardType = CardTypes.AttackCard
+					cd.name = attackData.get.name.capitalize
 				})
 				attackCard
 			})
@@ -234,8 +241,9 @@ object SimpleMapScenario extends Scenario {
 		controlEngine.register[WindowingControlComponent]
 		controlEngine.register[QueryControlComponent]
 		controlEngine.register[TacticalUIControl]
-		controlEngine.register[TacticalUIActionControl]
+//		controlEngine.register[TacticalUIActionControl]
 		controlEngine.register[CardControl]
+		controlEngine.register[SelectionControl]
 	}
 
 	override def serialGraphicsEngine(universe: Universe): Boolean = true

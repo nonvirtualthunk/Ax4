@@ -20,7 +20,7 @@ object GatherIntent extends GameActionIntent {
 				if (!resultsSoFar.fullySatisfied(hexSelector)) {
 					Some(hexSelector)
 				} else if (resourceSelector.resources.isEmpty || !resultsSoFar.fullySatisfied(resourceSelector)) {
-					val tileEnt = Tiles.tileAt(resultsSoFar.build().single(hexSelector).vec)
+					val tileEnt = Tiles.tileAt(resultsSoFar.single(hexSelector).vec)
 					val prospects = GatherLogic.gatherProspectsFor(entity, tileEnt)
 					resourceSelector = ResourceGatherSelector(prospects)
 					Some(resourceSelector)

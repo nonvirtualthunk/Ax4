@@ -3,12 +3,13 @@ package arx.ax4.game.action
 import arx.ai.search.Path
 import arx.application.Noto
 import arx.ax4.game.entities.Companions.{CharacterInfo, Physical}
+import arx.ax4.game.entities.cardeffects.CardEffect
 import arx.ax4.game.entities.{AllegianceData, AttackProspect, AttackReference, CharacterInfo, EntityTarget, FactionData, HexTargetPattern, Physical, TargetPattern, Tile, Tiles}
 import arx.ax4.game.event.AttackEventInfo
 import arx.ax4.game.logic.{AllegianceLogic, AxPathfinder, CharacterLogic, CombatLogic, MovementLogic}
 import arx.core.vec.coordinates.{AxialVec, AxialVec3, HexDirection}
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
-import arx.engine.world.WorldView
+import arx.engine.world.{World, WorldView}
 
 abstract class GameAction {
 	def identity: Taxon
@@ -195,6 +196,31 @@ case class AttackIntent(attackRef: AttackReference) extends GameActionIntent {
 	}
 }
 
+case object MoveCharacter extends CardEffect {
+	def pathSelector(entity : Entity) = PathSelector(entity, TargetPattern.Point, (view,h) => {
+		view.hasData[Tile](Tiles.tileAt(h)) && // it is a tile
+			! view.data[Tile](Tiles.tileAt(h)).entities.exists(e => view.dataOpt[Physical](e).exists(p => p.occupiesHex)) // the tile is not occupied
+	}, (view,p) => {
+		p.steps.size >= 2 && MovementLogic.movePointsRequiredForPath(entity, p)(view) <= CharacterLogic.curMovePoints(entity)(view)
+	})
+
+	override def nextSelector(world: WorldView, entity: Entity, results: SelectionResult): Option[Selector[_]] = {
+		val pathSel = pathSelector(entity)
+		if (results.fullySatisfied(pathSel)) {
+			None
+		} else {
+			Some(pathSel)
+		}
+	}
+
+	override def applyEffect(world: World, entity: Entity, selectionResult: SelectionResult): Unit = {
+		val path = selectionResult.single(pathSelector(entity))
+		MovementLogic.moveCharacterOnPath(entity, path)(world)
+	}
+
+	override def canApplyEffect(world: WorldView, entity: Entity): Boolean = true
+}
+
 case object MoveIntent extends GameActionIntent {
 	override def instantiate(implicit view: WorldView, entity: Entity): Either[GameActionIntentInstance, String] = Left(
 		new GameActionIntentInstance {
@@ -261,7 +287,7 @@ case class SelectionResult(results : Map[Selector[_], List[Any]] = Map(),
 	def isEmpty = results.isEmpty
 
 	def apply[T](sel: Selector[T]): List[T] = {
-		results(sel).asInstanceOf[List[T]]
+		results.getOrElse(sel, Nil).asInstanceOf[List[T]]
 	}
 	def apply[A,B](sel: Either[Selector[A], Selector[B]]): Either[List[A], List[B]] = {
 		sel match {
@@ -275,6 +301,19 @@ case class SelectionResult(results : Map[Selector[_], List[Any]] = Map(),
 
 trait Selectable {
 	def nextSelector(world : WorldView, entity : Entity, results : SelectionResult) : Option[Selector[_]]
+}
+trait CompoundSelectable extends Selectable {
+	def subSelectables(world : WorldView) : Traversable[Selectable]
+
+	override def nextSelector(world: WorldView, entity: Entity, results: SelectionResult): Option[Selector[_]] = {
+		for (sel <- subSelectables(world)) {
+			sel.nextSelector(world, entity, results) match {
+				case s @ Some(_) => return s
+				case None => // continue
+			}
+		}
+		None
+	}
 }
 
 trait Selector[MatchedType] {
@@ -297,14 +336,6 @@ case class EntitySelector(predicate: (WorldView, Entity) => Boolean, description
 	}
 }
 
-case object SelfSelector extends Selector[Entity] {
-	override def satisfiedBy(view: WorldView, a: Any): Option[(Entity, Int)] = a match {
-		case e : Entity => Some(e -> 1)
-		case _ => None
-	}
-	override def description: String = "Self"
-}
-
 case class HexSelector(pattern: TargetPattern, hexPredicate: (WorldView, AxialVec3) => Boolean) extends Selector[AxialVec3] {
 	override def satisfiedBy(view: WorldView, a: Any): Option[(AxialVec3, Int)] = a match {
 		case v3: AxialVec3 if hexPredicate(view, v3) => Some(v3 -> 1)
@@ -317,6 +348,40 @@ case class HexSelector(pattern: TargetPattern, hexPredicate: (WorldView, AxialVe
 	}
 
 	override def description: String = "hex"
+}
+
+/**
+ * Selecting a destination and a path to travel to it
+ */
+case class PathSelector(entity : Entity, pattern : TargetPattern, hexPredicate : (WorldView, AxialVec3) => Boolean, pathPredicate : (WorldView, Path[AxialVec3]) => Boolean) extends Selector[Path[AxialVec3]] {
+	override def satisfiedBy(view: WorldView, a: Any): Option[(Path[AxialVec3], Int)] = {
+		val target : Option[AxialVec3] = a match {
+			case v3: AxialVec3 => Some(v3)
+			case v2: AxialVec => Some(AxialVec3(v2, 0))
+			case e: Entity => view.dataOpt[Tile](e) match {
+				case Some(tile) => Some(tile.position)
+				case None => None
+			}
+			case _ => None
+		}
+
+		target.filter(v3 => hexPredicate(view, v3)) match {
+			case Some(validTarget) => AxPathfinder.findPath(entity, entity(Physical)(view).position, validTarget)(view) match {
+				case Some(validPath) if pathPredicate(view, validPath) => Some(validPath -> 1)
+				case _ => None
+			}
+			case _ => None
+		}
+	}
+
+	override def description: String = "path to hex"
+
+	override def hashCode(): Int = (entity, pattern).hashCode()
+
+	override def equals(obj: Any): Boolean = obj match {
+		case PathSelector(otherEnt, otherPattern, _, _) => entity == otherEnt && pattern == otherPattern
+		case _ => false
+	}
 }
 
 

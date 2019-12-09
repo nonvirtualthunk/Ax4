@@ -1,5 +1,8 @@
 package arx.ax4.control.components
+import arx.ax4.game.action.SelectionResult
+import arx.ax4.game.entities.{CardData, CardPlay}
 import arx.ax4.game.entities.Companions.DeckData
+import arx.ax4.game.logic.CardLogic
 import arx.ax4.graphics.data.TacticalUIData
 import arx.core.units.UnitOfTime
 import arx.core.vec.{ReadVec2i, Vec2f, Vec2i}
@@ -10,11 +13,12 @@ import arx.engine.entity.Entity
 import arx.engine.world.{HypotheticalWorldView, World}
 import arx.resource.ResourceManager
 
-class CardControl extends AxControlComponent {
+class CardControl(selectionControl : SelectionControl) extends AxControlComponent {
 
 	var cardWidgets : Map[Entity, Widget] = Map()
 	var heldCard : Option[Entity] = None
 	var grabOffset : ReadVec2i = Vec2i.Zero
+	var useCardOnDrop = false
 
 
 	override protected def onUpdate(gameView: HypotheticalWorldView, game: World, display: World, dt: UnitOfTime): Unit = {
@@ -37,7 +41,9 @@ class CardControl extends AxControlComponent {
 						case MousePressEvent(button, pos, modifiers) =>
 							heldCard = Some(card)
 							grabOffset = cardWidget.windowingSystem.currentWindowingMousePosition - cardWidget.drawing.absolutePosition.xy
-						case MouseReleaseEvent(button, pos, modifiers) => heldCard = None
+						case MouseReleaseEvent(button, pos, modifiers) =>
+							cardDropped(game, display)
+							heldCard = None
 					}
 
 					cardWidgets += card -> cardWidget
@@ -52,7 +58,7 @@ class CardControl extends AxControlComponent {
 				for ((card, widget) <- cardWidgets) {
 					val index = hand.indexOf(card)
 
-					widget.z = if (heldCard.contains(card) || (heldCard.isEmpty && widget.isUnderCursor)) {
+					widget.z = if (heldCard.contains(card) || (heldCard.isEmpty && widget.isUnderCursor && Mouse.isInWindow)) {
 						100
 					} else {
 						index
@@ -66,7 +72,7 @@ class CardControl extends AxControlComponent {
 							}
 						case None =>
 							if (widget.isUnderCursor) {
-								widget.parent.drawing.absolutePosition.y + widget.parent.drawing.effectiveDimensions.y - widget.drawing.effectiveDimensions.y
+								widget.parent.drawing.absolutePosition.y + widget.parent.drawing.effectiveDimensions.y - widget.drawing.effectiveDimensions.y + 10
 							} else {
 								widget.parent.drawing.absolutePosition.y + widget.parent.drawing.effectiveDimensions.y - 200
 							}
@@ -111,16 +117,49 @@ class CardControl extends AxControlComponent {
 					widget.x = PositionExpression.Absolute(newX, TopLeft)
 					widget.y = PositionExpression.Absolute(newY, TopLeft)
 					widget.drawing.backgroundImage = if (heldCard.contains(card) && curY < (widget.parent.drawing.effectiveDimensions.y - 1000)) {
+						useCardOnDrop = true
 						Some(ResourceManager.image("graphics/ui/active_card_border.png"))
 					} else {
+						if (heldCard.contains(card)) {
+							useCardOnDrop = false
+						}
 						Some(ResourceManager.image("graphics/ui/card_border.png"))
 					}
 				}
 			}
 		}
+
+		// TODO: currently this crashes the OS... somehow
+//		if (heldCard.isDefined) {
+//			Mouse.setVisible(false)
+//		} else {
+//			Mouse.setVisible(true)
+//		}
 	}
 
-	override protected def onInitialize(view: HypotheticalWorldView, game: World, display: World): Unit = {
+	override protected def onInitialize(hypView: HypotheticalWorldView, game: World, display: World): Unit = {
 		val tuid = display[TacticalUIData]
+		implicit val view = game.view
+
+		onControlEvent {
+			case HexMouseReleaseEvent(_,_,_,_) => cardDropped(game, display)
+		}
+	}
+
+	def cardDropped(game : World, display : World): Unit = {
+		val tuid = display[TacticalUIData]
+		implicit val view = game.view
+
+		if (useCardOnDrop) {
+			for (card <- heldCard ; selC <- tuid.selectedCharacter) {
+				val cardPlay = CardPlay(card)
+				if (cardPlay.nextSelector(view, selC, SelectionResult()).isEmpty) {
+					// no requirements for this card, play it directly
+					CardLogic.playCard(selC, card, SelectionResult())(game)
+				} else {
+					selectionControl.changeSelectionTarget(display, cardPlay, (sc) => CardLogic.playCard(selC, card, sc.selectionResults)(game))
+				}
+			}
+		}
 	}
 }

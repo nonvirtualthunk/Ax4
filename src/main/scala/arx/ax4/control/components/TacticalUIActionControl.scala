@@ -247,7 +247,7 @@ case class ActionSelectionContext(intent : GameActionIntentInstance, selectionRe
 
 	def fullySatisfied = intent.nextSelection(selectionResults).isEmpty
 	def completeAction = if (fullySatisfied) {
-		Some(intent.createAction(selectionResults.build()))
+		Some(intent.createAction(selectionResults))
 	} else {
 		None
 	}
@@ -261,10 +261,7 @@ object CardInfo {
 	def apply(entity : Entity)(implicit view : WorldView) : CardInfo = {
 		val CD = entity[CardData]
 
-		CardInfo(CD.action match {
-			case Some(value) => value.displayName
-			case None => "No Card Name"
-		})
+		CardInfo(CD.name)
 	}
 }
 

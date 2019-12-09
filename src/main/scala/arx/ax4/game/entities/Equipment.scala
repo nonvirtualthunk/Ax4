@@ -13,10 +13,14 @@ import arx.engine.entity.{Entity, Taxon, Taxonomy}
 class Item extends AxAuxData {
 	var durability : Reduceable[Sext] = Reduceable(Sext(25))
 
+	var equipable : Boolean = false
 	var equippedTo : Option[Entity] = None
 	var heldIn : Option[Entity] = None
 	var wornOn : Map[Taxon, Int] = Map()
 	var usesBodyParts : Map[Taxon, Int] = Map()
+
+	var inventoryCards : Vector[Entity] = Vector()
+	var equippedCards : Vector[Entity] = Vector()
 }
 
 @GenerateCompanion

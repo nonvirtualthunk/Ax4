@@ -1,8 +1,9 @@
 package arx.ax4.game.logic
 
 import arx.application.Noto
+import arx.ax4.game.action.BiasedAxialVec3
 import arx.ax4.game.entities.Companions.{CharacterInfo, CombatData, Equipment, Physical, Weapon}
-import arx.ax4.game.entities.{AttackData, AttackModifier, AttackProspect, AttackReference, CharacterInfo, CombatData, DamageResult, DamageType, DefenseData, DefenseModifier, Physical, UntargetedAttackProspect, Weapon}
+import arx.ax4.game.entities.{AttackData, AttackModifier, AttackProspect, AttackReference, CharacterInfo, CombatData, DamageResult, DamageType, DefenseData, DefenseModifier, Physical, Tiles, UntargetedAttackProspect, Weapon}
 import arx.ax4.game.event.{AttackEvent, AttackEventInfo, DamageEvent, DeflectEvent, DodgeEvent, StrikeEvent, SubStrike}
 import arx.core.vec.coordinates.AxialVec3
 import arx.engine.entity.Entity
@@ -252,6 +253,13 @@ object CombatLogic {
 		}
 
 
+	}
+
+	def targetedEntities(targets : Either[Seq[Entity], Seq[BiasedAxialVec3]])(implicit view : WorldView) : Seq[Entity] = {
+		targets match {
+			case Left(value) => value
+			case Right(value) => value.flatMap(h => Tiles.entitiesOnTile(h.vec))
+		}
 	}
 
 }

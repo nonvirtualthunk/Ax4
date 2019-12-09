@@ -1,22 +1,16 @@
 package arx.ax4.graphics.components
 import arx.Prelude
-import arx.ax4.control.components.ActionSelectionContext
-import arx.ax4.game.action.GameAction
-import arx.ax4.game.entities.Companions.{AllegianceData, CharacterInfo, FactionData, Physical}
-import arx.ax4.game.entities.{CharacterInfo, Physical}
-import arx.ax4.graphics.components.subcomponents.{TacticalActionPreviewRenderer, TacticalSelectorRenderer}
+import arx.ax4.control.components.{SelectionContext, SelectionData}
+import arx.ax4.game.entities.CharacterInfo
+import arx.ax4.game.entities.Companions.{AllegianceData, CharacterInfo, FactionData}
+import arx.ax4.graphics.components.subcomponents.{TacticalActionPreviewRenderer, TacticalSelectableRenderer, TacticalSelectorRenderer}
 import arx.ax4.graphics.data.{AxDrawingConstants, TacticalUIData}
 import arx.ax4.graphics.logic.EntityDrawLogic
 import arx.core.introspection.ReflectionAssistant
 import arx.core.units.UnitOfTime
-import arx.core.vec.{Vec2f, Vec3f}
-import arx.core.vec.coordinates.{AxialVec, AxialVec3, CartVec, CartVec3}
-import arx.engine.control.data.TControlData
-import arx.engine.data.{TMutableAuxData, TWorldAuxData}
-import arx.engine.entity.Entity
-import arx.engine.graphics.data.TGraphicsData
+import arx.core.vec.coordinates.{CartVec, CartVec3}
 import arx.engine.world.{HypotheticalWorldView, World}
-import arx.graphics.helpers.{Color, RGBA}
+import arx.graphics.helpers.Color
 import arx.resource.ResourceManager
 
 class TacticalUIGraphics(anim : AnimationGraphicsComponent) extends AxCanvasGraphicsComponent {
@@ -24,6 +18,8 @@ class TacticalUIGraphics(anim : AnimationGraphicsComponent) extends AxCanvasGrap
 	lazy val actionRenderers = ReflectionAssistant.instancesOfSubtypesOf[TacticalActionPreviewRenderer]
 	lazy val selectorRenderers = ReflectionAssistant.instancesOfSubtypesOf[TacticalSelectorRenderer]
 	lazy val intentOverlays = ReflectionAssistant.instancesOfSubtypesOf[GameActionIntentOverlay]
+
+	lazy val selectableRenderers = ReflectionAssistant.instancesOfSubtypesOf[TacticalSelectableRenderer]
 
 	override protected def onInitialize(game: World, display: World): Unit = {
 
@@ -39,6 +35,7 @@ class TacticalUIGraphics(anim : AnimationGraphicsComponent) extends AxCanvasGrap
 		val tuid = display[TacticalUIData]
 		import tuid._
 		val const = display[AxDrawingConstants]
+		val sd = display[SelectionData]
 
 		val selImg = ResourceManager.image("graphics/ui/selection_arrow.png")
 		val selScale = 4//(const.HexSize / selImg.width)
@@ -70,22 +67,17 @@ class TacticalUIGraphics(anim : AnimationGraphicsComponent) extends AxCanvasGrap
 			}
 
 
-			consideringActionSelectionContext match {
-				case Some(ActionSelectionContext(intent, selectionResults)) =>
-					if (!intent.hasRemainingSelections(selectionResults)) {
-						for (action <- intent.createAction(selectionResults.build()) ; renderer <- actionRenderers) {
-							renderer.previewAction(game, display, canvas).lift.apply(action)
-						}
-					} else {
-						for ((selector, values) <- selectionResults.results ; selRenderer <- selectorRenderers) {
-							selRenderer.renderSelection(game, display, canvas, selector, values)
-						}
+			sd.consideredContext match {
+				case Some(SelectionContext(entity, selectable, selectionResults, _)) =>
+					for (renderer <- selectableRenderers) {
+						renderer.renderSelectable(view, display, entity, canvas, selectable, selectionResults)
+					}
+
+					for ((selector, values) <- selectionResults.results; selRenderer <- selectorRenderers) {
+						selRenderer.renderSelection(game, display, canvas, selector, values)
 					}
 				case None => // do nothing
 			}
-
-			intentOverlays.foreach(overlay => overlay.
-				draw(view, display, selC[CharacterInfo].activeIntent, consideringActionSelectionContext, canvas))
 		}
 
 //		canvas.quad(mousedOverHex)

@@ -9,4 +9,6 @@ object CardEvents {
 	case class CardDiscarded(entity : Entity, card : Entity, explicitDiscard : Boolean) extends GameEvent
 
 	case class DeckShuffled(entity : Entity) extends GameEvent
+
+	case class CardPlayed(entity : Entity, card : Entity) extends GameEvent
 }
