@@ -22,14 +22,22 @@ object CharacterLogic {
 		character.dataOpt[CharacterInfo].map(_.movePoints).getOrElse(Sext(0))
 	}
 
+	def curStamina(character : Entity)(implicit view : WorldView) : Int = {
+		character.dataOpt[CharacterInfo].map(_.stamina.currentValue).getOrElse(0)
+	}
+
 	def useActionPoints(character : Entity, ap : Int)(implicit game : World) = {
 		game.modify(character, CharacterInfo.actionPoints reduceBy ap)
 	}
 
-	def gainMovePoints(character : Entity, mp : Int)(implicit game : World) = {
-		game.eventStmt(MovePointsGained(character, mp)) {
-			game.modify(character, CharacterInfo.movePoints + mp)
-		}
+	def useStamina(character : Entity, stamina : Int)(implicit game : World) = {
+		game.modify(character, CharacterInfo.stamina reduceBy stamina)
+	}
+
+	def gainMovePoints(character : Entity, mp : Sext)(implicit game : World) = {
+		game.startEvent(MovePointsGained(character, mp))
+		game.modify(character, CharacterInfo.movePoints + mp)
+		game.endEvent(MovePointsGained(character, mp))
 	}
 
 	def setActiveIntent(entity : Entity, intent : GameActionIntent)(implicit game : World) = {

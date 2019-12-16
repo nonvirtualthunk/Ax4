@@ -140,6 +140,7 @@ Taxonomy {
     AxeSkill : [WeaponSkill, MeleeSkill]
     ShieldSkill : [ArmorSkill, MeleeSkill]
 
+    UnarmedSkill : [WeaponSkill, MeleeSkill]
   }
 
 
@@ -189,6 +190,7 @@ Taxonomy {
   CardTypes {
     AttackCard : CardType
     SkillCard : CardType
+    ItemCard : CardType
     SpellCard : CardType
     ActionCard : CardType
     MoveCard : CardType

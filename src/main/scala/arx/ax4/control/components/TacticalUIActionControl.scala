@@ -255,13 +255,3 @@ case class ActionSelectionContext(intent : GameActionIntentInstance, selectionRe
 
 
 case class ResourceSelectionInfo(prospect : GatherSelectionProspect, method : GatherMethod, resourceName : String, resourceIcon : ScaledImage, methodName : String, amount : Int, remainingAmount : Int, fontColor : Color, iconColor : Color, disabledReason : String)
-
-case class CardInfo(name : String)
-object CardInfo {
-	def apply(entity : Entity)(implicit view : WorldView) : CardInfo = {
-		val CD = entity[CardData]
-
-		CardInfo(CD.name)
-	}
-}
-

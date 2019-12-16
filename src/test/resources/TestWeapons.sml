@@ -1,9 +1,9 @@
 Weapons {
   TestSword {
     durability: 1
-    primaryAttack: "slash"
+    primaryAttack: "primary"
     attacks: {
-      slash: {
+      primary: {
         name: slash
         accuracyBonus: 1
         strikeCount: 2

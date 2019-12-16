@@ -24,8 +24,8 @@ class WeaponLibraryTest extends FunSuite {
 
 		val WD = ent[Weapon]
 		val ID = ent[Item]
-		assert(WD.attacks.keys.toSeq == Seq("slash"))
-		assert(WD.attacks("slash").accuracyBonus == 1)
+		assert(WD.attacks.keys.toSeq == Seq(AttackKey.Primary))
+		assert(WD.attacks(AttackKey.Primary).accuracyBonus == 1)
 		assert(ID.durability.maxValue == Sext(1))
 	}
 }

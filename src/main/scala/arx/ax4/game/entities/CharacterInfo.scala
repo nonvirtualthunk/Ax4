@@ -62,7 +62,7 @@ class CombatData extends AxAuxData {
 	var specialAttacks = Map[AnyRef, SpecialAttack]()
 }
 
-case class AttackReference(weapon : Entity, attackKey : AnyRef, specialSource : Option[Entity], specialKey : AnyRef) {
+case class AttackReference(weapon : Entity, attackKey : AttackKey, specialSource : Option[Entity], specialKey : AnyRef) {
 
 	def resolve()(implicit view : WorldView) : Option[AttackData] = {
 		val baseAttackData = view.data[Weapon](weapon).attacks.get(attackKey)

@@ -4,9 +4,9 @@ import arx.Prelude
 import arx.application.Noto
 import arx.ax4.control.components.{CardControl, SelectionControl, TacticalUIActionControl, TacticalUIControl}
 import arx.ax4.game.action.{AttackIntent, MoveIntent}
-import arx.ax4.game.components.TurnComponent
+import arx.ax4.game.components.{CardCreationComponent, DeckComponent, TurnComponent}
 import arx.ax4.game.entities.Companions.{CharacterInfo, DeckData, Physical, Tile, TurnData}
-import arx.ax4.game.entities.{AllegianceData, AttackReference, AxAuxData, CardData, CardTypes, CharacterInfo, CombatData, DeckData, EntityConditionals, Equipment, FactionData, GatherMethod, Inventory, ItemLibrary, Physical, QualitiesData, ReactionData, Resource, ResourceKey, ResourceOrigin, ResourceSourceData, Terrain, TerrainLibrary, Tile, Tiles, TurnData, Vegetation, VegetationLayer, VegetationLayerType, VegetationLibrary, WeaponLibrary}
+import arx.ax4.game.entities.{AllegianceData, AttackData, AttackKey, AttackReference, AxAuxData, CardData, CardTypes, CharacterInfo, CombatData, DamageElement, DamageType, DeckData, EntityConditionals, Equipment, FactionData, GatherMethod, Inventory, ItemLibrary, Physical, QualitiesData, ReactionData, Resource, ResourceKey, ResourceOrigin, ResourceSourceData, TargetPattern, Terrain, TerrainLibrary, Tile, Tiles, TurnData, Vegetation, VegetationLayer, VegetationLayerType, VegetationLibrary, Weapon, WeaponLibrary}
 import arx.ax4.game.logic.{InventoryLogic, MovementLogic}
 import arx.ax4.graphics.components.{AnimationGraphicsComponent, AnimationGraphicsRenderingComponent, EntityGraphics, TacticalUIGraphics, TileGraphics}
 import arx.ax4.graphics.data.{AxGraphicsData, TacticalUIData}
@@ -19,7 +19,7 @@ import arx.engine.Scenario
 import arx.engine.control.ControlEngine
 import arx.engine.control.components.ControlComponent
 import arx.engine.control.components.windowing.WindowingControlComponent
-import arx.engine.control.event.KeyPressEvent
+import arx.engine.control.event.{KeyPressEvent, Mouse}
 import arx.engine.data.Reduceable
 import arx.engine.entity.Companions.IdentityData
 import arx.engine.entity.{Entity, IdentityData, Taxonomy}
@@ -29,14 +29,16 @@ import arx.engine.graphics.GraphicsEngine
 import arx.engine.graphics.components.windowing.WindowingGraphicsComponent
 import arx.engine.graphics.data.PovData
 import arx.engine.world.{Universe, World, WorldQuery}
-import arx.game.data.RandomizationWorldData
+import arx.game.data.{DicePool, RandomizationWorldData}
 import arx.graphics.helpers.RGBA
 import arx.graphics.pov.{PixelCamera, TopDownCamera}
 import org.lwjgl.glfw.GLFW
 import arx.ax4.game.entities.UnitOfGameTimeFloat._
-import arx.ax4.game.entities.cardeffects.{AttackCardEffect, GainMove, PayActionPoints}
+import arx.ax4.game.entities.cardeffects.{AttackCardEffect, GainMovePoints, PayActionPoints, PayStamina}
+import arx.ax4.game.event.EntityCreated
 import arx.ax4.game.event.TurnEvents.TurnStartedEvent
 import arx.core.gen.SimplexNoise
+import arx.resource.ResourceManager
 
 import scala.io.StdIn
 
@@ -51,8 +53,15 @@ object SimpleMapScenario extends Scenario {
 		world.registerSubtypesOf[AxAuxData]()
 		Metrics.checkpoint("SimpleMap world subtypes registered")
 
+		world.attachWorldData(new RandomizationWorldData)
 
+		world
+	}
 
+	/**
+	 * Called after game engine initialized
+	 */
+	override def setupInitialGameState(world: World): Unit = {
 		var created = 0
 		for (r <- 0 until 8) {
 			for (apos <- HexRingIterator(AxialVec.Zero, r)) {
@@ -131,10 +140,38 @@ object SimpleMapScenario extends Scenario {
 
 		val torbold = createCreature(world, player)
 		MovementLogic.placeCharacterAt(torbold, AxialVec3(1,-1,0))(world)
-//		world.modify(Tiles.tileAt(0,0), Tile.entities + torbold, None)
+		//		world.modify(Tiles.tileAt(0,0), Tile.entities + torbold, None)
 		world.modify(torbold, IdentityData.name -> Some("Torbold"), None)
 
 		playerCharacter = torbold
+
+//		world.attachDataWith[DeckData](torbold, dd => {
+//			val moveCards = (0 until 3).map(_ => {
+//				val moveCard = world.createEntity()
+//				world.attachDataWith[CardData](moveCard, cd => {
+//					cd.costs = Vector(PayActionPoints(1))
+//					cd.effects = Vector(GainMovePoints(3))
+//					cd.cardType = CardTypes.MoveCard
+//					cd.name = "Move"
+//				})
+//				moveCard
+//			})
+//			//
+//			//			val attackCards = (0 until 3).map(_ => {
+//			//				val attackCard = world.createEntity()
+//			//				world.attachDataWith[CardData](attackCard, cd => {
+//			//					val attackRef = AttackReference(longspear, "primary", None, None)
+//			//					val attackData = attackRef.resolve()(world.view)
+//			//					cd.costs = Vector(PayActionPoints(attackData.get.actionCost), PayStamina(attackData.get.staminaCost))
+//			//					cd.effects = Vector(AttackCardEffect(attackRef))
+//			//					cd.cardType = CardTypes.AttackCard
+//			//					cd.name = attackData.get.name.capitalize
+//			//				})
+//			//				attackCard
+//			//			})
+//			//
+//			dd.drawPile = (moveCards).toVector
+//		})
 
 		val longspearArch = WeaponLibrary.withKind(Taxonomy("longspear", "Items.Weapons"))
 		val longspear = longspearArch.createEntity(world)
@@ -142,36 +179,6 @@ object SimpleMapScenario extends Scenario {
 
 		val stamPot = ItemLibrary.withKind(Taxonomy("staminaPotion")).createEntity(world)
 		InventoryLogic.transferItem(stamPot, Some(torbold))(world)
-
-
-
-		world.attachDataWith[DeckData](torbold, dd => {
-			val moveCards = (0 until 3).map(_ => {
-				val moveCard = world.createEntity()
-				world.attachDataWith[CardData](moveCard, cd => {
-					cd.costs = Vector(PayActionPoints(1))
-					cd.effects = Vector(GainMove(3))
-					cd.cardType = CardTypes.MoveCard
-					cd.name = "Move"
-				})
-				moveCard
-			})
-
-			val attackCards = (0 until 3).map(_ => {
-				val attackCard = world.createEntity()
-				world.attachDataWith[CardData](attackCard, cd => {
-					val attackRef = AttackReference(longspear, "primary", None, None)
-					val attackData = attackRef.resolve()(world.view)
-					cd.costs = Vector(PayActionPoints(attackData.get.actionCost))
-					cd.effects = Vector(AttackCardEffect(attackRef))
-					cd.cardType = CardTypes.AttackCard
-					cd.name = attackData.get.name.capitalize
-				})
-				attackCard
-			})
-
-			dd.drawPile = (attackCards ++ moveCards).toVector
-		})
 
 
 		val slime = createCreature(world, enemy)
@@ -183,21 +190,14 @@ object SimpleMapScenario extends Scenario {
 		world.attachWorldData(new TurnData)
 		world.modifyWorld(TurnData.activeFaction -> player, None)
 
-		world.attachWorldData(new RandomizationWorldData)
-
-		world
-	}
-
-
-	/**
-	 * Called after all other setup has completed
-	 */
-	override def start(world: World): Unit = {
 		world.addEvent(TurnStartedEvent(player, 0))
+
+		Mouse.setImage(ResourceManager.image("third-party/shikashiModified/staff1.png"), Vec2i(4,4))
 	}
 
 	def createCreature(world : World, faction : Entity) = {
 		val creature = world.createEntity()
+		world.attachData(creature, new DeckData)
 		world.attachData(creature, new CharacterInfo)
 		world.attachData(creature, new Physical)
 		world.attachData(creature, new IdentityData)
@@ -206,9 +206,15 @@ object SimpleMapScenario extends Scenario {
 		world.attachData(creature, new CombatData)
 		world.attachData(creature, new QualitiesData)
 		world.attachData(creature, new ReactionData)
+		world.attachDataWith(creature, (wd : Weapon) => {
+			wd.attacks += AttackKey.Primary -> AttackData("Slam", 0, 1, 1, 1, 0, 1, Map(AttackData.PrimaryDamageKey -> DamageElement(DicePool(1).d(4), 0, 1.0f, DamageType.Bludgeoning)), TargetPattern.SingleEnemy, cardCount = 2)
+			wd.weaponSkills = List(Taxonomy("UnarmedSkill"))
+		})
 		world.attachDataWith(creature, (ad : AllegianceData) => {
 			ad.faction = faction
 		})
+
+		world.addEvent(EntityCreated(creature))
 		creature
 	}
 
@@ -225,6 +231,8 @@ object SimpleMapScenario extends Scenario {
 
 	override def registerGameComponents(gameEngine: GameEngine, universe: Universe): Unit = {
 		gameEngine.register[TurnComponent]
+		gameEngine.register[DeckComponent]
+		gameEngine.register[CardCreationComponent]
 	}
 
 	override def registerGraphicsComponents(graphicsEngine: GraphicsEngine, universe: Universe): Unit = {

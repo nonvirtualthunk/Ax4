@@ -24,7 +24,7 @@ class CombatLogicTest extends FunSuite {
 		import sandbox._
 		implicit val view = world.view
 
-		CombatLogic.attack(world, attacker, List(defenderA, defenderB), AttackReference(weapon, "slash", None, None))
+		CombatLogic.attack(world, attacker, List(defenderA, defenderB), AttackReference(weapon, AttackKey.Primary, None, None))
 
 		WorldQuery.assert(s"health < 10 AND health > 0 FROM CharacterInfo WHERE id == $defenderA OR id == $defenderB", "baseline, both defenders should have been hit, but not killed")
 	}
@@ -36,7 +36,7 @@ class CombatLogicTest extends FunSuite {
 
 		world.modify(defenderA, CombatData.conditionalDefenseModifiers append (AntiMudDefense -> DefenseModifier(10,1)), None)
 
-		CombatLogic.attack(world, attacker, List(defenderA, defenderB), AttackReference(weapon, "slash", None, None))
+		CombatLogic.attack(world, attacker, List(defenderA, defenderB), AttackReference(weapon, AttackKey.Primary, None, None))
 
 		WorldQuery.assert(s"health == 10 FROM CharacterInfo WHERE id == $defenderA", "defender with anti-mud monster defenses should be fine")
 		WorldQuery.assert(s"health < 10 FROM CharacterInfo where id == $defenderB", "but defender without such defenses should still get hit")
@@ -44,7 +44,7 @@ class CombatLogicTest extends FunSuite {
 		// give the attacker a bonus when attacking a single target, with enough of a bonus to compensate for the conditional defense bonus it has
 		world.modify(attacker, CombatData.conditionalAttackModifiers append (SingleAttackBuff -> AttackModifier(accuracyBonus = 20)), None)
 
-		CombatLogic.attack(world, attacker, List(defenderA), AttackReference(weapon, "slash", None, None))
+		CombatLogic.attack(world, attacker, List(defenderA), AttackReference(weapon, AttackKey.Primary, None, None))
 
 		// two strikes, each dealing 1d6 (median -> 4) damage, minus 1 each from the conditional bonus to armor = 6 damage, so 4 health remaining
 		WorldQuery.assert(s"health == 4 from CharacterInfo where id == $defenderA")
@@ -57,14 +57,14 @@ class CombatLogicTest extends FunSuite {
 
 		// use the power attack special attack which reduces accuracy but doubles damage. With default arrangement the accuracy penalty
 		// is too high for the attack to hit, so it should be a miss as a result
-		CombatLogic.attack(world, attacker, List(defenderA, defenderB), AttackReference(weapon, "slash", Some(attacker), "power attack"))
+		CombatLogic.attack(world, attacker, List(defenderA, defenderB), AttackReference(weapon, AttackKey.Primary, Some(attacker), "power attack"))
 
 		WorldQuery.assert(s"health == 10 FROM CharacterInfo WHERE id == $defenderA OR id == $defenderB", "defenders should not be hurt because attack too inaccurate")
 
 		// give the attacker a bonus when attacking a single target, with enough of a bonus to compensate for the penalty from power attack
 		world.modify(attacker, CombatData.conditionalAttackModifiers append (SingleAttackBuff -> AttackModifier(accuracyBonus = 20)), None)
 
-		CombatLogic.attack(world, attacker, List(defenderA), AttackReference(weapon, "slash", Some(attacker), "power attack"))
+		CombatLogic.attack(world, attacker, List(defenderA), AttackReference(weapon, AttackKey.Primary, Some(attacker), "power attack"))
 
 		// the target attacked with power attack should now have 0 health, but the other one should be untouched
 		WorldQuery.assert(s"health == 0 FROM CharacterInfo WHERE id == $defenderA")

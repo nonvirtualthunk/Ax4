@@ -10,6 +10,7 @@ import arx.ax4.game.logic.{AllegianceLogic, AxPathfinder, CharacterLogic, Combat
 import arx.core.vec.coordinates.{AxialVec, AxialVec3, HexDirection}
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.world.{World, WorldView}
+import arx.graphics.helpers.{RichText, RichTextRenderSettings}
 
 abstract class GameAction {
 	def identity: Taxon
@@ -82,7 +83,7 @@ case object DoNothingIntent extends GameActionIntent {
 
 case object SwitchSelectedCharacterIntent extends GameActionIntent {
 	override def instantiate(implicit view: WorldView, entity: Entity): Either[GameActionIntentInstance, String] = Left(new GameActionIntentInstance {
-		val selector = EntitySelector((view, other) => AllegianceLogic.areInSameFaction(entity, other)(view), "Entity with same faction")
+		val selector = new EntitySelector(Seq(EntityPredicate.Friend(entity)), "Entity with same faction")
 
 		override def nextSelection(resultsSoFar: SelectionResult): Option[Selector[_]] = if (!resultsSoFar.fullySatisfied(selector)) {
 			Some(selector)
@@ -157,8 +158,7 @@ case class AttackIntent(attackRef: AttackReference) extends GameActionIntent {
 							}
 						})
 					case entityTarget: EntityTarget =>
-						val entitySelector = EntitySelector((view, ent) => AllegianceLogic.areEnemies(attacker, ent)(view), "Enemy creature")
-							.withAmount(entityTarget.count)
+						val entitySelector = new EntitySelector(Seq(EntityPredicate.Enemy(attacker), EntityPredicate.InRange(attacker, attack.minRange, attack.maxRange)),"Enemy creature").withAmount(entityTarget.count)
 						Left(new GameActionIntentInstance {
 							override def nextSelection(resultsSoFar: SelectionResult): Option[Selector[_]] = Some(entitySelector).filter(h => !resultsSoFar.fullySatisfied(h))
 
@@ -197,12 +197,19 @@ case class AttackIntent(attackRef: AttackReference) extends GameActionIntent {
 }
 
 case object MoveCharacter extends CardEffect {
-	def pathSelector(entity : Entity) = PathSelector(entity, TargetPattern.Point, (view,h) => {
-		view.hasData[Tile](Tiles.tileAt(h)) && // it is a tile
-			! view.data[Tile](Tiles.tileAt(h)).entities.exists(e => view.dataOpt[Physical](e).exists(p => p.occupiesHex)) // the tile is not occupied
-	}, (view,p) => {
-		p.steps.size >= 2 && MovementLogic.movePointsRequiredForPath(entity, p)(view) <= CharacterLogic.curMovePoints(entity)(view)
-	})
+
+	protected case class CustomPathSelector(entity : Entity) extends PathSelector(entity, TargetPattern.Point) {
+		override def hexPredicate(view: WorldView, v: AxialVec3): Boolean = {
+			view.hasData[Tile](Tiles.tileAt(v)) && // it is a tile
+				! view.data[Tile](Tiles.tileAt(v)).entities.exists(e => view.dataOpt[Physical](e).exists(p => p.occupiesHex))
+		}
+
+		override def pathPredicate(view: WorldView, path: Path[AxialVec3]): Boolean = {
+			path.steps.size >= 2 &&
+				MovementLogic.movePointsRequiredForPath(entity, path)(view) <= CharacterLogic.curMovePoints(entity)(view)
+		}
+	}
+	def pathSelector(entity : Entity) = CustomPathSelector(entity)
 
 	override def nextSelector(world: WorldView, entity: Entity, results: SelectionResult): Option[Selector[_]] = {
 		val pathSel = pathSelector(entity)
@@ -219,6 +226,8 @@ case object MoveCharacter extends CardEffect {
 	}
 
 	override def canApplyEffect(world: WorldView, entity: Entity): Boolean = true
+
+	override def toRichText(settings: RichTextRenderSettings): RichText = RichText("Move")
 }
 
 case object MoveIntent extends GameActionIntent {
@@ -329,11 +338,45 @@ trait Selector[MatchedType] {
 	}
 }
 
-case class EntitySelector(predicate: (WorldView, Entity) => Boolean, description: String) extends Selector[Entity] {
+case class EntitySelector(predicates : Seq[EntityPredicate], description: String) extends Selector[Entity] {
+
+
 	override def satisfiedBy(view: WorldView, a: Any): Option[(Entity, Int)] = a match {
-		case e: Entity if predicate(view, e) => Some(e -> 1)
+		case e: Entity if predicates.forall(p => p.matches(view, e)) => Some(e -> 1)
 		case _ => None
 	}
+}
+
+trait EntityPredicate {
+	def matches(view : WorldView, entity : Entity) : Boolean
+}
+
+object EntityPredicate {
+	case class Enemy(source : Entity) extends EntityPredicate {
+		override def matches(view: WorldView, entity: Entity): Boolean = AllegianceLogic.areEnemies(source, entity)(view)
+	}
+	case class InRange(source : Entity, minRange : Int, maxRange : Int) extends EntityPredicate {
+		override def matches(view: WorldView, entity: Entity): Boolean = {
+			implicit val v = view
+			(entity.dataOpt[Physical], source.dataOpt[Physical]) match {
+				case (Some(from), Some(to)) => {
+					val dist = from.position.distance(to.position)
+					dist >= minRange && dist <= maxRange
+				}
+				case _ => false
+			}
+		}
+	}
+
+	case class Friend(source : Entity) extends EntityPredicate {
+		override def matches(view: WorldView, entity: Entity): Boolean = AllegianceLogic.areInSameFaction(entity, source)(view)
+	}
+
+}
+
+
+object EntitySelector {
+	def Enemy(attacker : Entity) = new EntitySelector(Vector(EntityPredicate.Enemy(attacker)),"Enemy Creature")
 }
 
 case class HexSelector(pattern: TargetPattern, hexPredicate: (WorldView, AxialVec3) => Boolean) extends Selector[AxialVec3] {
@@ -353,7 +396,10 @@ case class HexSelector(pattern: TargetPattern, hexPredicate: (WorldView, AxialVe
 /**
  * Selecting a destination and a path to travel to it
  */
-case class PathSelector(entity : Entity, pattern : TargetPattern, hexPredicate : (WorldView, AxialVec3) => Boolean, pathPredicate : (WorldView, Path[AxialVec3]) => Boolean) extends Selector[Path[AxialVec3]] {
+abstract class PathSelector(entity : Entity, pattern : TargetPattern) extends Selector[Path[AxialVec3]] {
+	def hexPredicate(view : WorldView, v : AxialVec3) : Boolean
+	def pathPredicate(view : WorldView, path : Path[AxialVec3]) : Boolean
+
 	override def satisfiedBy(view: WorldView, a: Any): Option[(Path[AxialVec3], Int)] = {
 		val target : Option[AxialVec3] = a match {
 			case v3: AxialVec3 => Some(v3)
@@ -376,12 +422,12 @@ case class PathSelector(entity : Entity, pattern : TargetPattern, hexPredicate :
 
 	override def description: String = "path to hex"
 
-	override def hashCode(): Int = (entity, pattern).hashCode()
-
-	override def equals(obj: Any): Boolean = obj match {
-		case PathSelector(otherEnt, otherPattern, _, _) => entity == otherEnt && pattern == otherPattern
-		case _ => false
-	}
+//	override def hashCode(): Int = (entity, pattern).hashCode()
+//
+//	override def equals(obj: Any): Boolean = obj match {
+//		case PathSelector(otherEnt, otherPattern, _, _) => entity == otherEnt && pattern == otherPattern
+//		case _ => false
+//	}
 }
 
 

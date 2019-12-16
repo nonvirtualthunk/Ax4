@@ -21,11 +21,11 @@ class SelectionControl(mainControl : TacticalUIControl) extends AxControlCompone
 
 		for (selC <- display[TacticalUIData].selectedCharacter) {
 			if (SD.activeContext.isEmpty || SD.activeContext.get.entity != selC) {
-				SD.activeContext = Some(SelectionContext(selC, MoveCharacter.instantiate(game.view, selC), SelectionResult(), sc => MoveCharacter.applyEffect(game, sc.entity, sc.selectionResults)))
+				SD.activeContext = Some(SelectionContext(selC, MoveCharacter, SelectionResult(), sc => MoveCharacter.applyEffect(game, sc.entity, sc.selectionResults)))
 			}
 		}
 
-		SD.consideredContext = selectionContextIfClicked(gameView, display)
+		SD.consideredContext = selectionContextIfClicked(game.view, display)
 
 		val desktop = display[WindowingControlData].desktop
 		for (selC <- display[TacticalUIData].selectedCharacter; ctxt <- SD.consideredContext) {

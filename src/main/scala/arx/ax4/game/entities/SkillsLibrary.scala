@@ -43,7 +43,7 @@ object SkillsLibrary {
 				(world, entity) => world.modify(entity, CombatData.conditionalAttackModifiers append (AttackConditionals.WeaponIs(Taxonomy("spear", "Items.Weapons")) -> AttackModifier(accuracyBonus = 1))),
 				(world, entity) => world.modify(entity, CombatData.specialAttacks.put("piercing stab", SpecialAttack.PiercingStab))
 			), SkillLevel(
-				(world, entity) => world.modify(entity, CombatData.conditionalAttackModifiers append (AttackConditionals.WeaponIs(Taxonomy("spear", "Items.Weapons")) -> AttackModifier(damageBonuses = Map("primary" -> DamageElementDelta.damageBonus(2)))))
+				(world, entity) => world.modify(entity, CombatData.conditionalAttackModifiers append (AttackConditionals.WeaponIs(Taxonomy("spear", "Items.Weapons")) -> AttackModifier(damageBonuses = Map(AttackKey.Primary -> DamageElementDelta.damageBonus(2)))))
 			), SkillLevel(
 				(world, entity) => world.modify(entity, CombatData.conditionalAttackModifiers append (AttackConditionals.WeaponIs(Taxonomy("spear", "Items.Weapons")) -> AttackModifier(minRangeOverride = Some(1))))
 			)

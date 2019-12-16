@@ -5,6 +5,7 @@ import arx.Prelude._
 import arx.application.Noto
 import arx.ax4.game.entities.Companions.{CharacterInfo, Physical}
 import arx.ax4.game.entities.{ColorComponentMix, HueShift, Physical}
+import arx.ax4.game.event.CardEvents.{CardDrawn, HandDiscarded, HandDrawn}
 import arx.ax4.game.event.{DamageEvent, EntityMoved, GainSkillLevelEvent, StrikeEvent}
 import arx.ax4.graphics.data.{AxAnimatingWorldData, AxDrawingConstants, AxGraphicsData, SpriteLibrary}
 import arx.ax4.graphics.logic.EntityDrawLogic
@@ -61,7 +62,7 @@ class AnimationGraphicsComponent extends  GraphicsComponent {
 								animData.animations ::= FieldAnimation(attackInfo.attacker, Physical.offset, Interpolation.between(CartVec.Zero,  strikeVector).sin010, time, time + 0.5.seconds)
 							}
 							val curStamina = attackInfo.attacker(CharacterInfo).stamina
-							animData.animations ::= FieldAnimation(attackInfo.attacker, CharacterInfo.stamina, Interpolation.betweenI(curStamina, curStamina.reduceBy(attackInfo.attackData.staminaCostPerStrike, true)), time, time + 0.5.seconds)
+							animData.animations ::= FieldAnimation(attackInfo.attacker, CharacterInfo.stamina, Interpolation.betweenI(curStamina, curStamina.reduceBy(attackInfo.attackData.staminaCost, true)), time, time + 0.5.seconds)
 						case DamageEvent(entity, damage, damageType) =>
 							implicit val view = animData.currentGameWorldView
 							val startTransforms = entity(Physical).colorTransforms
@@ -89,7 +90,10 @@ class AnimationGraphicsComponent extends  GraphicsComponent {
 									time + 5.seconds
 								).nonBlocking()
 							}
-
+						case HandDrawn(entity) =>
+							animData.animations ::= WaitAnimation(time + 0.1.second)
+						case HandDiscarded(entity, cards) =>
+							animData.animations ::= WaitAnimation(time + 0.1.second)
 					}
 				}
 
@@ -150,6 +154,12 @@ case class FieldAnimation[C <: TAuxData,T](entity : Entity, field : Field[C,T], 
 		val pcnt = ((time - startTime).inSeconds / (endTime - startTime).inSeconds).clamp(0.0f,1.0f)
 		world.modify(entity, field setTo interpolation.interpolate(pcnt), None)
 		time >= endTime - 0.0166666667.seconds
+	}
+}
+
+case class WaitAnimation(endTime : UnitOfTime) extends Animation {
+	override def apply(world: World, time: UnitOfTime): Boolean = {
+		time >= endTime
 	}
 }
 

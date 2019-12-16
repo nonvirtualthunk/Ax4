@@ -3,7 +3,7 @@ package arx.ax4.control.components
 import arx.ai.search.Pathfinder
 import arx.application.Noto
 import arx.ax4.game.entities.Companions.{CharacterInfo, Physical, Tile, TurnData}
-import arx.ax4.game.entities.{AllegianceData, AttackData, AttackReference, CharacterInfo, DamageElement, FactionData, Physical, SkillsLibrary, Tile, Tiles, TurnData}
+import arx.ax4.game.entities.{AllegianceData, AttackData, AttackKey, AttackReference, CharacterInfo, DamageElement, FactionData, Physical, SkillsLibrary, Tile, Tiles, TurnData}
 import arx.ax4.game.event.{ActiveIntentChanged, EntityMoved}
 import arx.ax4.graphics.components.EntityGraphics
 import arx.ax4.graphics.data.{AxDrawingConstants, SpriteLibrary, TacticalUIData, TacticalUIMode}
@@ -196,7 +196,7 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 
 			tuid.selectedCharacterInfoWidget.bind("attacks", () => {
 				CombatLogic.availableAttacks(game, selC, includeBaseAttacks = true,  includeSpecialAttacks = false)
-   				.sortBy(aref => aref.attackKey != "primary")
+   				.sortBy(aref => aref.attackKey != AttackKey.Primary)
 					.map(aref => {
 						val selected = selC[CharacterInfo].activeIntent == AttackIntent(aref)
 					CombatLogic.resolveUntargetedConditionalAttackData(game, selC, aref) match {
@@ -261,7 +261,7 @@ case class DamageExpression(damageElements : Map[AnyRef, DamageElement]) extends
 				sections ::= TextSection(de.damageBonus.toSignedString)
 			}
 			sections ::= (SpriteLibrary.getSpriteDefinitionFor(de.damageType) match {
-				case Some(SpriteDefinition(icon, icon16)) if !settings.noSymbols => ImageSection(icon,2, Color.White)
+				case Some(SpriteDefinition(icon, icon16)) if !settings.noSymbols => ImageSection(icon, 2, Color.White)
 				case _ => TextSection(" " + de.damageType.name)
 			})
 

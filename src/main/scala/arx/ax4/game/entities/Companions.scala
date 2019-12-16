@@ -181,6 +181,12 @@ object DeckData extends Clazz[DeckData]("DeckData", classOf[DeckData]){
 	fields += "discardPile" -> discardPile
 	val hand = Field.fromValue(Sentinel.hand).createField[DeckData]("hand",f => f.hand, (f,hand) => f.hand = hand, DeckData) 
 	fields += "hand" -> hand
+	val exhaustPile = Field.fromValue(Sentinel.exhaustPile).createField[DeckData]("exhaustPile",f => f.exhaustPile, (f,exhaustPile) => f.exhaustPile = exhaustPile, DeckData) 
+	fields += "exhaustPile" -> exhaustPile
+	val lockedCards = Field.fromValue(Sentinel.lockedCards).createField[DeckData]("lockedCards",f => f.lockedCards, (f,lockedCards) => f.lockedCards = lockedCards, DeckData) 
+	fields += "lockedCards" -> lockedCards
+	val lockedCardSlots = Field.fromValue(Sentinel.lockedCardSlots).createField[DeckData]("lockedCardSlots",f => f.lockedCardSlots, (f,lockedCardSlots) => f.lockedCardSlots = lockedCardSlots, DeckData) 
+	fields += "lockedCardSlots" -> lockedCardSlots
 	val drawCount = Field.fromValue(Sentinel.drawCount).createField[DeckData]("drawCount",f => f.drawCount, (f,drawCount) => f.drawCount = drawCount, DeckData) 
 	fields += "drawCount" -> drawCount
 
@@ -190,6 +196,9 @@ object DeckData extends Clazz[DeckData]("DeckData", classOf[DeckData]){
 		to.drawPile = from.drawPile
 		to.discardPile = from.discardPile
 		to.hand = from.hand
+		to.exhaustPile = from.exhaustPile
+		to.lockedCards = from.lockedCards
+		to.lockedCardSlots = from.lockedCardSlots
 		to.drawCount = from.drawCount
 	}
 }
@@ -364,6 +373,10 @@ object Weapon extends Clazz[Weapon]("Weapon", classOf[Weapon]){
 	fields += "primaryAttack" -> primaryAttack
 	val weaponSkills = Field.fromValue(Sentinel.weaponSkills).createField[Weapon]("weaponSkills",f => f.weaponSkills, (f,weaponSkills) => f.weaponSkills = weaponSkills, Weapon) 
 	fields += "weaponSkills" -> weaponSkills
+	val naturalWeapon = Field.fromValue(Sentinel.naturalWeapon).createField[Weapon]("naturalWeapon",f => f.naturalWeapon, (f,naturalWeapon) => f.naturalWeapon = naturalWeapon, Weapon) 
+	fields += "naturalWeapon" -> naturalWeapon
+	val attackCards = Field.fromValue(Sentinel.attackCards).createField[Weapon]("attackCards",f => f.attackCards, (f,attackCards) => f.attackCards = attackCards, Weapon) 
+	fields += "attackCards" -> attackCards
 
 	def apply(f : Weapon => Unit) : Weapon = { val v = new Weapon; f(v); v }
 					 
@@ -371,6 +384,8 @@ object Weapon extends Clazz[Weapon]("Weapon", classOf[Weapon]){
 		to.attacks = from.attacks
 		to.primaryAttack = from.primaryAttack
 		to.weaponSkills = from.weaponSkills
+		to.naturalWeapon = from.naturalWeapon
+		to.attackCards = from.attackCards
 	}
 }
 import arx.ax4.game.entities.Vegetation
@@ -398,6 +413,8 @@ object CardData extends Clazz[CardData]("CardData", classOf[CardData]){
 	fields += "cardType" -> cardType
 	val name = Field.fromValue(Sentinel.name).createField[CardData]("name",f => f.name, (f,name) => f.name = name, CardData) 
 	fields += "name" -> name
+	val source = Field.fromValue(Sentinel.source).createField[CardData]("source",f => f.source, (f,source) => f.source = source, CardData) 
+	fields += "source" -> source
 
 	def apply(f : CardData => Unit) : CardData = { val v = new CardData; f(v); v }
 					 
@@ -406,6 +423,7 @@ object CardData extends Clazz[CardData]("CardData", classOf[CardData]){
 		to.effects = from.effects
 		to.cardType = from.cardType
 		to.name = from.name
+		to.source = from.source
 	}
 }
 import arx.ax4.game.entities.Resource

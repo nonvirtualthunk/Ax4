@@ -1,6 +1,7 @@
 package arx.ax4.game.entities
 
-import arx.ax4.game.action.{CompoundSelectable, EntitySelector, Selectable}
+import arx.ax4.game.action.{CompoundSelectable, EntityPredicate, EntitySelector, Selectable}
+import arx.ax4.game.entities.Companions.CardData
 import arx.ax4.game.entities.cardeffects.CardEffect
 import arx.core.macros.GenerateCompanion
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
@@ -11,9 +12,22 @@ class DeckData extends AxAuxData {
 	var drawPile : Vector[Entity] = Vector()
 	var discardPile : Vector[Entity] = Vector()
 	var hand : Vector[Entity] = Vector()
+	var exhaustPile : Vector[Entity] = Vector()
+
+	var lockedCards : Vector[LockedCardSlot] = Vector()
+	var lockedCardSlots : Int = 2
 
 	var drawCount : Int = 5
+
+	def allAvailableCards = drawPile ++ discardPile ++ hand
+	def allCards = drawPile ++ discardPile ++ hand ++ exhaustPile
+	def containsCard(card : Entity) = drawPile.contains(card) || discardPile.contains(card) || hand.contains(card) || exhaustPile.contains(card)
 }
+
+case class LockedCardSlot(locked : LockedCard, resolvedCard : Entity)
+sealed trait LockedCard
+case class LockedSpecificCard(card : Entity) extends LockedCard
+case class LockedMetaAttackCard(key : AttackKey, specialSource : Option[Entity], specialKey : AnyRef) extends LockedCard
 
 @GenerateCompanion
 class CardData extends AxAuxData {
@@ -21,6 +35,7 @@ class CardData extends AxAuxData {
 	var effects : Vector[CardEffect] = Vector()
 	var cardType : Taxon = CardTypes.GenericCardType
 	var name : String = "Card"
+	var source : Entity = Entity.Sentinel
 }
 
 object CardTypes {
@@ -28,19 +43,15 @@ object CardTypes {
 	val AttackCard = Taxonomy("AttackCard")
 	val MoveCard = Taxonomy("MoveCard")
 	val SkillCard = Taxonomy("SkillCard")
+	val ItemCard = Taxonomy("ItemCard")
 }
+
 
 
 object CardSelector {
-	def apply(criteria : CardData => Boolean, description : String) : EntitySelector = {
-		EntitySelector((view,entity) => {
-			view.dataOpt[CardData](entity) match {
-				case Some(cd) => criteria(cd)
-				case None => false
-			}
-		}, description)
-	}
+	def AnyCard(desc : String) = new EntitySelector(Seq(CardPredicate.IsCard), "Any Card")
 }
+
 
 trait CardTrigger
 object CardTrigger {
@@ -49,12 +60,15 @@ object CardTrigger {
 	case object OnDiscard extends CardTrigger
 }
 
-case class CardPlay(entity : Entity, card : Entity, view : WorldView) extends CompoundSelectable {
-	val subParts = {
-		val CD = view.data[CardData](card)
-		CD.costs.map(_.instantiate(view, entity)) ++ CD.effects.map(_.instantiate(view, entity))
-	}
+case class CardPlay(card : Entity) extends CompoundSelectable {
 	override def subSelectables(view : WorldView): Traversable[Selectable] = {
-		subParts
+		val CD = view.data[CardData](card)
+		CD.costs ++ CD.effects
+	}
+}
+
+object CardPredicate {
+	case object IsCard extends EntityPredicate {
+		override def matches(view: WorldView, entity: Entity): Boolean = entity.hasData(CardData)(view)
 	}
 }

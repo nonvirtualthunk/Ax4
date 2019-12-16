@@ -17,27 +17,27 @@ import arx.engine.world.{Breakdown, WorldView}
 import arx.game.data.DicePool
 
 
-case class AttackData (
-	var name : String = "Strike",
-	var accuracyBonus: Int = 0,
-	var strikeCount : Int = 1,
-	var staminaCostPerStrike: Int = 1,
-	var actionCost : Int = 1,
-	var minRange: Int = 0,
-	var maxRange: Int = 1,
-	var damage: Map[AnyRef, DamageElement] = Map(),
-	var targetPattern : TargetPattern = TargetPattern.SingleEnemy
-) extends ConfigLoadable {
-	def merge(modifiers : AttackModifier): Unit = {
+case class AttackData(var name: String = "Strike",
+							 var accuracyBonus: Int = 0,
+							 var strikeCount: Int = 1,
+							 var staminaCost: Int = 1,
+							 var actionCost: Int = 1,
+							 var minRange: Int = 0,
+							 var maxRange: Int = 1,
+							 var damage: Map[AnyRef, DamageElement] = Map(),
+							 var targetPattern: TargetPattern = TargetPattern.SingleEnemy,
+							 var cardCount : Int = 3
+							) extends ConfigLoadable {
+	def merge(modifiers: AttackModifier): Unit = {
 		name = modifiers.namePrefix.getOrElse("") + name
 		name = modifiers.nameOverride.getOrElse(name)
 		accuracyBonus += modifiers.accuracyBonus
 		strikeCount += modifiers.strikeCountBonus
-		staminaCostPerStrike += modifiers.staminaCostIncrease
+		staminaCost += modifiers.staminaCostIncrease
 		minRange = modifiers.minRangeOverride.getOrElse(minRange)
 		maxRange = modifiers.maxRangeOverride.getOrElse(maxRange)
 		targetPattern = modifiers.targetPatternOverride.getOrElse(targetPattern)
-		for ((src,dmg) <- modifiers.damageBonuses) {
+		for ((src, dmg) <- modifiers.damageBonuses) {
 			val existing = damage.get(src)
 			val newDmg = existing match {
 				case Some(ext) => {
@@ -74,14 +74,14 @@ case class AttackData (
 		// TODO : target pattern
 	}
 }
+
 object AttackData {
 	val PrimaryDamageKey = "primary"
 }
 
-case class DefenseData(var armor : Int = 0,
-							  var dodgeBonus : Int = 0)
-{
-	def merge(modifiers : DefenseModifier) : Unit = {
+case class DefenseData(var armor: Int = 0,
+							  var dodgeBonus: Int = 0) {
+	def merge(modifiers: DefenseModifier): Unit = {
 		armor += modifiers.armorBonus
 		dodgeBonus += modifiers.dodgeBonus
 	}
@@ -90,7 +90,7 @@ case class DefenseData(var armor : Int = 0,
 
 @GenerateCompanion
 case class AttackModifier(var nameOverride: Option[String] = None,
-								  var namePrefix : Option[String] = None,
+								  var namePrefix: Option[String] = None,
 								  var accuracyBonus: Int = 0,
 								  var strikeCountBonus: Int = 0,
 								  var staminaCostIncrease: Int = 0,
@@ -100,16 +100,15 @@ case class AttackModifier(var nameOverride: Option[String] = None,
 								  var targetPatternOverride: Option[TargetPattern] = None) extends TNestedData
 
 @GenerateCompanion
-case class DefenseModifier(var dodgeBonus : Int = 0,
-									var armorBonus : Int = 0) extends TNestedData
+case class DefenseModifier(var dodgeBonus: Int = 0,
+									var armorBonus: Int = 0) extends TNestedData
 
 class SpecialAttack {
-	var condition : BaseAttackConditional = AnyAttackReference
+	var condition: BaseAttackConditional = AnyAttackReference
 	var attackModifier: AttackModifier = AttackModifier()
 }
 
 object SpecialAttack {
-
 
 
 	case object PiercingStab extends SpecialAttack {
@@ -117,7 +116,7 @@ object SpecialAttack {
 		attackModifier = AttackModifier(
 			nameOverride = Some("piercing stab"),
 			accuracyBonus = -1,
-			targetPatternOverride = Some(TargetPattern.Line(startDist = 1,length = 2)),
+			targetPatternOverride = Some(TargetPattern.Line(startDist = 1, length = 2)),
 			minRangeOverride = Some(1),
 			maxRangeOverride = Some(1)
 		)
@@ -131,12 +130,15 @@ object SpecialAttack {
 			damageBonuses = Map(AttackData.PrimaryDamageKey -> DamageElementDelta(damageMultiplier = Some(2.0f)))
 		)
 	}
+
 }
 
-case class DamageType(taxon : Taxon) {
+case class DamageType(taxon: Taxon) {
 	def name: String = taxon.name
-	def isA(dt : DamageType) : Boolean = taxon.isA(dt.taxon)
-	def isA(t : Taxon) : Boolean = taxon.isA(t)
+
+	def isA(dt: DamageType): Boolean = taxon.isA(dt.taxon)
+
+	def isA(t: Taxon): Boolean = taxon.isA(t)
 
 	DamageTypes.damageTypesByName += taxon.name -> this
 }
@@ -152,17 +154,20 @@ object DamageType extends TEagerSingleton {
 
 	val Unknown = DamageType(Taxonomy("DamageTypes.Unknown"))
 
-	implicit def toTaxon(dt : DamageType) : Taxon = dt.taxon
+	implicit def toTaxon(dt: DamageType): Taxon = dt.taxon
 }
+
 object DamageTypes {
 	var damageTypesByName = Map[String, DamageType]()
 }
 
-case class DamageElement(damageDice: DicePool, damageBonus : Int, damageMultiplier : Float, damageType: DamageType) {
+case class DamageElement(damageDice: DicePool, damageBonus: Int, damageMultiplier: Float, damageType: DamageType) {
 }
-case class DamageElementDelta(damageDice : Option[DicePool] = None, damageBonus : Option[Int] = None, damageMultiplier : Option[Float] = None, damageType : Option[DamageType] = None)
+
+case class DamageElementDelta(damageDice: Option[DicePool] = None, damageBonus: Option[Int] = None, damageMultiplier: Option[Float] = None, damageType: Option[DamageType] = None)
+
 object DamageElementDelta {
-	def damageBonus(n : Int) = DamageElementDelta(damageBonus = Some(n))
+	def damageBonus(n: Int) = DamageElementDelta(damageBonus = Some(n))
 }
 
 object DamageElement {
@@ -172,7 +177,8 @@ object DamageElement {
 	def toString(elements: Traversable[DamageElement]) = {
 		elements.map(e => e.damageDice.toString)
 	}
-	def parse(str : String) : Option[DamageElement] = {
+
+	def parse(str: String): Option[DamageElement] = {
 		str match {
 			case damageRegex(dieCountStr, pipsStr, nullableBonusStr, nullableDamageTypeStr) =>
 				val bonus = Option(nullableBonusStr) collect {
@@ -192,12 +198,14 @@ object DamageElement {
 }
 
 trait BaseAttackProspect {
-	def attacker : Entity
-	def attackReference : AttackReference
+	def attacker: Entity
+
+	def attackReference: AttackReference
 }
 
-case class UntargetedAttackProspect(attacker : Entity, attackReference: AttackReference) extends BaseAttackProspect
-case class AttackProspect(attacker : Entity, attackReference: AttackReference, target : Entity, allTargets : Seq[Entity], attackData : AttackData, defenseData : DefenseData) extends BaseAttackProspect
+case class UntargetedAttackProspect(attacker: Entity, attackReference: AttackReference) extends BaseAttackProspect
+
+case class AttackProspect(attacker: Entity, attackReference: AttackReference, target: Entity, allTargets: Seq[Entity], attackData: AttackData, defenseData: DefenseData) extends BaseAttackProspect
 
 
 //case class AttackResult(attacker: Entity, defender: Entity, strikes: List[StrikeResult])
@@ -228,8 +236,9 @@ sealed trait TargetPattern {
 }
 
 trait EntityTarget extends TargetPattern {
-	def matches (view : WorldView, attacker : Entity, target : Entity) : Boolean
-	def count : Int
+	def matches(view: WorldView, attacker: Entity, target: Entity): Boolean
+
+	def count: Int
 }
 
 trait HexTargetPattern extends TargetPattern {
@@ -238,7 +247,7 @@ trait HexTargetPattern extends TargetPattern {
 
 object TargetPattern {
 
-	case class Enemies(count : Int) extends EntityTarget {
+	case class Enemies(count: Int) extends EntityTarget {
 		override def matches(view: WorldView, attacker: Entity, target: Entity): Boolean = AllegianceLogic.areEnemies(attacker, target)(view)
 	}
 
@@ -248,11 +257,11 @@ object TargetPattern {
 		override def targetedHexes(sourcePoint: AxialVec3, targetPoint: AxialVec3): Seq[AxialVec3] = targetPoint :: Nil
 	}
 
-	case class Line(startDist : Int, length: Int) extends HexTargetPattern {
+	case class Line(startDist: Int, length: Int) extends HexTargetPattern {
 		override def targetedHexes(sourcePoint: AxialVec3, targetPoint: AxialVec3): Seq[AxialVec3] = {
-//			val sourceCart = sourcePoint.qr.asCartesian
-//			val delta = CartVec((targetPoint.qr.asCartesian - sourceCart).normalizeSafe)
-//			(startDist until (startDist + length)).map(i => AxialVec.fromCartesian(sourceCart + delta * i.toFloat)).map(ax => AxialVec3(ax.q, ax.r, sourcePoint.l))
+			//			val sourceCart = sourcePoint.qr.asCartesian
+			//			val delta = CartVec((targetPoint.qr.asCartesian - sourceCart).normalizeSafe)
+			//			(startDist until (startDist + length)).map(i => AxialVec.fromCartesian(sourceCart + delta * i.toFloat)).map(ax => AxialVec3(ax.q, ax.r, sourcePoint.l))
 			val q = sourcePoint.sideClosestTo(targetPoint, AxialVec3.Zero)
 			(startDist until (startDist + length)).map(i => AxialVec3(sourcePoint.plusDir(q, i), sourcePoint.l))
 		}

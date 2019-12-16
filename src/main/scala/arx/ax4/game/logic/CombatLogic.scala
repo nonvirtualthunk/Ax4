@@ -26,11 +26,11 @@ object CombatLogic {
 
 				world.startEvent(AttackEvent(AttackEventInfo(attacker, weapon, targets, untargetedAttackData)))
 				world.modify(attacker, CharacterInfo.actionPoints reduceBy untargetedAttackData.actionCost)
+				world.modify(attacker, CharacterInfo.stamina reduceBy untargetedAttackData.staminaCost)
 
 				for (strikeN <- 0 until untargetedAttackData.strikeCount) {
 					world.startEvent(StrikeEvent(AttackEventInfo(attacker, weapon, targets, untargetedAttackData)))
 
-					world.modify(attacker, CharacterInfo.stamina reduceBy untargetedAttackData.staminaCostPerStrike)
 					for (target <- targets) {
 						// resolve raw defense, assuming no information about the attack
 						val (rawDefenseData, _) = resolveUnconditionalDefenseData(view, target)
@@ -110,7 +110,7 @@ object CombatLogic {
 	def canAttackBeMade(implicit worldView: WorldView, attacker: Entity, attackerPos: AxialVec3, target: Either[Entity, AxialVec3], attackData: AttackData): Boolean = {
 		if (attackData.actionCost > attacker(CharacterInfo).actionPoints.currentValue) {
 			false
-		} else if (attackData.staminaCostPerStrike * attackData.strikeCount > attacker(CharacterInfo).stamina.currentValue) {
+		} else if (attackData.staminaCost * attackData.strikeCount > attacker(CharacterInfo).stamina.currentValue) {
 			false
 		} else {
 			target match {

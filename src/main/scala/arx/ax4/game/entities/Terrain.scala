@@ -4,6 +4,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicBoolean
 
 import arx.ax4.game.entities.Companions.Terrain
+import arx.ax4.game.event.EntityCreated
 import arx.core.async.Executor
 import arx.core.introspection.{Clazz, CopyAssistant, ReflectionAssistant, TEagerSingleton}
 import arx.core.macros.GenerateCompanion
@@ -102,9 +103,11 @@ class EntityArchetype {
 
 	def createEntity(world : World) : Entity = {
 		val ent = world.createEntity()
+		world.startEvent(EntityCreated(ent))
 		_data.foreach {
 			case (clazz,data) => world.attachDataByClass(ent, CopyAssistant.copyShallow(data), clazz.runtimeClass)
 		}
+		world.endEvent(EntityCreated(ent))
 		ent
 	}
 }
