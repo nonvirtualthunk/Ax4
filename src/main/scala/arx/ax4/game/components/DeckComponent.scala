@@ -1,7 +1,7 @@
 package arx.ax4.game.components
 
 import arx.ax4.game.entities.cardeffects.{GainMovePoints, PayActionPoints}
-import arx.ax4.game.entities.{CardData, CardTypes, DeckData, Item, Weapon}
+import arx.ax4.game.entities.{CardData, CardTypes, CharacterInfo, DeckData, Item, Weapon}
 import arx.ax4.game.event.{EntityCreated, EntityPlaced, EquipItem, TransferItem, UnequipItem}
 import arx.ax4.game.logic.CardAdditionStyle.{DrawDiscardSplit, DrawPile}
 import arx.ax4.game.logic.{CardAdditionStyle, CardLogic}
@@ -67,19 +67,12 @@ class DeckComponent extends GameComponent {
 					initializeDeck(entity)
 				}
 			case ge : GameEvent =>
-
 		}
 	}
 
 	def initializeDeck(entity: Entity)(implicit world : World, view : WorldView): Unit = {
-		for (_ <- 0 until 3) {
-			val moveCard = CardLogic.createCard(entity, cd => {
-				cd.costs = Vector(PayActionPoints(1))
-				cd.effects = Vector(GainMovePoints(bonusMP = Sext(0)))
-				cd.cardType = CardTypes.MoveCard
-				cd.name = "Move"
-			})
-			CardLogic.addCard(entity, moveCard, DrawPile)
+		for (charInfo <- entity.dataOpt[CharacterInfo]; card <- charInfo.innateCards) {
+			CardLogic.addCard(entity, card, DrawPile)
 		}
 
 		addNaturalAttackCards(entity)

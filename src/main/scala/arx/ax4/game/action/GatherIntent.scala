@@ -12,9 +12,9 @@ object GatherIntent extends GameActionIntent {
 			val hexSelector = BiasedHexSelector(TargetPattern.Point, (view, v) => {
 				val tileEnt = Tiles.tileAt(v.vec)
 				view.dataOpt[ResourceSourceData](tileEnt).exists( rsrc => rsrc.resources.nonEmpty )
-			})
+			}, null)
 
-			var resourceSelector = ResourceGatherSelector(Nil)
+			var resourceSelector = ResourceGatherSelector(Nil, null)
 
 			override def nextSelection(resultsSoFar: SelectionResult): Option[Selector[_]] = {
 				if (!resultsSoFar.fullySatisfied(hexSelector)) {
@@ -22,7 +22,7 @@ object GatherIntent extends GameActionIntent {
 				} else if (resourceSelector.resources.isEmpty || !resultsSoFar.fullySatisfied(resourceSelector)) {
 					val tileEnt = Tiles.tileAt(resultsSoFar.single(hexSelector).vec)
 					val prospects = GatherLogic.gatherProspectsFor(entity, tileEnt)
-					resourceSelector = ResourceGatherSelector(prospects)
+					resourceSelector = ResourceGatherSelector(prospects, null)
 					Some(resourceSelector)
 				} else {
 					None
@@ -59,7 +59,7 @@ case class GatherSelectionProspect(gatherer : Entity, target : Entity, key : Res
 	}
 }
 
-case class ResourceGatherSelector(resources : Iterable[GatherSelectionProspect]) extends Selector[GatherSelectionProspect] {
+case class ResourceGatherSelector(resources : Iterable[GatherSelectionProspect], selectable : Selectable) extends Selector[GatherSelectionProspect](selectable) {
 
 	override def satisfiedBy(view: WorldView, a: Any): Option[(GatherSelectionProspect, Int)] = {
 		implicit val implview = view

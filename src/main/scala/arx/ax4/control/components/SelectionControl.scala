@@ -8,10 +8,13 @@ import arx.engine.control.data.{TControlData, WindowingControlData}
 import arx.engine.entity.Entity
 import arx.engine.world.{HypotheticalWorldView, World, WorldView}
 import arx.Prelude._
+import arx.ax4.control.event.SelectionMadeEvent
 import arx.ax4.game.logic.AllegianceLogic
 import arx.ax4.graphics.components.subcomponents.TacticalSelectableRenderer
 import arx.core.introspection.ReflectionAssistant
+import arx.engine.control.event.{KeyModifiers, KeyReleaseEvent}
 import arx.engine.data.{TMutableAuxData, TWorldAuxData}
+import org.lwjgl.glfw.GLFW
 
 class SelectionControl(mainControl : TacticalUIControl) extends AxControlComponent {
 	lazy val selectableRenderers = ReflectionAssistant.instancesOfSubtypesOf[TacticalSelectableRenderer]
@@ -28,15 +31,20 @@ class SelectionControl(mainControl : TacticalUIControl) extends AxControlCompone
 		SD.consideredContext = selectionContextIfClicked(game.view, display)
 
 		val desktop = display[WindowingControlData].desktop
-		for (selC <- display[TacticalUIData].selectedCharacter; ctxt <- SD.consideredContext) {
-			selectableRenderers.foreach(r => r.updateUI(gameView, display, selC, ctxt.selectable, ctxt.selectionResults, desktop))
-			selectableRenderers.foreach(r => r.update(gameView, display, selC, ctxt.selectable, ctxt.selectionResults))
+		for (selC <- display[TacticalUIData].selectedCharacter; consCtxt <- SD.consideredContext; actCtxt <- SD.activeContext) {
+			selectableRenderers.foreach(r => r.updateUI(gameView, display, selC, consCtxt.selectable, consCtxt.selectionResults, actCtxt.selectionResults, desktop))
+			selectableRenderers.foreach(r => r.update(gameView, display, selC, consCtxt.selectable, consCtxt.selectionResults))
 		}
 	}
 
 	override protected def onInitialize(view: HypotheticalWorldView, game: World, display: World): Unit = {
 		val SD = display[SelectionData]
 		implicit val view = game.view
+
+		display[TacticalUIData].mainSectionWidget.onEvent {
+			case SelectionMadeEvent(selector, value, amount) =>
+				updateSelectionContext(view, display, SD.activeContext.map(ctxt => ctxt.copy(selectionResults = ctxt.selectionResults.addResult(selector, value, amount))))
+		}
 
 		onControlEvent {
 			case HexMouseReleaseEvent(button, hex, pos, modifiers) =>
@@ -52,6 +60,8 @@ class SelectionControl(mainControl : TacticalUIControl) extends AxControlCompone
 						}
 					}
 				}
+			case KeyReleaseEvent(GLFW.GLFW_KEY_ESCAPE, KeyModifiers.None) =>
+				updateSelectionContext(view, display, None)
 		}
 	}
 
@@ -86,12 +96,12 @@ class SelectionControl(mainControl : TacticalUIControl) extends AxControlCompone
 		SD.selectionWidgets = Map()
 	}
 
-	def changeSelectionTarget(display : World, selectable : Selectable, onFinish : SelectionContext => Unit): Unit = {
+	def changeSelectionTarget(game : World, display : World, selectable : Selectable, onFinish : SelectionContext => Unit): Unit = {
 		val SD = display[SelectionData]
 
 		for (selC <- display[TacticalUIData].selectedCharacter) {
-			SD.activeContext = Some(SelectionContext(selC, selectable, SelectionResult(), onFinish))
 			resetSelectionContext(display)
+			updateSelectionContext(game.view, display, Some(SelectionContext(selC, selectable, SelectionResult(), onFinish)))
 		}
 	}
 

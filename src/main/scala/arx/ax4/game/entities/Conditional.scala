@@ -23,9 +23,10 @@ object Conditionals {
 	type BaseGatherConditional = Conditional[BaseGatherProspect]
 	type EntityConditional = Conditional[Entity]
 
-	def all[T] : Conditional[T] = new Conditional[T] {
-		override def isTrueFor(implicit view: WorldView, value: T): Boolean = true
+	private object AllConditional extends Conditional[Any] {
+		override def isTrueFor(implicit view: WorldView, value: Any): Boolean = true
 	}
+	def all[T] : Conditional[T] = AllConditional.asInstanceOf[Conditional[T]]
 
 	//	case class AttackOfType
 }

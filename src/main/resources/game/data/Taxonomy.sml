@@ -194,5 +194,6 @@ Taxonomy {
     SpellCard : CardType
     ActionCard : CardType
     MoveCard : CardType
+    GatherCard : CardType
   }
 }

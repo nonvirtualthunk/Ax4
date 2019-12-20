@@ -1,6 +1,6 @@
 package arx.ax4.game.entities
 
-import arx.ax4.game.action.{CompoundSelectable, EntityPredicate, EntitySelector, Selectable}
+import arx.ax4.game.action.{CompoundSelectable, EntityPredicate, EntitySelector, Selectable, SelectionResult, Selector}
 import arx.ax4.game.entities.Companions.CardData
 import arx.ax4.game.entities.cardeffects.CardEffect
 import arx.core.macros.GenerateCompanion
@@ -14,8 +14,8 @@ class DeckData extends AxAuxData {
 	var hand : Vector[Entity] = Vector()
 	var exhaustPile : Vector[Entity] = Vector()
 
-	var lockedCards : Vector[LockedCardSlot] = Vector()
-	var lockedCardSlots : Int = 2
+	var lockedCards : Vector[LockedCard] = Vector()
+	var lockedCardSlots : Vector[LockedCardSlot] = Vector()
 
 	var drawCount : Int = 5
 
@@ -24,10 +24,19 @@ class DeckData extends AxAuxData {
 	def containsCard(card : Entity) = drawPile.contains(card) || discardPile.contains(card) || hand.contains(card) || exhaustPile.contains(card)
 }
 
-case class LockedCardSlot(locked : LockedCard, resolvedCard : Entity)
-sealed trait LockedCard
-case class LockedSpecificCard(card : Entity) extends LockedCard
-case class LockedMetaAttackCard(key : AttackKey, specialSource : Option[Entity], specialKey : AnyRef) extends LockedCard
+
+
+case class LockedCardSlot(cardPredicates : Seq[EntityPredicate], description : String) extends Selectable {
+	val cardSelector = EntitySelector(cardPredicates, description, this)
+	override def nextSelector(world: WorldView, entity: Entity, results: SelectionResult): Option[Selector[_]] = if (results.fullySatisfied(cardSelector)) { None } else { Some(cardSelector) }
+}
+case class LockedCard(locked : LockedCardType, resolvedCard : Entity)
+sealed trait LockedCardType
+object LockedCardType {
+	case object Empty extends LockedCardType
+	case class SpecificCard(card : Entity) extends LockedCardType
+	case class MetaAttackCard(key : AttackKey, specialSource : Option[Entity], specialKey : AnyRef) extends LockedCardType
+}
 
 @GenerateCompanion
 class CardData extends AxAuxData {
@@ -36,6 +45,7 @@ class CardData extends AxAuxData {
 	var cardType : Taxon = CardTypes.GenericCardType
 	var name : String = "Card"
 	var source : Entity = Entity.Sentinel
+	var exhausted : Boolean = false
 }
 
 object CardTypes {
@@ -43,13 +53,14 @@ object CardTypes {
 	val AttackCard = Taxonomy("AttackCard")
 	val MoveCard = Taxonomy("MoveCard")
 	val SkillCard = Taxonomy("SkillCard")
+	val GatherCard = Taxonomy("GatherCard")
 	val ItemCard = Taxonomy("ItemCard")
 }
 
 
 
 object CardSelector {
-	def AnyCard(desc : String) = new EntitySelector(Seq(CardPredicate.IsCard), "Any Card")
+	def AnyCard(desc : String, selectable : Selectable) = new EntitySelector(Seq(CardPredicate.IsCard), "Any Card", selectable)
 }
 
 

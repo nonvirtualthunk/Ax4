@@ -36,7 +36,7 @@ object InventoryLogic {
 			for (toInventory <- to) {
 				world.modify(toInventory, Inventory.heldItems + item)
 			}
-			world.modify(item, Item.heldIn -> None)
+			world.modify(item, Item.heldIn -> to)
 			world.endEvent(TransferItem(item, curInventoryOpt, to))
 		}
 	}

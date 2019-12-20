@@ -14,12 +14,12 @@ import arx.Prelude._
 case class AttackCardEffect(attackRef: AttackReference) extends CardEffect {
 
 	def targetSelector(attacker: Entity, attackData: AttackData): Either[Selector[Entity], BiasedHexSelector] = attackData.targetPattern match {
-		case hexTargetPattern: HexTargetPattern => Right(BiasedHexSelector(hexTargetPattern, (_, _) => true))
+		case hexTargetPattern: HexTargetPattern => Right(BiasedHexSelector(hexTargetPattern, (_, _) => true, this))
 		case entityTarget: EntityTarget => Left(
 			new EntitySelector(Vector(
 				EntityPredicate.Enemy(attacker),
 				EntityPredicate.InRange(attacker, attackData.minRange, attackData.maxRange)),
-				"Enemy Creature").withAmount(entityTarget.count))
+				"Enemy Creature", this).withAmount(entityTarget.count))
 	}
 
 	override def nextSelector(world: WorldView, attacker: Entity, results: SelectionResult): Option[Selector[_]] = {

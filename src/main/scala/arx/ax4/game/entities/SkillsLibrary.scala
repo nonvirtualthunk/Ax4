@@ -56,4 +56,9 @@ object SkillsLibrary {
 //   			.withModifier(CombatData.specialAttacks.put(""))
 		)
 	)
+	byTaxon += Taxonomy("unarmedSkill", "Skills") -> Skill("Unarmed",
+		List(
+			SkillLevel()
+		)
+	)
 }

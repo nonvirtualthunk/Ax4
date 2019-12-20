@@ -25,14 +25,17 @@ trait CardEffect extends Selectable with THasRichTextRepresentation {
 	def toRichText(view: WorldView, entity: Entity, settings: RichTextRenderSettings): RichText = toRichText(settings)
 }
 
-case class Gather(range : Int) extends CardEffect {
-	def hexSelector(entity : Entity) = HexSelector(TargetPattern.Point, (view,v) => {
-		v.distance(entity(Physical)(view).position) <= range && GatherLogic.gatherProspectsFor(entity, Tiles.tileAt(v))(view).nonEmpty
-	})
-	def prospectSelector(view : WorldView, entity : Entity, target : AxialVec3) = ResourceGatherSelector(GatherLogic.gatherProspectsFor(entity, Tiles.tileAt(target))(view))
+case class GatherHexSelector(entity : Entity, range : Int, selectable : Selectable) extends HexSelector(TargetPattern.Point, selectable) {
+	override def hexPredicate(view: WorldView, hex: AxialVec3): Boolean = {
+		hex.distance(entity(Physical)(view).position) <= range && GatherLogic.gatherProspectsFor(entity, Tiles.tileAt(hex))(view).nonEmpty
+	}
+}
+
+case class GatherCardEffect(range : Int) extends CardEffect {
+	def prospectSelector(view : WorldView, entity : Entity, target : AxialVec3) = ResourceGatherSelector(GatherLogic.gatherProspectsFor(entity, Tiles.tileAt(target))(view), this)
 
 	override def nextSelector(world: WorldView, entity: Entity, results: SelectionResult): Option[Selector[_]] = {
-		val hexSel = hexSelector(entity)
+		val hexSel = GatherHexSelector(entity, range, this)
 		if (!results.fullySatisfied(hexSel)) {
 			Some(hexSel)
 		} else {
@@ -47,7 +50,7 @@ case class Gather(range : Int) extends CardEffect {
 	}
 
 	override def applyEffect(world: World, entity: Entity, selectionResult: SelectionResult): Unit = {
-		val hex = selectionResult.single(hexSelector(entity))
+		val hex = selectionResult.single(GatherHexSelector(entity, range, this))
 		val prospect = selectionResult.single(prospectSelector(world.view, entity, hex))
 
 		prospect.toGatherProspect(world.view) match {
@@ -141,7 +144,7 @@ case class PayStamina(stamina : Int) extends CardEffect {
 
 
 case class DiscardCards(numCards : Int, random : Boolean) extends CardEffect {
-	val cardSelector = CardSelector.AnyCard("Card to discard").withAmount(numCards)
+	val cardSelector = CardSelector.AnyCard("Card to discard", this).withAmount(numCards)
 
 	override def nextSelector(world: WorldView, entity: Entity, results: SelectionResult): Option[Selector[_]] = if (results.fullySatisfied(cardSelector)) {
 		None

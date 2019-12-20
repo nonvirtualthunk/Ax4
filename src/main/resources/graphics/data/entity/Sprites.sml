@@ -16,6 +16,9 @@ Sprites {
   shieldSkill : {
     icon: ${DHGZ}"/skills/shieldwielding.png"
   }
+  unarmedSkill : {
+    icon: ${DHGZ}"/skills/unarmed.png"
+  }
 
 
 

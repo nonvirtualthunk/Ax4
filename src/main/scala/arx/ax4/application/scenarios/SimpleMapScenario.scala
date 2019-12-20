@@ -5,9 +5,9 @@ import arx.application.Noto
 import arx.ax4.control.components.{CardControl, SelectionControl, TacticalUIActionControl, TacticalUIControl}
 import arx.ax4.game.action.{AttackIntent, MoveIntent}
 import arx.ax4.game.components.{CardCreationComponent, DeckComponent, TurnComponent}
-import arx.ax4.game.entities.Companions.{CharacterInfo, DeckData, Physical, Tile, TurnData}
-import arx.ax4.game.entities.{AllegianceData, AttackData, AttackKey, AttackReference, AxAuxData, CardData, CardTypes, CharacterInfo, CombatData, DamageElement, DamageType, DeckData, EntityConditionals, Equipment, FactionData, GatherMethod, Inventory, ItemLibrary, Physical, QualitiesData, ReactionData, Resource, ResourceKey, ResourceOrigin, ResourceSourceData, TargetPattern, Terrain, TerrainLibrary, Tile, Tiles, TurnData, Vegetation, VegetationLayer, VegetationLayerType, VegetationLibrary, Weapon, WeaponLibrary}
-import arx.ax4.game.logic.{InventoryLogic, MovementLogic}
+import arx.ax4.game.entities.Companions.{CardData, CharacterInfo, DeckData, Physical, Tile, TurnData}
+import arx.ax4.game.entities.{AllegianceData, AttackData, AttackKey, AttackReference, AxAuxData, CardData, CardPredicate, CardSelector, CardTypes, CharacterInfo, CombatData, DamageElement, DamageType, DeckData, EntityConditionals, Equipment, FactionData, GatherMethod, Inventory, ItemLibrary, LockedCardSlot, LockedCardType, Physical, QualitiesData, ReactionData, Resource, ResourceKey, ResourceOrigin, ResourceSourceData, TargetPattern, Terrain, TerrainLibrary, Tile, Tiles, TurnData, Vegetation, VegetationLayer, VegetationLayerType, VegetationLibrary, Weapon, WeaponLibrary}
+import arx.ax4.game.logic.{CardLogic, InventoryLogic, MovementLogic}
 import arx.ax4.graphics.components.{AnimationGraphicsComponent, AnimationGraphicsRenderingComponent, EntityGraphics, TacticalUIGraphics, TileGraphics}
 import arx.ax4.graphics.data.{AxGraphicsData, TacticalUIData}
 import arx.core.async.Executor
@@ -145,37 +145,18 @@ object SimpleMapScenario extends Scenario {
 
 		playerCharacter = torbold
 
-//		world.attachDataWith[DeckData](torbold, dd => {
-//			val moveCards = (0 until 3).map(_ => {
-//				val moveCard = world.createEntity()
-//				world.attachDataWith[CardData](moveCard, cd => {
-//					cd.costs = Vector(PayActionPoints(1))
-//					cd.effects = Vector(GainMovePoints(3))
-//					cd.cardType = CardTypes.MoveCard
-//					cd.name = "Move"
-//				})
-//				moveCard
-//			})
-//			//
-//			//			val attackCards = (0 until 3).map(_ => {
-//			//				val attackCard = world.createEntity()
-//			//				world.attachDataWith[CardData](attackCard, cd => {
-//			//					val attackRef = AttackReference(longspear, "primary", None, None)
-//			//					val attackData = attackRef.resolve()(world.view)
-//			//					cd.costs = Vector(PayActionPoints(attackData.get.actionCost), PayStamina(attackData.get.staminaCost))
-//			//					cd.effects = Vector(AttackCardEffect(attackRef))
-//			//					cd.cardType = CardTypes.AttackCard
-//			//					cd.name = attackData.get.name.capitalize
-//			//				})
-//			//				attackCard
-//			//			})
-//			//
-//			dd.drawPile = (moveCards).toVector
-//		})
+		val moveCard = torbold(DeckData)(world.view).allCards.find(c => c(CardData)(world.view).cardType == CardTypes.MoveCard).get
+
+		CardLogic.addLockedCardSlot(torbold, LockedCardSlot(Seq(CardPredicate.IsCard), "Any Card"))(world)
+		CardLogic.addLockedCardSlot(torbold, LockedCardSlot(Seq(CardPredicate.IsCard), "Any Card"))(world)
+
+		CardLogic.setLockedCard(torbold, 0, LockedCardType.SpecificCard(moveCard))(world)
+		CardLogic.setLockedCard(torbold, 1, LockedCardType.MetaAttackCard(AttackKey.Primary, None, None))(world)
 
 		val longspearArch = WeaponLibrary.withKind(Taxonomy("longspear", "Items.Weapons"))
 		val longspear = longspearArch.createEntity(world)
-		InventoryLogic.equip(torbold, longspear)(world)
+//		InventoryLogic.equip(torbold, longspear)(world)
+		InventoryLogic.transferItem(longspear, to = Some(torbold))(world)
 
 		val stamPot = ItemLibrary.withKind(Taxonomy("staminaPotion")).createEntity(world)
 		InventoryLogic.transferItem(stamPot, Some(torbold))(world)
@@ -207,8 +188,9 @@ object SimpleMapScenario extends Scenario {
 		world.attachData(creature, new QualitiesData)
 		world.attachData(creature, new ReactionData)
 		world.attachDataWith(creature, (wd : Weapon) => {
-			wd.attacks += AttackKey.Primary -> AttackData("Slam", 0, 1, 1, 1, 0, 1, Map(AttackData.PrimaryDamageKey -> DamageElement(DicePool(1).d(4), 0, 1.0f, DamageType.Bludgeoning)), TargetPattern.SingleEnemy, cardCount = 2)
+			wd.attacks += AttackKey.Primary -> AttackData("Punch", 0, 1, 1, 1, 0, 1, Map(AttackData.PrimaryDamageKey -> DamageElement(DicePool(1).d(4), 0, 1.0f, DamageType.Bludgeoning)), TargetPattern.SingleEnemy, cardCount = 2)
 			wd.weaponSkills = List(Taxonomy("UnarmedSkill"))
+			wd.naturalWeapon = true
 		})
 		world.attachDataWith(creature, (ad : AllegianceData) => {
 			ad.faction = faction

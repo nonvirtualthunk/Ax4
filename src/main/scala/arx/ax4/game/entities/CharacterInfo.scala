@@ -42,6 +42,8 @@ class CharacterInfo extends AxAuxData {
 	var activeIntent : GameActionIntent = DoNothingIntent
 	var defaultIntent : GameActionIntent = DoNothingIntent
 	var fallbackIntents : List[GameActionIntent] = List(MoveIntent, SwitchSelectedCharacterIntent)
+
+	var innateCards : Vector[Entity] = Vector()
 }
 
 @GenerateCompanion

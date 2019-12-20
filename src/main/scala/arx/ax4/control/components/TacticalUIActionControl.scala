@@ -134,7 +134,7 @@ class TacticalUIActionControl(mainControl : TacticalUIControl) extends AxControl
 		val tuid = display[TacticalUIData]
 
 		sel match {
-			case rgs@ResourceGatherSelector(resources) if !lastSelector.contains(rgs) =>
+			case rgs@ResourceGatherSelector(resources, selectable) if !lastSelector.contains(rgs) =>
 				val rsrcW = tuid.mainSectionWidget.createChild("ResourceSelectionWidgets.ResourceSelectionWidget")
 
 				rsrcW.bind("possibleResources", () => {

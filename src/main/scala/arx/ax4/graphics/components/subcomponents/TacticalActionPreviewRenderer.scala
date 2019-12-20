@@ -2,26 +2,28 @@ package arx.ax4.graphics.components.subcomponents
 
 import arx.ai.search.PathStep
 import arx.application.Noto
-import arx.ax4.game.action.{AttackAction, BiasedAxialVec3, BiasedHexSelector, CompoundSelectable, GameAction, HexSelector, MoveAction, MoveCharacter, Selectable, SelectionResult, Selector}
-import arx.ax4.game.entities.Companions.{CharacterInfo, Physical}
+import arx.ax4.game.action.{AttackAction, BiasedAxialVec3, BiasedHexSelector, CompoundSelectable, GameAction, HexSelector, MoveAction, MoveCharacter, ResourceGatherSelector, Selectable, SelectionResult, Selector}
+import arx.ax4.game.entities.Companions.{CharacterInfo, Physical, ResourceSourceData}
 import arx.ax4.graphics.components.{AttackPreviewData, AxCanvas, DrawLayer}
-import arx.core.vec.Vec3f
-import arx.core.vec.coordinates.AxialVec3
+import arx.core.vec.{Vec2f, Vec3f}
+import arx.core.vec.coordinates.{AxialVec3, HexRingIterator}
 import arx.engine.world.{HypotheticalWorldView, World, WorldView}
 import arx.resource.ResourceManager
 import arx.Prelude._
-import arx.ax4.control.components.{ActionSelectionContext, DamageExpression}
-import arx.ax4.game.entities.Tiles
-import arx.ax4.game.entities.cardeffects.AttackCardEffect
-import arx.ax4.game.logic.CombatLogic
-import arx.ax4.graphics.data.TacticalUIData
+import arx.ax4.control.components.{ActionSelectionContext, DamageExpression, ResourceSelectionInfo}
+import arx.ax4.control.event.SelectionMadeEvent
+import arx.ax4.game.entities.{ResourceSourceData, Tiles}
+import arx.ax4.game.entities.cardeffects.{AttackCardEffect, GatherCardEffect}
+import arx.ax4.game.logic.{CharacterLogic, CombatLogic, GatherLogic}
+import arx.ax4.graphics.data.{AxGraphicsData, CullingData, SpriteLibrary, TacticalUIData}
 import arx.ax4.graphics.logic.GameWidgetLogic
 import arx.core.introspection.ReflectionAssistant
 import arx.engine.control.components.windowing.Widget
-import arx.engine.control.components.windowing.widgets.{PositionExpression, TopLeft, TopRight}
+import arx.engine.control.components.windowing.widgets.{ListItemSelected, PositionExpression, TopLeft, TopRight}
+import arx.engine.data.{Moddable, TMutableAuxData, TWorldAuxData}
 import arx.engine.entity.{Entity, Taxonomy}
-import arx.graphics.GL
-import arx.graphics.helpers.RGBA
+import arx.graphics.{GL, ScaledImage}
+import arx.graphics.helpers.{Color, RGBA}
 
 trait TacticalActionPreviewRenderer {
 	def previewAction(game: HypotheticalWorldView, display: World, canvas: AxCanvas): PartialFunction[GameAction, _]
@@ -94,12 +96,12 @@ class AttackActionPreviewRenderer extends TacticalActionPreviewRenderer {
 
 
 trait TacticalSelectorRenderer {
-	def renderSelection(game: HypotheticalWorldView, display: World, canvas: AxCanvas, selector: Selector[_], selected: List[Any])
+	def renderSelection(game: HypotheticalWorldView, display: World, canvas: AxCanvas, selector: Selector[_], selected: List[Any]): Unit
 }
 
 class HexSelectorRenderer extends TacticalSelectorRenderer {
-	override def renderSelection(game: HypotheticalWorldView, display: World, canvas: AxCanvas, selector: Selector[_], selected: List[Any]) = selector pmatch {
-		case HexSelector(pattern, hexPredicate) =>
+	override def renderSelection(game: HypotheticalWorldView, display: World, canvas: AxCanvas, selector: Selector[_], selected: List[Any]): Unit = selector pmatch {
+		case hs : HexSelector =>
 			selected.foreach {
 				case a: AxialVec3 => canvas.quad(a)
 					.layer(DrawLayer.UnderEntity)
@@ -107,7 +109,7 @@ class HexSelectorRenderer extends TacticalSelectorRenderer {
 					.draw()
 				case other => Noto.warn(s"Unexpected selected value for hex selector $other")
 			}
-		case BiasedHexSelector(pattern, hexPredicate) =>
+		case BiasedHexSelector(pattern, hexPredicate, selectable) =>
 			selected.foreach {
 				case a: BiasedAxialVec3 => canvas.quad(a.vec)
 					.layer(DrawLayer.UnderEntity)
@@ -122,7 +124,7 @@ class HexSelectorRenderer extends TacticalSelectorRenderer {
 trait TacticalSelectableRenderer {
 	def renderSelectable(game : HypotheticalWorldView, display : World, entity : Entity, canvas : AxCanvas, selectable : Selectable, selectionResults : SelectionResult)
 
-	def updateUI(game: WorldView, display: World, entity : Entity, selectable : Selectable, selectionResult: SelectionResult, desktop: Widget): Unit = {}
+	def updateUI(game: WorldView, display: World, entity: Entity, selectable: Selectable, consideredSelectionResult: SelectionResult, activeSelectionResults: SelectionResult, desktop: Widget): Unit = {}
 	def update(game: WorldView, display: World, entity : Entity, selectable : Selectable, selectionResult: SelectionResult): Unit = {}
 }
 
@@ -139,25 +141,25 @@ object CompoundSelectableRenderer extends TacticalSelectableRenderer  {
 		}
 	}
 
-//	override def updateUI(game: WorldView, display: World, entity: Entity, selectable: Selectable, selectionResult: SelectionResult, desktop: Widget): Unit = {
-//		selectable match {
-//			case compound : CompoundSelectable =>
-//				for (subSel <- compound.subSelectables(game) ; renderer <- otherRenderers) {
-//					renderer.updateUI(game, display, entity, subSel, selectionResult, desktop)
-//				}
-//			case _ =>
-//		}
-//	}
-//
-//	override def update(game: WorldView, display: World, entity: Entity, selectable: Selectable, selectionResult: SelectionResult): Unit = {
-//		selectable match {
-//			case compound : CompoundSelectable =>
-//				for (subSel <- compound.subSelectables(game) ; renderer <- otherRenderers) {
-//					renderer.update(game, display, entity, subSel, selectionResult)
-//				}
-//			case _ =>
-//		}
-//	}
+	override def updateUI(game: WorldView, display: World, entity: Entity, selectable: Selectable, consideredSelectionResult: SelectionResult, activeSelectionResults: SelectionResult, desktop: Widget): Unit = {
+		selectable match {
+			case compound : CompoundSelectable =>
+				for (subSel <- compound.subSelectables(game) ; renderer <- otherRenderers) {
+					renderer.updateUI(game, display, entity, subSel, consideredSelectionResult, activeSelectionResults, desktop)
+				}
+			case _ =>
+		}
+	}
+
+	override def update(game: WorldView, display: World, entity: Entity, selectable: Selectable, selectionResult: SelectionResult): Unit = {
+		selectable match {
+			case compound : CompoundSelectable =>
+				for (subSel <- compound.subSelectables(game) ; renderer <- otherRenderers) {
+					renderer.update(game, display, entity, subSel, selectionResult)
+				}
+			case _ =>
+		}
+	}
 }
 
 object AttackCardEffectRenderer extends TacticalSelectableRenderer {
@@ -212,7 +214,7 @@ object AttackCardEffectRenderer extends TacticalSelectableRenderer {
 		}
 	}
 
-	override def updateUI(game: WorldView, display: World, entity : Entity, selectable : Selectable, selectionResult: SelectionResult, desktop: Widget): Unit = {
+	override def updateUI(game: WorldView, display: World, entity: Entity, selectable: Selectable, consideredSelectionResult: SelectionResult, activeSelectionResults: SelectionResult, desktop: Widget): Unit = {
 		implicit val view = game
 
 		val allSelectables = (selectable match {
@@ -225,7 +227,7 @@ object AttackCardEffectRenderer extends TacticalSelectableRenderer {
 				case ace@AttackCardEffect(attackRef) =>
 					for (attack <- attackRef.resolve()) {
 						val targetSel = ace.targetSelector(entity, attack)
-						val targets = selectionResult(targetSel)
+						val targets = consideredSelectionResult(targetSel)
 						val targetEntities = CombatLogic.targetedEntities(targets)
 
 						val existingWidgets = widgets.getOrElse(selectable, Map())
@@ -280,7 +282,7 @@ case object MoveCharacterRenderer extends TacticalSelectableRenderer {
 	override def renderSelectable(game: HypotheticalWorldView, display: World, entity: Entity, canvas: AxCanvas, selectable: Selectable, selectionResults: SelectionResult): Unit = {
 		selectable match {
 			case MoveCharacter =>
-				val selector = MoveCharacter.pathSelector(entity)
+				val selector = MoveCharacter.pathSelector(entity, selectable)
 				if (selectionResults.fullySatisfied(selector)) {
 					val path = selectionResults.single(selector)
 					if (path.steps.size > 1) {
@@ -308,4 +310,125 @@ case object MoveCharacterRenderer extends TacticalSelectableRenderer {
 			case _ => // do nothing
 		}
 	}
+}
+
+case object GatherEffectRenderer extends TacticalSelectableRenderer {
+	override def renderSelectable(game: HypotheticalWorldView, display: World, entity: Entity, canvas: AxCanvas, selectable: Selectable, selectionResults: SelectionResult): Unit = {
+		implicit val view = game
+		selectable match {
+			case GatherCardEffect(range) =>
+				for (selC <- display[TacticalUIData].selectedCharacter) {
+					for (r <- 0 to range ; hex <- HexRingIterator(selC(Physical).position, r)) {
+						val resourceTypes = GatherLogic.gatherProspectsFor(selC, Tiles.tileAt(hex))(game)
+							.filter(p => p.target(ResourceSourceData).resources(p.key).amount.currentValue > 0)
+							.map(_.key.kind).toSet
+						var xOffset = 0
+						for (resourceType <- resourceTypes) {
+							val sprite = SpriteLibrary.iconFor(resourceType).image
+
+							canvas.quad(hex)
+								.hexBottomOrigin(0.0f, 0.1f)
+								.offset(Vec2f(xOffset, 0.0f))
+								.texture("third-party/DHGZ/frames/wood_frame.png", 1)
+								.layer(DrawLayer.OverEntity)
+								.draw()
+
+							canvas.quad(hex)
+								.hexBottomOrigin(0.0f, 0.1f)
+								.offset(Vec2f(xOffset + 3,3.0f))
+								.texture(sprite, 1)
+								.layer(DrawLayer.OverEntity)
+								.draw()
+
+							xOffset += 68
+						}
+					}
+				}
+			case _ => // do nothing
+		}
+	}
+
+	override def updateUI(game: WorldView, display: World, entity: Entity, selectable: Selectable, consideredSelectionResult: SelectionResult, activeSelectionResults: SelectionResult, desktop: Widget): Unit = {
+		implicit  val view = game
+
+		val tuid = display[TacticalUIData]
+		val rsdd = display[ResourceSelectorDisplayData]
+		val rsrcW = rsdd.resourceSelectorWidget match {
+			case null =>
+				val newW = tuid.mainSectionWidget.createChild("ResourceSelectionWidgets.ResourceSelectionWidget")
+				newW.onEvent {
+					case ListItemSelected(_, _, Some(data: ResourceSelectionInfo)) =>
+						newW.handleEvent(SelectionMadeEvent(rsdd.activeSelector, data.prospect, 1))
+				}
+				newW
+			case other => other
+		}
+		rsdd.resourceSelectorWidget = rsrcW
+
+		var shouldShow = false
+		selectable match {
+			case gce@GatherCardEffect(_) =>
+				for (selC <- tuid.selectedCharacter) {
+					gce.nextSelector(game,selC, activeSelectionResults) match {
+						case Some(rgs@ResourceGatherSelector(resources, _)) =>
+							rsdd.activeSelector = rgs
+							rsrcW.bind("possibleResources", () => {
+								resources.map(p => {
+									val (textColor, iconColor) = p.toGatherProspect(game) match {
+										case Some(prospect) if GatherLogic.canGather(prospect) => (Color.Black, Color.White)
+										case _ => (RGBA(0.1f, 0.1f, 0.1f, 1.0f), Color.Grey)
+									}
+									val disabledReason = GatherLogic.cantGatherReason(p).map("[" + _.toLowerCase + "]").getOrElse("")
+									val remaining = p.target[ResourceSourceData].resources(p.key).amount.currentValue
+									ResourceSelectionInfo(p, p.method, p.key.kind.name, ScaledImage.scaleToPixelWidth(SpriteLibrary.iconFor(p.key.kind), 64), p.method.name, p.method.amount, remaining, textColor, iconColor, disabledReason)
+								})
+							})
+							shouldShow = true
+						case _ =>
+					}
+				}
+			case _ => // do nothing
+		}
+
+		rsrcW.showing = Moddable(shouldShow)
+	}
+}
+
+//case object ResourceSelectorRenderer extends TacticalSelectorRenderer {
+//	override def renderSelection(game: HypotheticalWorldView, display: World, canvas: AxCanvas, selector: Selector[_], selected: List[Any]): Unit = {
+//		val tuid = display[TacticalUIData]
+//		val rsdd = display[ResourceSelectorDisplayData]
+//		val rsrcW = rsdd.resourceSelectorWidget match {
+//			case null => tuid.mainSectionWidget.createChild("ResourceSelectionWidgets.ResourceSelectionWidget")
+//			case other => other
+//		}
+//
+//		selector match {
+//
+//		}
+//
+//		rsrcW.bind("possibleResources", () => {
+//			resources.map(p => {
+//				val (textColor, iconColor) = p.toGatherProspect(gameView) match {
+//					case Some(prospect) if GatherLogic.canGather(prospect) => (Color.Black, Color.White)
+//					case _ => (RGBA(0.1f, 0.1f, 0.1f, 1.0f), Color.Grey)
+//				}
+//				val disabledReason = GatherLogic.cantGatherReason(p).map("[" + _.toLowerCase + "]").getOrElse("")
+//				val remaining = p.target[ResourceSourceData].resources(p.key).amount.currentValue
+//				ResourceSelectionInfo(p, p.method, p.key.kind.name, ScaledImage.scaleToPixelWidth(SpriteLibrary.iconFor(p.key.kind), 64), p.method.name, p.method.amount, remaining, textColor, iconColor, disabledReason)
+//			})
+//		})
+//		rsrcW.onEvent {
+//			case ListItemSelected(_, _, Some(data: ResourceSelectionInfo)) =>
+//				if (makeSelection(game, display, sel, data.prospect)) {
+//					rsrcW.destroy()
+//				}
+//		}
+//		selectionWidgets += sel -> rsrcW
+//	}
+//}
+
+class ResourceSelectorDisplayData extends AxGraphicsData with TMutableAuxData with TWorldAuxData {
+	var resourceSelectorWidget : Widget = _
+	var activeSelector : Selector[_] = _
 }

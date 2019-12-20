@@ -4,8 +4,8 @@ import arx.application.Noto
 import arx.ax4.game.action.SelectionResult
 import arx.ax4.game.entities.Companions.DeckData
 import arx.ax4.game.entities.cardeffects.AttackCardEffect
-import arx.ax4.game.entities.{CardData, CardTypes, DeckData, LockedCard, LockedCardSlot, LockedMetaAttackCard, LockedSpecificCard, Weapon}
-import arx.ax4.game.event.CardEvents.{CardAdded, CardDiscarded, CardDrawn, CardPlayed, CardRemoved, DeckShuffled, DiscardPileShuffled, DrawPileShuffled, HandDiscarded, HandDrawn, LockedCardChanged}
+import arx.ax4.game.entities._
+import arx.ax4.game.event.CardEvents._
 import arx.engine.entity.Entity
 import arx.engine.world.{World, WorldView}
 import arx.game.logic.Randomizer
@@ -18,9 +18,17 @@ object CardLogic {
 		implicit val view = world.view
 		val DD = entity[DeckData]
 
+		resolveLockedCards(entity)
+		val lockedSlots = DD.lockedCards
+
 		world.startEvent(HandDrawn(entity))
-		for (_ <- 0 until DD.drawCount) {
-			drawCard(entity)
+		for (i <- 0 until DD.drawCount) {
+			if (lockedSlots.size > i && !lockedSlots(i).resolvedCard.isSentinel && !lockedSlots(i).resolvedCard[CardData].exhausted) {
+				val lockedCard = lockedSlots(i).resolvedCard
+				drawSpecificCardFromDrawOrDiscard(entity, lockedCard)
+			} else {
+				drawCard(entity)
+			}
 		}
 		world.endEvent(HandDrawn(entity))
 	}
@@ -75,6 +83,21 @@ object CardLogic {
 		} else {
 			Noto.warn("no cards in deck, cannot draw")
 		}
+	}
+
+	def drawSpecificCardFromDrawOrDiscard(entity: Entity, card : Entity)(implicit world: World): Unit = {
+		implicit val view = world.view
+		val DD = entity[DeckData]
+
+		if (DD.drawPile.contains(card)) {
+			world.modify(entity, DeckData.drawPile remove card)
+		} else if (DD.discardPile.contains(card)) {
+			world.modify(entity, DeckData.discardPile remove card)
+		}
+
+		world.startEvent(CardDrawn(entity, card))
+		world.modify(entity, DeckData.hand.append(card))
+		world.endEvent(CardDrawn(entity, card))
 	}
 
 	def discardHand(entity: Entity, explicit: Boolean)(implicit world: World): Unit = {
@@ -193,10 +216,28 @@ object CardLogic {
 		case _ => false
 	}
 
-	def resolveLockedCard(source: Entity, lockedCard: LockedCard)(implicit view: WorldView): Entity = {
+	def resolveLockedCards(entity : Entity)(implicit world : World): Unit = {
+		implicit val view = world.view
+		val dd = entity[DeckData]
+
+		for ((lockedCard,index) <- dd.lockedCards.zipWithIndex if ! dd.allCards.contains(lockedCard.resolvedCard)) {
+			world.modify(entity, DeckData.lockedCards -> dd.lockedCards.updated(index, lockedCard.copy(resolvedCard = Entity.Sentinel)))
+		}
+
+		for ((lockedCard,index) <- dd.lockedCards.zipWithIndex if lockedCard.resolvedCard.isSentinel) {
+			val resolved = resolveLockedCard(entity, lockedCard.locked)
+			if (lockedCard.resolvedCard != resolved) {
+				world.eventStmt(LockedCardResolved(entity, lockedCard)) {
+					world.modify(entity, DeckData.lockedCards -> dd.lockedCards.updated(index, lockedCard.copy(resolvedCard = resolved)))
+				}
+			}
+		}
+	}
+
+	def resolveLockedCard(source: Entity, lockedCard: LockedCardType)(implicit view: WorldView): Entity = {
 		lockedCard match {
-			case LockedSpecificCard(card) => card
-			case LockedMetaAttackCard(attackKey, specialSource, specialKey) => source[DeckData].allAvailableCards.find(c =>
+			case LockedCardType.SpecificCard(card) => card
+			case LockedCardType.MetaAttackCard(attackKey, specialSource, specialKey) => source[DeckData].allAvailableCards.find(c =>
 				c[CardData].effects.exists {
 					case AttackCardEffect(attackRef) =>
 						attackRef.attackKey == attackKey &&
@@ -204,14 +245,23 @@ object CardLogic {
 							attackRef.specialSource == specialSource
 					case _ => false
 				}).getOrElse(Entity.Sentinel)
+			case LockedCardType.Empty => Entity.Sentinel
 		}
 	}
 
-	def setLockedCardSlot(source: Entity, index: Int, lockedCard: LockedCard)(implicit world: World): Unit = {
+	def addLockedCardSlot(source : Entity, slot : LockedCardSlot)(implicit world : World) : Unit = {
+		world.startEvent(LockedCardSlotAdded(source, slot))
+		world.modify(source, DeckData.lockedCardSlots append slot)
+		world.modify(source, DeckData.lockedCards append LockedCard(LockedCardType.Empty, Entity.Sentinel))
+		world.endEvent(LockedCardSlotAdded(source, slot))
+	}
+
+	def setLockedCard(source: Entity, index: Int, lockedCard: LockedCardType)(implicit world: World): Unit = {
 		implicit val v = world.view
 		source.dataOpt[DeckData] match {
 			case Some(dd) =>
-				val newLockedSeq = dd.lockedCards.updated(index, LockedCardSlot(lockedCard, resolveLockedCard(source, lockedCard)))
+				// TODO: locked cards doesn't always have sufficient space in the vector
+				val newLockedSeq = dd.lockedCards.updated(index, LockedCard(lockedCard, resolveLockedCard(source, lockedCard)))
 				world.startEvent(LockedCardChanged(source, index, lockedCard))
 				world.modify(source, DeckData.lockedCards -> newLockedSeq)
 				world.endEvent(LockedCardChanged(source, index, lockedCard))

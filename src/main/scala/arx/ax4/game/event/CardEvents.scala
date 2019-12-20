@@ -1,6 +1,6 @@
 package arx.ax4.game.event
 
-import arx.ax4.game.entities.LockedCard
+import arx.ax4.game.entities.{LockedCard, LockedCardSlot, LockedCardType}
 import arx.engine.entity.Entity
 import arx.engine.event.GameEvent
 
@@ -25,5 +25,9 @@ object CardEvents {
 
 	case class CardAdded(entity : Entity, card : Entity) extends GameEvent
 
-	case class LockedCardChanged(entity : Entity, index : Int, newLockedCard : LockedCard) extends GameEvent
+	case class LockedCardChanged(entity : Entity, index : Int, newLockedCard : LockedCardType) extends GameEvent
+
+	case class LockedCardSlotAdded(entity : Entity, slot : LockedCardSlot) extends GameEvent
+
+	case class LockedCardResolved(entity : Entity, lockedCard : LockedCard) extends GameEvent
 }
