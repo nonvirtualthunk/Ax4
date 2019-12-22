@@ -3,7 +3,7 @@ package arx.ax4.game.action
 import arx.ai.search.Path
 import arx.application.Noto
 import arx.ax4.game.entities.Companions.{CharacterInfo, Physical}
-import arx.ax4.game.entities.cardeffects.CardEffect
+import arx.ax4.game.entities.cardeffects.{CardEffect, CardEffectInstance}
 import arx.ax4.game.entities.{AllegianceData, AttackProspect, AttackReference, CharacterInfo, EntityTarget, FactionData, HexTargetPattern, Physical, TargetPattern, Tile, Tiles}
 import arx.ax4.game.event.AttackEventInfo
 import arx.ax4.game.logic.{AllegianceLogic, AxPathfinder, CharacterLogic, CombatLogic, MovementLogic}
@@ -197,7 +197,14 @@ case class AttackIntent(attackRef: AttackReference) extends GameActionIntent {
 }
 
 case object MoveCharacter extends CardEffect {
+	def forceInstantiate(world: WorldView, entity : Entity) = MoveCharacterInstance(entity)
 
+	override def instantiate(world: WorldView, entity: Entity): Either[CardEffectInstance, String] = Left(forceInstantiate(world, entity))
+
+	override def toRichText(settings: RichTextRenderSettings): RichText = RichText("Move")
+}
+
+case class MoveCharacterInstance(entity : Entity) extends CardEffectInstance {
 	protected case class CustomPathSelector(entity : Entity, selectable : Selectable) extends PathSelector(entity, TargetPattern.Point, selectable) {
 		override def hexPredicate(view: WorldView, v: AxialVec3): Boolean = {
 			view.hasData[Tile](Tiles.tileAt(v)) && // it is a tile
@@ -209,25 +216,21 @@ case object MoveCharacter extends CardEffect {
 				MovementLogic.movePointsRequiredForPath(entity, path)(view) <= CharacterLogic.curMovePoints(entity)(view)
 		}
 	}
-	def pathSelector(entity : Entity, selectable : Selectable) = CustomPathSelector(entity, selectable)
 
-	override def nextSelector(world: WorldView, entity: Entity, results: SelectionResult): Option[Selector[_]] = {
-		val pathSel = pathSelector(entity, this)
-		if (results.fullySatisfied(pathSel)) {
-			None
-		} else {
-			Some(pathSel)
-		}
-	}
+	val pathSelector = CustomPathSelector(entity, MoveCharacter)
 
-	override def applyEffect(world: World, entity: Entity, selectionResult: SelectionResult): Unit = {
-		val path = selectionResult.single(pathSelector(entity, this))
+	override def applyEffect(world: World, selectionResult: SelectionResult): Unit = {
+		val path = selectionResult.single(pathSelector)
 		MovementLogic.moveCharacterOnPath(entity, path)(world)
 	}
 
-	override def canApplyEffect(world: WorldView, entity: Entity): Boolean = true
-
-	override def toRichText(settings: RichTextRenderSettings): RichText = RichText("Move")
+	override def nextSelector(results: SelectionResult): Option[Selector[_]] = {
+		if (results.fullySatisfied(pathSelector)) {
+			None
+		} else {
+			Some(pathSelector)
+		}
+	}
 }
 
 case object MoveIntent extends GameActionIntent {
@@ -312,21 +315,36 @@ case class SelectionResult(results : Map[Selector[_], List[Any]] = Map(),
 }
 
 trait Selectable {
-	def nextSelector(world : WorldView, entity : Entity, results : SelectionResult) : Option[Selector[_]]
-
-	def activeSubSelectable(world : WorldView, entity : Entity, results : SelectionResult) : Option[Selectable] = nextSelector(world, entity, results).map(_ => this)
+	def instantiate(world : WorldView, entity : Entity) : Either[SelectableInstance, String]
 }
+
+trait SelectableInstance {
+	def nextSelector(results : SelectionResult) : Option[Selector[_]]
+}
+
+
+
 trait CompoundSelectable extends Selectable {
 	def subSelectables(world : WorldView) : Traversable[Selectable]
 
-	/**
-	 * Returns the sub selectable that is actively being considered */
-	override def activeSubSelectable(world : WorldView, entity : Entity, results : SelectionResult) : Option[Selectable] =
-		subSelectables(world).find(s => s.nextSelector(world, entity, results).isDefined)
+	override def instantiate(world: WorldView, entity: Entity): Either[SelectableInstance, String] = {
+		val subSel = subSelectables(world)
+		val subSelectableInstRaw = subSel.map(s => s -> s.instantiate(world, entity))
 
-	override def nextSelector(world: WorldView, entity: Entity, results: SelectionResult): Option[Selector[_]] = {
-		for (sel <- subSelectables(world)) {
-			sel.nextSelector(world, entity, results) match {
+		var subSelectableInst = Vector[(Selectable, SelectableInstance)]()
+		subSelectableInstRaw.foreach {
+			case (k, Left(s)) => subSelectableInst :+= (k -> s)
+			case (_, Right(reason)) => return Right(reason)
+		}
+
+		Left(new CompoundSelectableInstance(subSelectableInst))
+	}
+}
+
+class CompoundSelectableInstance(val subSelectableInstances : Vector[(Selectable, SelectableInstance)]) extends SelectableInstance {
+	override def nextSelector(results: SelectionResult): Option[Selector[_]] = {
+		for ((_, selInst) <- subSelectableInstances) {
+			selInst.nextSelector(results) match {
 				case s @ Some(_) => return s
 				case None => // continue
 			}
@@ -403,6 +421,12 @@ abstract class HexSelector(pattern: TargetPattern, selectable : Selectable) exte
 	}
 
 	override def description: String = "hex"
+}
+
+object HexSelector {
+	def apply(pattern : TargetPattern, selectable : Selectable, predicate : AxialVec3 => Boolean) : HexSelector = new HexSelector(pattern, selectable) {
+		override def hexPredicate(view: WorldView, hex: AxialVec3): Boolean = predicate(hex)
+	}
 }
 
 /**

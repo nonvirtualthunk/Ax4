@@ -1,5 +1,6 @@
 package arx.ax4.game.entities
 
+import arx.core.introspection.CopyAssistant
 import arx.core.representation.ConfigValue
 import arx.engine.data.{ConfigDataLoader, ConfigLoadable, TAuxData}
 

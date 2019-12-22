@@ -1,5 +1,5 @@
 package arx.ax4.control.components
-import arx.ax4.game.action.{MoveCharacter, Selectable, SelectionResult, Selector}
+import arx.ax4.game.action.{MoveCharacter, Selectable, SelectableInstance, SelectionResult, Selector}
 import arx.ax4.game.entities.{AllegianceData, FactionData, Tiles, TurnData}
 import arx.ax4.graphics.data.TacticalUIData
 import arx.core.units.UnitOfTime
@@ -8,6 +8,7 @@ import arx.engine.control.data.{TControlData, WindowingControlData}
 import arx.engine.entity.Entity
 import arx.engine.world.{HypotheticalWorldView, World, WorldView}
 import arx.Prelude._
+import arx.application.Noto
 import arx.ax4.control.event.SelectionMadeEvent
 import arx.ax4.game.logic.AllegianceLogic
 import arx.ax4.graphics.components.subcomponents.TacticalSelectableRenderer
@@ -24,7 +25,8 @@ class SelectionControl(mainControl : TacticalUIControl) extends AxControlCompone
 
 		for (selC <- display[TacticalUIData].selectedCharacter) {
 			if (SD.activeContext.isEmpty || SD.activeContext.get.entity != selC) {
-				SD.activeContext = Some(SelectionContext(selC, MoveCharacter, SelectionResult(), sc => MoveCharacter.applyEffect(game, sc.entity, sc.selectionResults)))
+				val inst = MoveCharacter.forceInstantiate(game.view, selC)
+				SD.activeContext = Some(SelectionContext(selC, MoveCharacter, inst, SelectionResult(), sc => inst.applyEffect(game, sc.selectionResults)))
 			}
 		}
 
@@ -32,8 +34,8 @@ class SelectionControl(mainControl : TacticalUIControl) extends AxControlCompone
 
 		val desktop = display[WindowingControlData].desktop
 		for (selC <- display[TacticalUIData].selectedCharacter; consCtxt <- SD.consideredContext; actCtxt <- SD.activeContext) {
-			selectableRenderers.foreach(r => r.updateUI(gameView, display, selC, consCtxt.selectable, consCtxt.selectionResults, actCtxt.selectionResults, desktop))
-			selectableRenderers.foreach(r => r.update(gameView, display, selC, consCtxt.selectable, consCtxt.selectionResults))
+			selectableRenderers.foreach(r => r.updateUI(gameView, display, selC, consCtxt.selectable, consCtxt.selectableInst, consCtxt.selectionResults, actCtxt.selectionResults, desktop))
+			selectableRenderers.foreach(r => r.update(gameView, display, selC, consCtxt.selectable, consCtxt.selectableInst, consCtxt.selectionResults))
 		}
 	}
 
@@ -70,7 +72,7 @@ class SelectionControl(mainControl : TacticalUIControl) extends AxControlCompone
 		val tuid = display[TacticalUIData]
 
 
-		for (ctxt <- SD.activeContext; selector <- ctxt.nextSelector(view)) {
+		for (ctxt <- SD.activeContext; selector <- ctxt.nextSelector()) {
 			val toConsiderForSelection: List[Any] = Tiles.entitiesOnTile(tuid.mousedOverHex).toList ::: tuid.mousedOverBiasedHex :: tuid.mousedOverHex :: Nil
 			for ((_, (satisfying, satisfiedAmount)) <- toConsiderForSelection.findFirstWith(thing => selector.satisfiedBy(view, thing))) {
 				return Some(ctxt.copy(selectionResults = ctxt.selectionResults.addResult(selector, satisfying, satisfiedAmount)))
@@ -84,7 +86,7 @@ class SelectionControl(mainControl : TacticalUIControl) extends AxControlCompone
 		val tuid = display[TacticalUIData]
 		SD.activeContext.flatMap(ctxt => {
 			tuid.selectedCharacter.flatMap(selC => {
-				ctxt.selectable.nextSelector(view,selC,ctxt.selectionResults)
+				ctxt.nextSelector()
 			})
 		})
 	}
@@ -96,12 +98,12 @@ class SelectionControl(mainControl : TacticalUIControl) extends AxControlCompone
 		SD.selectionWidgets = Map()
 	}
 
-	def changeSelectionTarget(game : World, display : World, selectable : Selectable, onFinish : SelectionContext => Unit): Unit = {
+	def changeSelectionTarget(game : World, display : World, selectable : Selectable, selectableInst : SelectableInstance, onFinish : SelectionContext => Unit): Unit = {
 		val SD = display[SelectionData]
 
 		for (selC <- display[TacticalUIData].selectedCharacter) {
 			resetSelectionContext(display)
-			updateSelectionContext(game.view, display, Some(SelectionContext(selC, selectable, SelectionResult(), onFinish)))
+			updateSelectionContext(game.view, display, Some(SelectionContext(selC, selectable, selectableInst, SelectionResult(), onFinish)))
 		}
 	}
 
@@ -113,7 +115,7 @@ class SelectionControl(mainControl : TacticalUIControl) extends AxControlCompone
 			SD.activeContext = newContext
 			for (selC <- tuid.selectedCharacter) {
 				// if we have a selected character, a selection context, and the selection context is fully satisfied, then we're finished
-				for (ctxt <- SD.activeContext if ctxt.nextSelector(view).isEmpty) {
+				for (ctxt <- SD.activeContext if ctxt.nextSelector().isEmpty) {
 					// when we finish, we want to reset
 					ctxt.onFinish(ctxt)
 					SD.activeContext = None
@@ -131,6 +133,6 @@ class SelectionData extends TControlData with TMutableAuxData with TWorldAuxData
 	var selectionWidgets : Map[Selector[_], Widget] = Map()
 }
 
-case class SelectionContext(val entity : Entity, val selectable : Selectable, val selectionResults : SelectionResult, val onFinish : SelectionContext => Unit) {
-	def nextSelector(view : WorldView) = selectable.nextSelector(view, entity, selectionResults)
+case class SelectionContext(val entity : Entity, val selectable : Selectable, val selectableInst : SelectableInstance, val selectionResults : SelectionResult, val onFinish : SelectionContext => Unit) {
+	def nextSelector() = selectableInst.nextSelector(selectionResults)
 }

@@ -69,6 +69,8 @@ Taxonomy {
       Spear : Weapon
       Longspear : Spear
       Shortspear : Spear
+
+      Scythe : [Weapon, Tool, SturdyCuttingTool]
     }
   }
 
@@ -195,5 +197,22 @@ Taxonomy {
     ActionCard : CardType
     MoveCard : CardType
     GatherCard : CardType
+  }
+
+  Card : []
+  Cards {
+    Harvest : Card
+    Gather : Card
+    Move : Card
+  }
+
+  Flag : []
+  Flags {
+    Harvester : Flag
+  }
+
+  Tag : []
+  Tags {
+    Tool : Tag
   }
 }

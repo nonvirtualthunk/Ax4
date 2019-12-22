@@ -11,7 +11,6 @@ import arx.engine.world.{World, WorldView}
 import arx.game.logic.Randomizer
 
 object CardLogic {
-
 	import arx.core.introspection.FieldOperations._
 
 	def drawHand(entity: Entity)(implicit world: World) = {
@@ -173,7 +172,7 @@ object CardLogic {
 		world.endEvent(CardAdded(entity, card))
 	}
 
-	def playCard(entity: Entity, card: Entity, selections: SelectionResult)(implicit world: World): Unit = {
+	def playCard(entity: Entity, card: Entity, cardPlayInstance: CardPlayInstance, selections: SelectionResult)(implicit world: World): Unit = {
 		implicit val view = world.view
 
 		world.startEvent(CardPlayed(entity, card))
@@ -182,19 +181,12 @@ object CardLogic {
 		world.modify(entity, DeckData.hand remove card)
 
 		val CD = card[CardData]
-		for (cost <- CD.costs) {
-			if (!cost.canApplyEffect(view, entity)) {
-				Noto.error("Played a card when one if its costs could no longer be paid")
-			}
-			cost.applyEffect(world, entity, selections)
+		for ((_, cost) <- cardPlayInstance.costs) {
+			cost.applyEffect(world, selections)
 		}
 
-		for (effect <- CD.effects) {
-			if (effect.canApplyEffect(view, entity)) {
-				effect.applyEffect(world, entity, selections)
-			} else {
-				Noto.info("Effect was no longer applicable")
-			}
+		for ((_, effect) <- cardPlayInstance.effects) {
+			effect.applyEffect(world, selections)
 		}
 
 		world.endEvent(CardPlayed(entity, card))
@@ -284,6 +276,11 @@ object CardLogic {
 				case Some(weapon) => weapon.naturalWeapon == isNaturalWeapon
 				case None => false
 			})
+	}
+
+	def isPlayable(card: Entity)(implicit view : WorldView): Boolean = {
+		val CD = card[CardData]
+		CD.costs.nonEmpty || CD.effects.nonEmpty
 	}
 }
 

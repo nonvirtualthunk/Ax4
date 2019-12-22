@@ -158,6 +158,11 @@ object SimpleMapScenario extends Scenario {
 //		InventoryLogic.equip(torbold, longspear)(world)
 		InventoryLogic.transferItem(longspear, to = Some(torbold))(world)
 
+		val scytheArch = WeaponLibrary.withKind(Taxonomy("scythe", "Items.Weapons"))
+		val scythe = scytheArch.createEntity(world)
+		//		InventoryLogic.equip(torbold, longspear)(world)
+		InventoryLogic.transferItem(scythe, to = Some(torbold))(world)
+
 		val stamPot = ItemLibrary.withKind(Taxonomy("staminaPotion")).createEntity(world)
 		InventoryLogic.transferItem(stamPot, Some(torbold))(world)
 

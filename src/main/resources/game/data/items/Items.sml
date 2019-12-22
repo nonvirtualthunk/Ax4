@@ -15,6 +15,8 @@ Items {
     durability : 2
 
     material : Hay
+
+    tags : [Plant]
   }
 
   StaminaPotion : {

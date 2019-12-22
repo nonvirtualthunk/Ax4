@@ -28,6 +28,6 @@ Terrain {
     cover : 1
     elevation : 1
     moveCost : 2
-    kind : plateaus(hills)
+    kind : plateaus
   }
 }

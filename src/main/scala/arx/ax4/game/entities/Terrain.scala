@@ -105,7 +105,7 @@ class EntityArchetype {
 		val ent = world.createEntity()
 		world.startEvent(EntityCreated(ent))
 		_data.foreach {
-			case (clazz,data) => world.attachDataByClass(ent, CopyAssistant.copyShallow(data), clazz.runtimeClass)
+			case (clazz,data) => world.attachDataByClass(ent, data.copy(world), clazz.runtimeClass)
 		}
 		world.endEvent(EntityCreated(ent))
 		ent

@@ -24,6 +24,7 @@ Weapons {
         minRange : 2
         maxRange : 2
         damage : 1d8 Piercing
+        cardCount : 4
       }
 
       secondary : {
@@ -35,7 +36,43 @@ Weapons {
         minRange : 1
         maxRange : 1
         damage : 1d4 Bludgeoning
+        cardCount : 2
       }
+    }
+  }
+
+  Scythe : ${WeaponBase} {
+    durability : 15
+
+    weaponSkills : [spearSkill]
+
+    usesBodyParts {
+      gripping : 2
+    }
+
+    attacks {
+      primary {
+        name : slash
+        actionCost : 2
+        accuracyBonus : -1
+        strikeCount: 1
+        staminaCostPerStrike : 2
+        minRange : 1
+        maxRange : 1
+        damage : 1d5 slashing
+        damageBonus : -1
+        cardCount : 2
+      }
+    }
+
+    tags : [tags.tool]
+
+    equippedFlags : {
+      Harvester : 1
+    }
+
+    equippedCards : {
+      Harvest : 2
     }
   }
 }

@@ -171,7 +171,7 @@ class CardControl(selectionControl : SelectionControl) extends AxControlComponen
 
 				val od = widget[OverlayData]
 
-				od.overlays(CardControl.ActiveOverlay).drawOverlay = if (heldCard.contains(card) && curY < (widget.parent.drawing.effectiveDimensions.y - 1000)) {
+				od.overlays(CardControl.ActiveOverlay).drawOverlay = if (heldCard.contains(card) && curY < (widget.parent.drawing.effectiveDimensions.y - 1000) && CardLogic.isPlayable(card)(game.view)) {
 					useCardOnDrop = true
 					true
 				} else {
@@ -181,11 +181,7 @@ class CardControl(selectionControl : SelectionControl) extends AxControlComponen
 					false
 				}
 
-				if (isLockedCard) {
-					od.overlays(CardControl.LockedOverlay).drawOverlay = true
-				} else {
-					od.overlays(CardControl.LockedOverlay).drawOverlay = false
-				}
+				od.overlays(CardControl.LockedOverlay).drawOverlay = isLockedCard
 			}
 		}
 
@@ -211,18 +207,13 @@ class CardControl(selectionControl : SelectionControl) extends AxControlComponen
 
 		if (useCardOnDrop) {
 			for (card <- heldCard ; selC <- tuid.selectedCharacter) {
-				val costs = card[CardData].costs
-				costs.find(cost => !cost.canApplyEffect(game.view, selC)) match {
-					case Some(failedCost) =>
-						Noto.info(s"Could not pay cost: $failedCost")
-					case None =>
-						val cardPlay = CardPlay(card)
-//						if (cardPlay.nextSelector(view, selC, SelectionResult()).isEmpty) {
-//							// no requirements for this card, play it directly
-//							CardLogic.playCard(selC, card, SelectionResult())(game)
-//						} else {
-							selectionControl.changeSelectionTarget(game, display, cardPlay, (sc) => CardLogic.playCard(selC, card, sc.selectionResults)(game))
-//						}
+				if (CardLogic.isPlayable(card)) {
+					val cardPlay = CardPlay(card)
+					cardPlay.instantiate(game.view, selC) match {
+						case Left(cardPlayInst) =>
+							selectionControl.changeSelectionTarget(game, display, cardPlay, cardPlayInst, (sc) => CardLogic.playCard(selC, card, cardPlayInst, sc.selectionResults)(game))
+						case Right(msg) => Noto.error(s"Could not play card: $msg")
+					}
 				}
 			}
 		}

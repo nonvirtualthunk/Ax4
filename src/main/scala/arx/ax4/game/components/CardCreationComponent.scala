@@ -11,6 +11,7 @@ import arx.engine.game.components.GameComponent
 import arx.engine.world.World
 import arx.core.introspection.FieldOperations._
 import arx.core.math.Sext
+import arx.Prelude._
 
 class CardCreationComponent extends GameComponent {
 	override protected def onUpdate(world: World, dt: UnitOfTime): Unit = {
@@ -66,13 +67,22 @@ class CardCreationComponent extends GameComponent {
 					if (item.equipable) {
 						val card = CardLogic.createCard(entity, CD => {
 							CD.cardType = CardTypes.ItemCard
-							CD.name = s"Equip ${IdentityLogic.name(entity).capitalize}"
+							CD.name = s"Equip ${IdentityLogic.name(entity).capitalizeAll}"
 							CD.effects = Vector(EquipItemEffect(entity))
 							CD.costs = Vector(PayActionPoints(1))
-							CD.source = entity
+						})
+						world.modify(entity, Item.inventoryCards append card)
+					} else {
+						val card = CardLogic.createCard(entity, CD => {
+							CD.cardType = CardTypes.ItemCard
+							CD.name = IdentityLogic.name(entity).capitalizeAll
+							CD.cardType = CardTypes.ItemCard
 						})
 						world.modify(entity, Item.inventoryCards append card)
 					}
+
+					item.inventoryCardArchetypes.foreach(arch => world.modify(entity, Item.inventoryCards append arch.createEntity(world)))
+					item.equippedCardArchetypes.foreach(arch => world.modify(entity, Item.equippedCards append arch.createEntity(world)))
 				}
 
 		}
