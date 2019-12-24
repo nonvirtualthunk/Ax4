@@ -1,18 +1,18 @@
 package arx.ax4.game.logic
 
 import arx.application.Noto
-import arx.ax4.game.action.BiasedAxialVec3
 import arx.ax4.game.entities.Companions.{CharacterInfo, CombatData, Equipment, Physical, Weapon}
 import arx.ax4.game.entities.{AttackData, AttackModifier, AttackProspect, AttackReference, CharacterInfo, CombatData, DamageResult, DamageType, DefenseData, DefenseModifier, Physical, Tiles, UntargetedAttackProspect, Weapon}
 import arx.ax4.game.event.{AttackEvent, AttackEventInfo, DamageEvent, DeflectEvent, DodgeEvent, StrikeEvent, SubStrike}
-import arx.core.vec.coordinates.AxialVec3
-import arx.engine.entity.Entity
+import arx.core.vec.coordinates.{AxialVec3, BiasedAxialVec3}
+import arx.engine.entity.{Entity, Taxon}
 import arx.engine.world.{World, WorldView}
 import arx.game.logic.Randomizer
+import arx.core.introspection.FieldOperations._
 
 object CombatLogic {
 
-	import arx.core.introspection.FieldOperations._
+
 
 	def attack(world: World, attacker: Entity, targets: Seq[Entity], attackReference: AttackReference): Unit = {
 		implicit val view = world.view
@@ -90,7 +90,7 @@ object CombatLogic {
 		EffectiveAttackData(strikesByTarget)
 	}
 
-	def doDamage(world: World, target: Entity, damage: Int, damageType: DamageType, defenseData: DefenseData, source: Option[String]): Unit = {
+	def doDamage(world: World, target: Entity, damage: Int, damageType: Taxon, defenseData: DefenseData, source: Option[String]): Unit = {
 		val effDamage = if (damageType.isA(DamageType.Physical)) {
 			damage - defenseData.armor
 		} else {
@@ -219,7 +219,7 @@ object CombatLogic {
 		defenseData -> modifiers
 	}
 
-	def availableAttacks(implicit view: WorldView, attacker: Entity, includeBaseAttacks : Boolean, includeSpecialAttacks: Boolean): Seq[AttackReference] = {
+	def availableAttacks(attacker: Entity, includeBaseAttacks : Boolean, includeSpecialAttacks: Boolean)(implicit view: WorldView): Seq[AttackReference] = {
 		val weaponAttacks = attacker(Equipment).equipped
 			.filter(e => e.hasData[Weapon])
 			.flatMap(weapon => weapon(Weapon).attacks.map { case (k, _) => AttackReference(weapon, k, None, None) })
@@ -251,8 +251,15 @@ object CombatLogic {
 				Nil
 			}
 		}
+	}
 
-
+	/**
+	 * Returns all the valid attack references for the given attacker, special attack source and special attack key by examining the
+	 * possible weapons and attacks used by the entity
+	 */
+	def validSpecialAttacksFor(attacker : Entity, specialAttackSource : Entity, specialAttackKey : AnyRef)(implicit view: WorldView) = {
+		availableAttacks(attacker, includeBaseAttacks = false, includeSpecialAttacks = true)
+			.filter(aref => aref.specialSource.contains(specialAttackSource) && aref.specialKey == specialAttackKey)
 	}
 
 	def targetedEntities(targets : Either[Seq[Entity], Seq[BiasedAxialVec3]])(implicit view : WorldView) : Seq[Entity] = {
@@ -262,6 +269,14 @@ object CombatLogic {
 		}
 	}
 
+	def baseAttackDataForWeapon(weapon : Entity)(implicit view : WorldView) : AttackData = {
+		AttackReference(weapon, weapon[Weapon].primaryAttack, None, None).resolve() match {
+			case Some(attackData) => attackData
+			case None =>
+				Noto.warn(s"Weapon did not have primary attack $weapon")
+				AttackData(name = "Could not resolve")
+		}
+	}
 }
 
 

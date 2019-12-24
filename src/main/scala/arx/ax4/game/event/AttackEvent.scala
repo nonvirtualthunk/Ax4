@@ -1,6 +1,5 @@
 package arx.ax4.game.event
 
-import arx.ax4.game.action.GameActionIntent
 import arx.ax4.game.entities.{AttackData, DamageType, DefenseData, GatherProspect, ReactionType, Resource}
 import arx.engine.entity.{Entity, Taxon}
 import arx.engine.event.GameEvent
@@ -11,7 +10,7 @@ case class StrikeEvent(attackInfo : AttackEventInfo) extends GameEvent
 
 case class SubStrike(target : Entity, attackInfo : AttackEventInfo, defenseData : DefenseData) extends GameEvent
 
-case class DamageEvent(entity : Entity, damage : Int, damageType : DamageType) extends GameEvent
+case class DamageEvent(entity : Entity, damage : Int, damageType : Taxon) extends GameEvent
 
 case class DodgeEvent(entity : Entity) extends GameEvent
 
@@ -29,7 +28,6 @@ case class UnequipItem(entity : Entity, item : Entity) extends GameEvent
 case class TransferItem(item : Entity, from : Option[Entity], to : Option[Entity]) extends  GameEvent
 
 
-case class ActiveIntentChanged(entity : Entity, intent : GameActionIntent) extends GameEvent
 
 case class GainSkillXPEvent(entity : Entity, skill : Taxon, amount : Int) extends GameEvent
 

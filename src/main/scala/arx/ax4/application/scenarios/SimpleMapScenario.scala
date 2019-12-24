@@ -2,12 +2,13 @@ package arx.ax4.application.scenarios
 
 import arx.Prelude
 import arx.application.Noto
-import arx.ax4.control.components.{CardControl, SelectionControl, TacticalUIActionControl, TacticalUIControl}
-import arx.ax4.game.action.{AttackIntent, MoveIntent}
+import arx.ax4.control.components.{CardControl, SelectionControl, TacticalUIControl}
 import arx.ax4.game.components.{CardCreationComponent, DeckComponent, TurnComponent}
 import arx.ax4.game.entities.Companions.{CardData, CharacterInfo, DeckData, Physical, Tile, TurnData}
-import arx.ax4.game.entities.{AllegianceData, AttackData, AttackKey, AttackReference, AxAuxData, CardData, CardPredicate, CardSelector, CardTypes, CharacterInfo, CombatData, DamageElement, DamageType, DeckData, EntityConditionals, Equipment, FactionData, GatherMethod, Inventory, ItemLibrary, LockedCardSlot, LockedCardType, Physical, QualitiesData, ReactionData, Resource, ResourceKey, ResourceOrigin, ResourceSourceData, TargetPattern, Terrain, TerrainLibrary, Tile, Tiles, TurnData, Vegetation, VegetationLayer, VegetationLayerType, VegetationLibrary, Weapon, WeaponLibrary}
-import arx.ax4.game.logic.{CardLogic, InventoryLogic, MovementLogic}
+import arx.ax4.game.entities.EntityConditionals._
+import arx.ax4.game.entities.GatherConditionals._
+import arx.ax4.game.entities.{AllegianceData, AttackData, AttackKey, AttackReference, AxAuxData, CardData, CardPredicate, CardSelector, CardTypes, CharacterInfo, CombatData, DamageElement, DamageType, DeckData, EntityConditionals, Equipment, FactionData, GatherConditionals, GatherMethod, Inventory, ItemLibrary, LockedCardSlot, LockedCardType, Physical, QualitiesData, ReactionData, Resource, ResourceKey, ResourceOrigin, ResourceSourceData, TargetPattern, Terrain, TerrainLibrary, Tile, Tiles, TurnData, Vegetation, VegetationLayer, VegetationLayerType, VegetationLibrary, Weapon, WeaponLibrary}
+import arx.ax4.game.logic.{CardLogic, CharacterLogic, InventoryLogic, MovementLogic}
 import arx.ax4.graphics.components.{AnimationGraphicsComponent, AnimationGraphicsRenderingComponent, EntityGraphics, TacticalUIGraphics, TileGraphics}
 import arx.ax4.graphics.data.{AxGraphicsData, TacticalUIData}
 import arx.core.async.Executor
@@ -111,11 +112,9 @@ object SimpleMapScenario extends Scenario {
 				val resourceData = new ResourceSourceData
 				for ((vlt, l) <- veg.layers) {
 					if (l.kind == Taxonomy("grass", "Vegetations")) {
-						resourceData.resources += ResourceKey(ResourceOrigin.Vegetation(vlt), Taxonomy("hay bale", "Items")) ->
-							Resource(Taxonomy("hay bale", "Items"), Reduceable(3), 1, 1.gameYear, canRecoverFromZero = true, structural = false,
-								Vector(
-									GatherMethod(name = "gather hay by hand", actionCost = 3, amount = 1),
-									GatherMethod(name = "cut hay", toolRequirements = Some(EntityConditionals.isA(Taxonomy("fine cutting tool"))) ,actionCost = 2, amount = 3)))
+						resourceData.resources += ResourceKey(ResourceOrigin.Vegetation(vlt), Taxonomy("hay bushel", "Items")) ->
+							Resource(Taxonomy("hay bushel", "Items"), Reduceable(3), 1, 1.gameYear, canRecoverFromZero = true, structural = false,
+								Vector(GatherMethod(name = "Gather Hay", amount = 1, gatherFlags = Set(Taxonomy("harvester")))))
 					}
 				}
 				world.attachData(ent, resourceData)
@@ -138,7 +137,7 @@ object SimpleMapScenario extends Scenario {
 		})
 
 
-		val torbold = createCreature(world, player)
+		val torbold = CharacterLogic.createCharacter(player)(world)
 		MovementLogic.placeCharacterAt(torbold, AxialVec3(1,-1,0))(world)
 		//		world.modify(Tiles.tileAt(0,0), Tile.entities + torbold, None)
 		world.modify(torbold, IdentityData.name -> Some("Torbold"), None)
@@ -167,7 +166,7 @@ object SimpleMapScenario extends Scenario {
 		InventoryLogic.transferItem(stamPot, Some(torbold))(world)
 
 
-		val slime = createCreature(world, enemy)
+		val slime = CharacterLogic.createCharacter(enemy)(world)
 		world.modify(slime, CharacterInfo.species setTo Taxonomy("slime"), None)
 		world.modify(slime, Physical.position -> AxialVec3(2,0,0), None)
 		world.modify(slime, IdentityData.name -> Some("Slime"), None)
@@ -179,30 +178,6 @@ object SimpleMapScenario extends Scenario {
 		world.addEvent(TurnStartedEvent(player, 0))
 
 		Mouse.setImage(ResourceManager.image("third-party/shikashiModified/staff1.png"), Vec2i(4,4))
-	}
-
-	def createCreature(world : World, faction : Entity) = {
-		val creature = world.createEntity()
-		world.attachData(creature, new DeckData)
-		world.attachData(creature, new CharacterInfo)
-		world.attachData(creature, new Physical)
-		world.attachData(creature, new IdentityData)
-		world.attachData(creature, new Equipment)
-		world.attachData(creature, new Inventory)
-		world.attachData(creature, new CombatData)
-		world.attachData(creature, new QualitiesData)
-		world.attachData(creature, new ReactionData)
-		world.attachDataWith(creature, (wd : Weapon) => {
-			wd.attacks += AttackKey.Primary -> AttackData("Punch", 0, 1, 1, 1, 0, 1, Map(AttackData.PrimaryDamageKey -> DamageElement(DicePool(1).d(4), 0, 1.0f, DamageType.Bludgeoning)), TargetPattern.SingleEnemy, cardCount = 2)
-			wd.weaponSkills = List(Taxonomy("UnarmedSkill"))
-			wd.naturalWeapon = true
-		})
-		world.attachDataWith(creature, (ad : AllegianceData) => {
-			ad.faction = faction
-		})
-
-		world.addEvent(EntityCreated(creature))
-		creature
 	}
 
 	override def displayWorld(universe: Universe): World = {

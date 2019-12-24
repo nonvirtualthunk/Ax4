@@ -53,7 +53,7 @@ Taxonomy {
     IronwoodLog : Log
     IronwoodPlank : Plank
 
-    HayBale : [RawMaterial, AnimalFoodstuff]
+    HayBushel : [RawMaterial, AnimalFoodstuff]
 
     StaminaPotion : Potion
 
@@ -197,13 +197,11 @@ Taxonomy {
     ActionCard : CardType
     MoveCard : CardType
     GatherCard : CardType
-  }
 
-  Card : []
-  Cards {
-    Harvest : Card
-    Gather : Card
-    Move : Card
+    Harvest : GatherCard
+    Gather : GatherCard
+    Move : MoveCard
+    Slash : AttackCard
   }
 
   Flag : []

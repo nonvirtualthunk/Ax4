@@ -4,12 +4,12 @@ import arx.ai.search.Pathfinder
 import arx.application.Noto
 import arx.ax4.game.entities.Companions.{CharacterInfo, Physical, Tile, TurnData}
 import arx.ax4.game.entities.{AllegianceData, AttackData, AttackKey, AttackReference, CharacterInfo, DamageElement, FactionData, Physical, SkillsLibrary, Tile, Tiles, TurnData}
-import arx.ax4.game.event.{ActiveIntentChanged, EntityMoved}
+import arx.ax4.game.event.{EntityMoved}
 import arx.ax4.graphics.components.EntityGraphics
 import arx.ax4.graphics.data.{AxDrawingConstants, SpriteLibrary, TacticalUIData, TacticalUIMode}
 import arx.core.units.UnitOfTime
 import arx.core.vec.{ReadVec2f, Vec3f, Vec4f}
-import arx.core.vec.coordinates.{AxialVec, AxialVec3, HexDirection}
+import arx.core.vec.coordinates.{AxialVec, AxialVec3, BiasedAxialVec3, HexDirection}
 import arx.engine.control.components.ControlComponent
 import arx.engine.control.event.{KeyModifiers, KeyPressEvent, KeyReleaseEvent, MouseButton, MouseEvent, MouseMoveEvent, MousePressEvent, MouseReleaseEvent, UIEvent}
 import arx.engine.graphics.data.PovData
@@ -17,7 +17,6 @@ import arx.engine.world.{GameEventClock, HypotheticalWorldView, World, WorldView
 import arx.graphics.{GL, TToImage}
 import arx.Prelude.toArxList
 import arx.ax4.control.components.widgets.InventoryWidget
-import arx.ax4.game.action.{AttackIntent, BiasedAxialVec3, DoNothingIntent, GameAction, GatherIntent, MoveIntent}
 import arx.ax4.game.event.TurnEvents.{TurnEndedEvent, TurnStartedEvent}
 import arx.ax4.game.logic.{ActionLogic, CharacterLogic, CombatLogic, SkillsLogic}
 import arx.ax4.graphics.data.TacticalUIMode.ChooseSpecialAttackMode
@@ -70,28 +69,6 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 		mainSection.height = DimensionExpression.Proportional(1.0f)
 		mainSection.drawing.drawBackground = false
 		tuid.mainSectionWidget = mainSection
-
-
-//		val actionSelBar = mainSection.createChild("widgets/ActionSelectionWidgets.sml", "ActionSelectionButtonBar")
-//		actionSelBar.showing = Moddable(() => tuid.selectedCharacter.isDefined)
-//		for (w <- actionSelBar.descendantsWithIdentifier("SpecialAttackButton")) {
-//			w.consumeEvent {
-//				case MouseReleaseEvent(_,_,_) => tuid.toggleUIMode(ChooseSpecialAttackMode)
-//			}
-//		}
-
-		tuid.specialAttacksList = mainSection.createChild("widgets/ActionSelectionWidgets.sml", "SpecialAttackSelectionList")
-//		specialAttackList.showing = Moddable(() => )
-		(desktop.descendantsWithIdentifier("SpecialAttackSelectionList") ::: desktop.descendantsWithIdentifier("AttackDisplay")).foreach(w =>
-			w.onEvent {
-				case ListItemSelected(_, _, Some(attackDisplayInfo: SimpleAttackDisplayInfo)) =>
-					val selC = display[TacticalUIData].selectedCharacter.get
-					game.modify(selC, CharacterInfo.activeAttack -> Some(attackDisplayInfo.attackRef))
-					game.modify(selC, CharacterInfo.defaultIntent -> AttackIntent(attackDisplayInfo.attackRef))
-					CharacterLogic.setActiveIntent(selC, AttackIntent(attackDisplayInfo.attackRef))(game)
-			}
-		)
-		tuid.specialAttacksList.showing = Moddable(false)//Moddable(() => tuid.activeUIMode == TacticalUIMode.ChooseSpecialAttackMode)
 
 		tuid.inventoryWidget = new InventoryWidget(mainSection)
 		tuid.inventoryWidget.widget.showing = Moddable(() => tuid.activeUIMode == TacticalUIMode.InventoryMode)
@@ -147,11 +124,6 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 			case KeyReleaseEvent(GLFW.GLFW_KEY_I, _) =>
 				val tuid = display[TacticalUIData]
 				tuid.toggleUIMode(TacticalUIMode.InventoryMode)
-			case KeyReleaseEvent(GLFW.GLFW_KEY_G, _) =>
-				val tuid = display[TacticalUIData]
-				for (selC <- tuid.selectedCharacter) {
-					CharacterLogic.setActiveIntent(selC, GatherIntent)(game)
-				}
 		}
 	}
 
@@ -195,27 +167,14 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 			desktop.bind("selectedCharacter.speed", () => selC[CharacterInfo].moveSpeed)
 
 			tuid.selectedCharacterInfoWidget.bind("attacks", () => {
-				CombatLogic.availableAttacks(game, selC, includeBaseAttacks = true,  includeSpecialAttacks = false)
+				CombatLogic.availableAttacks(selC, includeBaseAttacks = true,  includeSpecialAttacks = false)
    				.sortBy(aref => aref.attackKey != AttackKey.Primary)
 					.map(aref => {
-						val selected = selC[CharacterInfo].activeIntent == AttackIntent(aref)
 					CombatLogic.resolveUntargetedConditionalAttackData(game, selC, aref) match {
-						case Some((attackData, modifiers)) => SimpleAttackDisplayInfo.fromAttackData(aref, attackData, selected)
-						case None => SimpleAttackDisplayInfo(aref, "unresolved", AttackBonus(0), DamageExpression(Map()), RGBA(0.1f,0.2f,0.3f,1f))
+						case Some((attackData, modifiers)) => SimpleAttackDisplayInfo.fromAttackData(aref, attackData)
+						case None => SimpleAttackDisplayInfo(aref, "unresolved", AttackBonus(0), DamageExpression(Map()))
 					}
 				}).toList
-			})
-
-			tuid.specialAttacksList.bind("specialAttacks", () => {
-				CombatLogic.availableAttacks(game, selC, includeBaseAttacks = false,  includeSpecialAttacks = true)
-   				.sortBy(aref => s"${aref.attackKey} ${aref.specialKey}")
-   				.map(aref => {
-						val selected = selC[CharacterInfo].activeIntent == AttackIntent(aref)
-						CombatLogic.resolveUntargetedConditionalAttackData(game, selC, aref) match {
-							case Some((attackData, modifiers)) => SimpleAttackDisplayInfo.fromAttackData(aref, attackData, selected)
-							case None => SimpleAttackDisplayInfo(aref, "unresolved", AttackBonus(0), DamageExpression(Map()), RGBA(0.1f,0.2f,0.3f,1f))
-						}
-					})
 			})
 
 			tuid.selectedCharacterInfoWidget.bind("skills", () => {
@@ -275,11 +234,10 @@ case class AttackBonus(bonus : Int) {
 	import arx.Prelude.int2RicherInt
 	override def toString: String = bonus.toSignedString
 }
-case class SimpleAttackDisplayInfo(attackRef : AttackReference, name : String, accuracyBonus : AttackBonus, damage : DamageExpression, selectedColor : Color)
+case class SimpleAttackDisplayInfo(attackRef : AttackReference, name : String, accuracyBonus : AttackBonus, damage : DamageExpression)
 object SimpleAttackDisplayInfo {
-	def fromAttackData(aref : AttackReference, attackData : AttackData, selected : Boolean) : SimpleAttackDisplayInfo = {
-		SimpleAttackDisplayInfo(aref, attackData.name.capitalize, AttackBonus(attackData.accuracyBonus), DamageExpression(attackData.damage),
-			if (selected) { RGBA(0.1f,0.2f,0.3f,1f) } else { RGBA(0.5f,0.5f,0.5f,1.0f) })
+	def fromAttackData(aref : AttackReference, attackData : AttackData) : SimpleAttackDisplayInfo = {
+		SimpleAttackDisplayInfo(aref, attackData.name.capitalize, AttackBonus(attackData.accuracyBonus), DamageExpression(attackData.damage))
 	}
 }
 

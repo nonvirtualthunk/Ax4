@@ -1,7 +1,7 @@
 package arx.ax4.game.logic
 
 import arx.application.Noto
-import arx.ax4.game.action.{AttackAction, GameAction, GatherAction, GatherSelectionProspect, MoveAction}
+import arx.ax4.game.action.{AttackAction, GameAction, GatherAction, MoveAction}
 import arx.ax4.game.entities.Companions.Tile
 import arx.ax4.game.entities.{GatherProspect, Tile, Tiles}
 import arx.ax4.game.event.ActionTaken
@@ -23,14 +23,8 @@ object ActionLogic {
 				CombatLogic.attack(world, attacker, entityTargets.toList, attack)
 				true
 			case ga @ GatherAction(gatherer, target, resourceKey, method) =>
-				GatherSelectionProspect(gatherer, target, resourceKey, method).toGatherProspect(view) match {
-					case Some(prospect) =>
-						GatherLogic.gather(prospect)
-						true
-					case None =>
-						Noto.warn(s"could not perform requested gather $ga")
-						false
-				}
+				GatherLogic.gather(GatherProspect(gatherer, target, resourceKey, method))
+				true
 			case _ =>
 				Noto.error(s"Unsupported action: $action")
 				false

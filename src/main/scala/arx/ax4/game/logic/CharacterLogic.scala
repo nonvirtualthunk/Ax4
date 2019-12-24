@@ -1,13 +1,14 @@
 package arx.ax4.game.logic
 
-import arx.ax4.game.action.GameActionIntent
-import arx.ax4.game.entities.CharacterInfo
+
+import arx.ax4.game.entities.{AllegianceData, AttackData, AttackKey, CharacterInfo, CombatData, DamageElement, DamageType, DeckData, Equipment, Inventory, Physical, QualitiesData, ReactionData, TagData, TargetPattern, Weapon}
 import arx.ax4.game.entities.Companions.CharacterInfo
-import arx.ax4.game.event.{ActiveIntentChanged, MovePointsGained}
-import arx.engine.entity.Entity
+import arx.ax4.game.event.{EntityCreated, MovePointsGained}
+import arx.engine.entity.{Entity, IdentityData, Taxonomy}
 import arx.engine.world.{World, WorldView}
 import arx.core.introspection.FieldOperations._
 import arx.core.math.Sext
+import arx.game.data.DicePool
 
 object CharacterLogic {
 
@@ -40,10 +41,30 @@ object CharacterLogic {
 		game.endEvent(MovePointsGained(character, mp))
 	}
 
-	def setActiveIntent(entity : Entity, intent : GameActionIntent)(implicit game : World) = {
-		game.startEvent(ActiveIntentChanged(entity, intent))
-		game.modify(entity, CharacterInfo.activeIntent -> intent)
-		game.endEvent(ActiveIntentChanged(entity, intent))
+
+	def createCharacter(faction : Entity)(implicit world : World) = {
+		val creature = world.createEntity()
+		world.attachData(creature, new DeckData)
+		world.attachData(creature, new CharacterInfo)
+		world.attachData(creature, new Physical)
+		world.attachData(creature, new IdentityData)
+		world.attachData(creature, new Equipment)
+		world.attachData(creature, new Inventory)
+		world.attachData(creature, new CombatData)
+		world.attachData(creature, new QualitiesData)
+		world.attachData(creature, new ReactionData)
+		world.attachData(creature, new TagData)
+		world.attachDataWith(creature, (wd : Weapon) => {
+			wd.attacks += AttackKey.Primary -> AttackData("Punch", 0, 1, 1, 1, 0, 1, Map(AttackData.PrimaryDamageKey -> DamageElement(DicePool(1).d(4), 0, 1.0f, DamageType.Bludgeoning)), TargetPattern.SingleEnemy, cardCount = 2)
+			wd.weaponSkills = List(Taxonomy("UnarmedSkill"))
+			wd.naturalWeapon = true
+		})
+		world.attachDataWith(creature, (ad : AllegianceData) => {
+			ad.faction = faction
+		})
+
+		world.addEvent(EntityCreated(creature))
+		creature
 	}
 
 }

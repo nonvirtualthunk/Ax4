@@ -5,8 +5,9 @@ import arx.ax4.game.entities.AttackConditionals.AnyAttackReference
 import arx.ax4.game.entities.Conditionals.BaseAttackConditional
 import arx.ax4.game.entities.DamageType.{Piercing, Unknown}
 import arx.ax4.game.entities.TargetPattern.Point
+import arx.ax4.game.entities.cardeffects.{DrawCards, GameEffect}
 import arx.ax4.game.logic.AllegianceLogic
-import arx.core.introspection.{CopyAssistant, TEagerSingleton}
+import arx.core.introspection.{CopyAssistant, ReflectionAssistant, TEagerSingleton}
 import arx.core.macros.GenerateCompanion
 import arx.core.math.Sext
 import arx.core.representation.ConfigValue
@@ -33,9 +34,12 @@ case class AttackData(var name: String = "Strike",
 		name = modifiers.nameOverride.getOrElse(name)
 		accuracyBonus += modifiers.accuracyBonus
 		strikeCount += modifiers.strikeCountBonus
-		staminaCost += modifiers.staminaCostIncrease
+		staminaCost += modifiers.staminaCostDelta
+		actionCost = (actionCost + modifiers.actionCostDelta).max(modifiers.actionCostMinimum)
 		minRange = modifiers.minRangeOverride.getOrElse(minRange)
+		minRange = minRange + modifiers.minRangeDelta.getOrElse(0)
 		maxRange = modifiers.maxRangeOverride.getOrElse(maxRange)
+		maxRange = maxRange + modifiers.maxRangeDelta.getOrElse(0)
 		targetPattern = modifiers.targetPatternOverride.getOrElse(targetPattern)
 		for ((src, dmg) <- modifiers.damageBonuses) {
 			val existing = damage.get(src)
@@ -93,8 +97,12 @@ case class AttackModifier(var nameOverride: Option[String] = None,
 								  var namePrefix: Option[String] = None,
 								  var accuracyBonus: Int = 0,
 								  var strikeCountBonus: Int = 0,
-								  var staminaCostIncrease: Int = 0,
+								  var actionCostDelta : Int = 0,
+								  var actionCostMinimum : Int = 0,
+								  var staminaCostDelta: Int = 0,
+								  var minRangeDelta : Option[Int] = None,
 								  var minRangeOverride: Option[Int] = None,
+								  var maxRangeDelta : Option[Int] = None,
 								  var maxRangeOverride: Option[Int] = None,
 								  var damageBonuses: Map[AnyRef, DamageElementDelta] = Map(),
 								  var targetPatternOverride: Option[TargetPattern] = None) extends TNestedData
@@ -106,6 +114,7 @@ case class DefenseModifier(var dodgeBonus: Int = 0,
 class SpecialAttack {
 	var condition: BaseAttackConditional = AnyAttackReference
 	var attackModifier: AttackModifier = AttackModifier()
+	var additionalEffects : Seq[GameEffect] = Nil
 }
 
 object SpecialAttack {
@@ -131,40 +140,43 @@ object SpecialAttack {
 		)
 	}
 
+	case object SwiftStab extends SpecialAttack {
+		condition = AttackConditionals.HasDamageType(Piercing)
+		attackModifier = AttackModifier(
+			nameOverride = Some("swift stab"),
+			accuracyBonus = -1,
+			damageBonuses = Map(AttackData.PrimaryDamageKey -> DamageElementDelta(damageBonus = Some(-1))),
+			actionCostDelta = -1,
+			actionCostMinimum = 1
+		)
+		additionalEffects = Seq(
+			DrawCards(1)
+		)
+	}
+
+	import arx.Prelude._
+	private lazy val byNameMap = ReflectionAssistant.instancesOfSubtypesOf[SpecialAttack].map(inst => inst.getClass.getSimpleName.replace("$","").toLowerCase.stripWhitespace -> inst).toMap
+	def withNameExists(name : String) = byNameMap.contains(name.toLowerCase().stripWhitespace)
+	def withName(name : String) = byNameMap(name.toLowerCase().stripWhitespace)
 }
 
-case class DamageType(taxon: Taxon) {
-	def name: String = taxon.name
-
-	def isA(dt: DamageType): Boolean = taxon.isA(dt.taxon)
-
-	def isA(t: Taxon): Boolean = taxon.isA(t)
-
-	DamageTypes.damageTypesByName += taxon.name -> this
-}
 
 object DamageType extends TEagerSingleton {
-	val Physical = DamageType(Taxonomy("DamageType"))
+	val Physical = Taxonomy("DamageType")
 
-	val Bludgeoning = DamageType(Taxonomy("DamageTypes.Bludgeoning"))
+	val Bludgeoning = Taxonomy("DamageTypes.Bludgeoning")
 
-	val Piercing = DamageType(Taxonomy("DamageTypes.Piercing"))
+	val Piercing = Taxonomy("DamageTypes.Piercing")
 
-	val Slashing = DamageType(Taxonomy("DamageTypes.Slashing"))
+	val Slashing = Taxonomy("DamageTypes.Slashing")
 
-	val Unknown = DamageType(Taxonomy("DamageTypes.Unknown"))
-
-	implicit def toTaxon(dt: DamageType): Taxon = dt.taxon
+	val Unknown = Taxonomy("DamageTypes.Unknown")
 }
 
-object DamageTypes {
-	var damageTypesByName = Map[String, DamageType]()
+case class DamageElement(damageDice: DicePool, damageBonus: Int, damageMultiplier: Float, damageType: Taxon) {
 }
 
-case class DamageElement(damageDice: DicePool, damageBonus: Int, damageMultiplier: Float, damageType: DamageType) {
-}
-
-case class DamageElementDelta(damageDice: Option[DicePool] = None, damageBonus: Option[Int] = None, damageMultiplier: Option[Float] = None, damageType: Option[DamageType] = None)
+case class DamageElementDelta(damageDice: Option[DicePool] = None, damageBonus: Option[Int] = None, damageMultiplier: Option[Float] = None, damageType: Option[Taxon] = None)
 
 object DamageElementDelta {
 	def damageBonus(n: Int) = DamageElementDelta(damageBonus = Some(n))
@@ -187,7 +199,7 @@ object DamageElement {
 						case "-" => -amount.toInt
 					}
 				}
-				val damageType = Option(nullableDamageTypeStr).flatMap(str => DamageTypes.damageTypesByName.get(str.toLowerCase())).getOrElse(DamageType.Unknown)
+				val damageType = Option(nullableDamageTypeStr).map(str => Taxonomy(str.toLowerCase())).getOrElse(DamageType.Unknown)
 				val dieCount = dieCountStr.toInt
 				val pips = pipsStr.toInt
 
@@ -212,7 +224,7 @@ case class AttackProspect(attacker: Entity, attackReference: AttackReference, ta
 //
 //case class StrikeResult(outcomes: Set[StrikeOutcome], damage: List[DamageResult])
 
-case class DamageResult(amount: Int, damageType: DamageType)
+case class DamageResult(amount: Int, damageType: Taxon)
 
 trait StrikeOutcome
 

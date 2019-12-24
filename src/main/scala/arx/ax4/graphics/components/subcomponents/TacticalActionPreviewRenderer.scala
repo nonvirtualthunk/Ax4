@@ -2,26 +2,26 @@ package arx.ax4.graphics.components.subcomponents
 
 import arx.ai.search.PathStep
 import arx.application.Noto
-import arx.ax4.game.action.{AttackAction, BiasedAxialVec3, BiasedHexSelector, CompoundSelectable, CompoundSelectableInstance, GameAction, HexSelector, MoveAction, MoveCharacter, MoveCharacterInstance, ResourceGatherSelector, Selectable, SelectableInstance, SelectionResult, Selector}
+import arx.ax4.game.action.{AttackAction, BiasedHexSelector, CompoundSelectable, CompoundSelectableInstance, GameAction, HexSelector, MoveAction, MoveCharacter, MoveCharacterInstance, ResourceGatherSelector, Selectable, SelectableInstance, SelectionResult, Selector}
 import arx.ax4.game.entities.Companions.{CharacterInfo, Physical, ResourceSourceData}
-import arx.ax4.graphics.components.{AttackPreviewData, AxCanvas, DrawLayer}
+import arx.ax4.graphics.components.{AxCanvas, DrawLayer}
 import arx.core.vec.{Vec2f, Vec3f}
-import arx.core.vec.coordinates.{AxialVec3, HexRingIterator}
+import arx.core.vec.coordinates.{AxialVec3, BiasedAxialVec3, HexRingIterator}
 import arx.engine.world.{HypotheticalWorldView, World, WorldView}
 import arx.resource.ResourceManager
 import arx.Prelude._
-import arx.ax4.control.components.{ActionSelectionContext, DamageExpression, ResourceSelectionInfo}
+import arx.ax4.control.components.DamageExpression
 import arx.ax4.control.event.SelectionMadeEvent
-import arx.ax4.game.entities.{ResourceSourceData, Tiles}
-import arx.ax4.game.entities.cardeffects.{AttackCardEffect, AttackCardEffectInstance, GatherCardEffect}
-import arx.ax4.game.logic.{CharacterLogic, CombatLogic, GatherLogic}
+import arx.ax4.game.entities.{GatherMethod, GatherProspect, ResourceSourceData, Tiles}
+import arx.ax4.game.entities.cardeffects.{AttackCardEffect, AttackGameEffectInstance, GatherCardEffect}
+import arx.ax4.game.logic.{CharacterLogic, CombatLogic, GatherLogic, TagLogic}
 import arx.ax4.graphics.data.{AxGraphicsData, CullingData, SpriteLibrary, TacticalUIData}
 import arx.ax4.graphics.logic.GameWidgetLogic
 import arx.core.introspection.ReflectionAssistant
 import arx.engine.control.components.windowing.Widget
 import arx.engine.control.components.windowing.widgets.{ListItemSelected, PositionExpression, TopLeft, TopRight}
 import arx.engine.data.{Moddable, TMutableAuxData, TWorldAuxData}
-import arx.engine.entity.{Entity, Taxonomy}
+import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.graphics.{GL, ScaledImage}
 import arx.graphics.helpers.{Color, RGBA}
 
@@ -167,7 +167,7 @@ object AttackCardEffectRenderer extends TacticalSelectableRenderer {
 
 	override def renderSelectable(game: HypotheticalWorldView, display: World, entity: Entity, canvas: AxCanvas, selectable: Selectable, selectableInst: SelectableInstance, selectionResults: SelectionResult): Unit = {
 		selectableInst match {
-			case ce @ AttackCardEffectInstance(attacker, attackRef, attack, _) =>
+			case ce @ AttackGameEffectInstance(attacker, attackRef, attack, _) =>
 				implicit val view = game
 
 				val targetSel = ce.targetSelector
@@ -220,7 +220,7 @@ object AttackCardEffectRenderer extends TacticalSelectableRenderer {
 
 		for ((selectable, selectableInst) <- allSelectablePairs) {
 			selectableInst match {
-				case ace@AttackCardEffectInstance(attacker, attackRef, attack, _) =>
+				case ace@AttackGameEffectInstance(attacker, attackRef, attack, _) =>
 					val targetSel = ace.targetSelector
 					val targets = consideredSelectionResult(targetSel)
 					val targetEntities = CombatLogic.targetedEntities(targets)
@@ -366,13 +366,17 @@ case object GatherEffectRenderer extends TacticalSelectableRenderer {
 				rsdd.activeSelector = rgs
 				rsrcW.bind("possibleResources", () => {
 					resources.map(p => {
-						val (textColor, iconColor) = p.toGatherProspect(game) match {
-							case Some(prospect) if GatherLogic.canGather(prospect) => (Color.Black, Color.White)
-							case _ => (RGBA(0.1f, 0.1f, 0.1f, 1.0f), Color.Grey)
+						val (textColor, iconColor) = if (GatherLogic.canGather(p)) {
+							(Color.Black, Color.White)
 						}
+						else {
+							(RGBA(0.1f, 0.1f, 0.1f, 1.0f), Color.Grey)
+						}
+
 						val disabledReason = GatherLogic.cantGatherReason(p).map("[" + _.toLowerCase + "]").getOrElse("")
 						val remaining = p.target[ResourceSourceData].resources(p.key).amount.currentValue
-						ResourceSelectionInfo(p, p.method, p.key.kind.name, ScaledImage.scaleToPixelWidth(SpriteLibrary.iconFor(p.key.kind), 64), p.method.name, p.method.amount, remaining, textColor, iconColor, disabledReason)
+						val maxAmount = p.method.amount + TagLogic.sumOfFlags(p.gatherer, p.method.gatherFlags)
+						ResourceSelectionInfo(p, p.method, p.key.kind.name, ScaledImage.scaleToPixelWidth(SpriteLibrary.iconFor(p.key.kind), 64), p.method.name, maxAmount, remaining, textColor, iconColor, disabledReason, p.method.actionCostDelta != 0 || p.method.staminaCostDelta != 0)
 					})
 				})
 				shouldShow = true
@@ -421,3 +425,7 @@ class ResourceSelectorDisplayData extends AxGraphicsData with TMutableAuxData wi
 	var resourceSelectorWidget : Widget = _
 	var activeSelector : Selector[_] = _
 }
+
+case class AttackPreviewData(name : String, accuracyBonus : String, damage : DamageExpression, defenderHP : Int, defense : String, defenseConcept : Taxon)
+
+case class ResourceSelectionInfo(prospect : GatherProspect, method : GatherMethod, resourceName : String, resourceIcon : ScaledImage, methodName : String, amount : Int, remainingAmount : Int, fontColor : Color, iconColor : Color, disabledReason : String, hasExtraCosts :Boolean)

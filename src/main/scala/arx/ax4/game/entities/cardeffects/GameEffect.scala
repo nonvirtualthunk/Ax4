@@ -1,9 +1,10 @@
 package arx.ax4.game.entities.cardeffects
 
 import arx.application.Noto
-import arx.ax4.game.action.{HexSelector, ResourceGatherSelector, Selectable, SelectableInstance, SelectionResult, Selector}
-import arx.ax4.game.entities.Companions.{CharacterInfo, Equipment, Physical}
-import arx.ax4.game.entities.{AttackReference, CardSelector, CharacterInfo, DeckData, Equipment, TargetPattern, Tiles}
+import arx.ax4.game.action.{EntityPredicate, EntitySelector, HexSelector, ResourceGatherSelector, Selectable, SelectableInstance, SelectionResult, Selector, SelfEntityPredicate}
+import arx.ax4.game.entities.Companions.{CharacterInfo, CombatData, Equipment, Physical}
+import arx.ax4.game.entities.Conditionals.BaseAttackConditional
+import arx.ax4.game.entities.{AttackModifier, AttackReference, CardSelector, CharacterInfo, DeckData, Equipment, SpecialAttack, TargetPattern, Tiles}
 import arx.ax4.game.logic.{CardLogic, CharacterLogic, GatherLogic, InventoryLogic}
 import arx.core.introspection.Field
 import arx.core.introspection.FieldOperations.{Add, Sub}
@@ -15,30 +16,31 @@ import arx.engine.entity.Entity
 import arx.engine.world.{FieldOperationModifier, World, WorldView}
 import arx.graphics.TToImage
 import arx.graphics.helpers.{Color, HorizontalPaddingSection, ImageSection, RichText, RichTextRenderSettings, THasRichTextRepresentation, TextSection}
+import arx.core.introspection.FieldOperations._
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe
 import scala.reflect.runtime.universe._
 
-trait CardEffect extends Selectable with THasRichTextRepresentation {
-	override def instantiate(world: WorldView, entity: Entity): Either[CardEffectInstance, String]
+trait GameEffect extends Selectable with THasRichTextRepresentation {
+	override def instantiate(world: WorldView, entity: Entity): Either[GameEffectInstance, String]
 
 	def toRichText(view: WorldView, entity: Entity, settings: RichTextRenderSettings): RichText = toRichText(settings)
 }
 
-object CardEffect {
-	val Sentinel = new CardEffect {
-		override def instantiate(world: WorldView, entity: Entity): Either[CardEffectInstance, String] = Right("Sentinel")
+object GameEffect {
+	val Sentinel = new GameEffect {
+		override def instantiate(world: WorldView, entity: Entity): Either[GameEffectInstance, String] = Right("Sentinel")
 
 		override def toRichText(settings: RichTextRenderSettings): RichText = RichText("Sentinel")
 	}
 }
 
-abstract class SimpleCardEffect extends CardEffect {
+abstract class SimpleCardEffect extends GameEffect {
 	private val outer = this
 
-	override def instantiate(world: WorldView, entity: Entity): Either[CardEffectInstance, String] = {
-		Left(new CardEffectInstance {
+	override def instantiate(world: WorldView, entity: Entity): Either[GameEffectInstance, String] = {
+		Left(new GameEffectInstance {
 			override def applyEffect(world: World, selectionResult: SelectionResult): Unit = outer.applyEffect(world, entity)
 
 			override def nextSelector(results: SelectionResult): Option[Selector[_]] = None
@@ -48,14 +50,14 @@ abstract class SimpleCardEffect extends CardEffect {
 	def applyEffect(world : World, entity : Entity)
 }
 
-trait CardEffectInstance extends SelectableInstance {
+trait GameEffectInstance extends SelectableInstance {
 	def applyEffect(world : World, selectionResult: SelectionResult)
 }
 
-case class GatherCardEffect(range : Int) extends CardEffect {
+case class GatherCardEffect(range : Int) extends GameEffect {
 
 
-	override def instantiate(world: WorldView, entity: Entity): Either[CardEffectInstance, String] = {
+	override def instantiate(world: WorldView, entity: Entity): Either[GameEffectInstance, String] = {
 		implicit val view = world
 
 		val center = entity(Physical).position
@@ -63,7 +65,7 @@ case class GatherCardEffect(range : Int) extends CardEffect {
 		if (!anyGatherInRange) {
 			Right("Nothing to gather in range")
 		} else {
-			Left(new CardEffectInstance {
+			Left(new GameEffectInstance {
 				val hexSelector = HexSelector(TargetPattern.Point, GatherCardEffect.this, h => h.distance(center) <= range && GatherLogic.gatherProspectsFor(entity, Tiles.tileAt(h)).nonEmpty)
 
 				def prospectSelector(target : AxialVec3) = ResourceGatherSelector(GatherLogic.gatherProspectsFor(entity, Tiles.tileAt(target))(view), GatherCardEffect.this)
@@ -86,10 +88,7 @@ case class GatherCardEffect(range : Int) extends CardEffect {
 					val hex = selectionResult.single(hexSelector)
 					val prospect = selectionResult.single(prospectSelector(hex))
 
-					prospect.toGatherProspect(world.view) match {
-						case Some(p) => GatherLogic.gather(p)(world)
-						case None => Noto.error(s"Gather failed after being selected: $prospect")
-					}
+					GatherLogic.gather(prospect)(world)
 				}
 			})
 		}
@@ -108,11 +107,11 @@ case class GainMovePoints(bonusMP : Sext) extends SimpleCardEffect {
 	override def toRichText(view: WorldView, entity: Entity, settings: RichTextRenderSettings): RichText = RichText(s"Move ${entity(CharacterInfo)(view).moveSpeed + bonusMP}")
 }
 
-case class PayActionPoints(ap : Int) extends CardEffect {
+case class PayActionPoints(ap : Int) extends GameEffect {
 
 
-	override def instantiate(world: WorldView, entity: Entity): Either[CardEffectInstance, String] = if (CharacterLogic.curActionPoints(entity)(world) >= ap) {
-		Left(new CardEffectInstance {
+	override def instantiate(world: WorldView, entity: Entity): Either[GameEffectInstance, String] = if (CharacterLogic.curActionPoints(entity)(world) >= ap) {
+		Left(new GameEffectInstance {
 			override def applyEffect(world: World, selectionResult: SelectionResult): Unit = CharacterLogic.useActionPoints(entity, ap)(world)
 			override def nextSelector(results: SelectionResult): Option[Selector[_]] = None
 		})
@@ -122,12 +121,12 @@ case class PayActionPoints(ap : Int) extends CardEffect {
 	override def toRichText(settings: RichTextRenderSettings): RichText = RichText(TextSection(s"Pay $ap ") :: HorizontalPaddingSection(10) :: ImageSection("graphics/ui/action_point.png", 2.0f, Color.White) :: Nil)
 }
 
-case class PayAttackActionPoints(attackReference : AttackReference) extends CardEffect {
+case class PayAttackActionPoints(attackReference : AttackReference) extends GameEffect {
 
-	override def instantiate(world: WorldView, entity: Entity): Either[CardEffectInstance, String] = attackReference.resolve()(world) match {
+	override def instantiate(world: WorldView, entity: Entity): Either[GameEffectInstance, String] = attackReference.resolve()(world) match {
 		case Some(attackData) =>
 			if (CharacterLogic.curActionPoints(entity)(world) >= attackData.actionCost) {
-				Left(new CardEffectInstance {
+				Left(new GameEffectInstance {
 					override def applyEffect(world: World, selectionResult: SelectionResult): Unit = CharacterLogic.useActionPoints(entity, attackData.actionCost)(world)
 					override def nextSelector(results: SelectionResult): Option[Selector[_]] = None
 				})
@@ -140,12 +139,12 @@ case class PayAttackActionPoints(attackReference : AttackReference) extends Card
 	override def toRichText(settings: RichTextRenderSettings): RichText = RichText("Pay Attack AP")
 }
 
-case class PayAttackStaminaPoints(attackReference : AttackReference) extends CardEffect {
+case class PayAttackStaminaPoints(attackReference : AttackReference) extends GameEffect {
 
-	override def instantiate(world: WorldView, entity: Entity): Either[CardEffectInstance, String] = attackReference.resolve()(world) match {
+	override def instantiate(world: WorldView, entity: Entity): Either[GameEffectInstance, String] = attackReference.resolve()(world) match {
 		case Some(attackData) =>
 			if (CharacterLogic.curActionPoints(entity)(world) >= attackData.actionCost) {
-				Left(new CardEffectInstance {
+				Left(new GameEffectInstance {
 					override def applyEffect(world: World, selectionResult: SelectionResult): Unit = CharacterLogic.useStamina(entity, attackData.actionCost)(world)
 					override def nextSelector(results: SelectionResult): Option[Selector[_]] = None
 				})
@@ -159,11 +158,11 @@ case class PayAttackStaminaPoints(attackReference : AttackReference) extends Car
 }
 
 
-case class PayStamina(stamina : Int) extends CardEffect {
+case class PayStamina(stamina : Int) extends GameEffect {
 
 
-	override def instantiate(world: WorldView, entity: Entity): Either[CardEffectInstance, String] = if (CharacterLogic.curStamina(entity)(world) >= stamina) {
-		Left(new CardEffectInstance {
+	override def instantiate(world: WorldView, entity: Entity): Either[GameEffectInstance, String] = if (CharacterLogic.curStamina(entity)(world) >= stamina) {
+		Left(new GameEffectInstance {
 			override def applyEffect(world: World, selectionResult: SelectionResult): Unit = CharacterLogic.useStamina(entity, stamina)(world)
 			override def nextSelector(results: SelectionResult): Option[Selector[_]] = None
 		})
@@ -175,13 +174,13 @@ case class PayStamina(stamina : Int) extends CardEffect {
 }
 
 
-case class DiscardCards(numCards : Int, requirePresent : Boolean, random : Boolean) extends CardEffect {
+case class DiscardCards(numCards : Int, requirePresent : Boolean, random : Boolean) extends GameEffect {
 
 
-	override def instantiate(world: WorldView, entity: Entity): Either[CardEffectInstance, String] = world.dataOpt[DeckData](entity) match {
+	override def instantiate(world: WorldView, entity: Entity): Either[GameEffectInstance, String] = world.dataOpt[DeckData](entity) match {
 		case Some(deck) =>
 			if (!requirePresent || deck.hand.size >= numCards) {
-				Left(new CardEffectInstance {
+				Left(new GameEffectInstance {
 					val cardSelector = CardSelector.AnyCard("Card to discard", DiscardCards.this).withAmount(numCards)
 
 					override def applyEffect(world: World, selectionResult: SelectionResult): Unit = {
@@ -204,12 +203,32 @@ case class DiscardCards(numCards : Int, requirePresent : Boolean, random : Boole
 	}
 }
 
-case class EquipItemEffect(item : Entity) extends CardEffect {
+case class DrawCards(numCards : Int) extends GameEffect {
+	override def instantiate(world: WorldView, entity: Entity): Either[GameEffectInstance, String] = {
+		implicit val view = world
+		entity.dataOpt[DeckData] match {
+			case Some(_) => Left(new GameEffectInstance {
+				override def applyEffect(world: World, selectionResult: SelectionResult): Unit = {
+					for (_ <- 0 until numCards) {
+						CardLogic.drawCard(entity)(world)
+					}
+				}
+
+				override def nextSelector(results: SelectionResult): Option[Selector[_]] = None
+			})
+			case None => Right("Entity does not have a deck to draw from")
+		}
+	}
+
+	override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"Draw $numCards Cards")
+}
+
+case class EquipItemEffect(item : Entity) extends GameEffect {
 
 
-	override def instantiate(world: WorldView, entity: Entity): Either[CardEffectInstance, String] = if (entity.hasData(Equipment)(world)) {
+	override def instantiate(world: WorldView, entity: Entity): Either[GameEffectInstance, String] = if (entity.hasData(Equipment)(world)) {
 		// TODO: inventory slots
-		Left(new CardEffectInstance {
+		Left(new GameEffectInstance {
 			override def applyEffect(world: World, selectionResult: SelectionResult): Unit = InventoryLogic.equip(entity, item)(world)
 
 			override def nextSelector(results: SelectionResult): Option[Selector[_]] = None
@@ -222,28 +241,66 @@ case class EquipItemEffect(item : Entity) extends CardEffect {
 }
 
 
-object CardEffectConfigLoader extends CustomConfigDataLoader[CardEffect] {
+case class AddAttackModifierEffect(condition : BaseAttackConditional, modifier : AttackModifier, predicates : Seq[EntityPredicate]) extends GameEffect {
+	override def instantiate(world: WorldView, entity: Entity): Either[GameEffectInstance, String] = Left(new GameEffectInstance {
+		val self = predicates == Seq(SelfEntityPredicate)
+		val selector = EntitySelector(predicates, "Entity to modify", AddAttackModifierEffect.this)
+
+		override def nextSelector(results: SelectionResult): Option[Selector[_]] = self || results.fullySatisfied(selector) match {
+			case true => None
+			case false => Some(selector)
+		}
+
+		override def applyEffect(world: World, selectionResult: SelectionResult): Unit = {
+			val target = if (self) {
+				entity
+			} else {
+				selectionResult.single(selector)
+			}
+			world.modify(target, CombatData.conditionalAttackModifiers append (condition -> modifier))
+		}
+	})
+
+	override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"Attack Modifier : $modifier")
+}
+
+case class AddSpecialAttackEffect(key : AnyRef, specialAttack : SpecialAttack) extends GameEffect {
+	override def instantiate(world: WorldView, entity: Entity): Either[GameEffectInstance, String] = {
+		Left(new GameEffectInstance {
+			override def applyEffect(world: World, selectionResult: SelectionResult): Unit = world.modify(entity, CombatData.specialAttacks.put(key, specialAttack))
+
+			override def nextSelector(results: SelectionResult): Option[Selector[_]] = None
+		})
+	}
+
+	override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"Gain Special Attack : $specialAttack")
+}
+
+
+object CardEffectConfigLoader extends CustomConfigDataLoader[GameEffect] {
 	val APPattern = "AP\\(([0-9]*)\\)".r
 	val MovePattern = "Move\\(([0-9]*)\\)".r
 	val StaminaPattern = "Stamina\\(([0-9]*)\\)".r
 	val GatherPattern = "Gather\\(([0-9]*)\\)".r
+	val SpecialAttackPattern = "SpecialAttack\\((.+?)\\)".r
 
-	override def loadedType = typeOf[CardEffect]
+	override def loadedType = typeOf[GameEffect]
 
-	override def loadFrom(config: ConfigValue): CardEffect = {
+	override def loadFrom(config: ConfigValue): GameEffect = {
 		if (config.isStr) {
 			config.str match {
 				case APPattern(ap) => PayActionPoints(ap.toInt)
 				case StaminaPattern(stam) => PayStamina(stam.toInt)
 				case GatherPattern(range) => GatherCardEffect(range.toInt)
 				case MovePattern(mp) => GainMovePoints(mp.toInt)
+				case SpecialAttackPattern(attName) if SpecialAttack.withNameExists(attName) => AddSpecialAttackEffect(attName, SpecialAttack.withName(attName))
 				case _ =>
 					Noto.warn(s"Unparseable card effect : ${config.str}")
-					CardEffect.Sentinel
+					GameEffect.Sentinel
 			}
 		} else {
 			Noto.warn(s"Unparseable card effect : $config")
-			CardEffect.Sentinel
+			GameEffect.Sentinel
 		}
 	}
 }

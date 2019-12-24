@@ -132,10 +132,6 @@ import arx.ax4.game.entities.CardData
 object CardData extends Clazz[CardData]("CardData", classOf[CardData]){
 	val Sentinel = new CardData
 	override def instantiate = new CardData
-	val costs = Field.fromValue(Sentinel.costs).createField[CardData]("costs",f => f.costs, (f,costs) => f.costs = costs, CardData) 
-	fields += "costs" -> costs
-	val effects = Field.fromValue(Sentinel.effects).createField[CardData]("effects",f => f.effects, (f,effects) => f.effects = effects, CardData) 
-	fields += "effects" -> effects
 	val cardType = Field.fromValue(Sentinel.cardType).createField[CardData]("cardType",f => f.cardType, (f,cardType) => f.cardType = cardType, CardData) 
 	fields += "cardType" -> cardType
 	val name = Field.fromValue(Sentinel.name).createField[CardData]("name",f => f.name, (f,name) => f.name = name, CardData) 
@@ -144,16 +140,20 @@ object CardData extends Clazz[CardData]("CardData", classOf[CardData]){
 	fields += "source" -> source
 	val exhausted = Field.fromValue(Sentinel.exhausted).createField[CardData]("exhausted",f => f.exhausted, (f,exhausted) => f.exhausted = exhausted, CardData) 
 	fields += "exhausted" -> exhausted
+	val costs = Field.fromValue(Sentinel.costs).createField[CardData]("costs",f => f.costs, (f,costs) => f.costs = costs, CardData) 
+	fields += "costs" -> costs
+	val effects = Field.fromValue(Sentinel.effects).createField[CardData]("effects",f => f.effects, (f,effects) => f.effects = effects, CardData) 
+	fields += "effects" -> effects
 
 	def apply(f : CardData => Unit) : CardData = { val v = new CardData; f(v); v }
 					 
 	def copyInto(from : CardData, to : CardData) {
-		to.costs = from.costs
-		to.effects = from.effects
 		to.cardType = from.cardType
 		to.name = from.name
 		to.source = from.source
 		to.exhausted = from.exhausted
+		to.costs = from.costs
+		to.effects = from.effects
 	}
 }
 import arx.ax4.game.entities.Inventory
@@ -201,12 +201,16 @@ object Item extends Clazz[Item]("Item", classOf[Item]){
 	fields += "wornOn" -> wornOn
 	val usesBodyParts = Field.fromValue(Sentinel.usesBodyParts).createField[Item]("usesBodyParts",f => f.usesBodyParts, (f,usesBodyParts) => f.usesBodyParts = usesBodyParts, Item) 
 	fields += "usesBodyParts" -> usesBodyParts
-	val inventoryCards = Field.fromValue(Sentinel.inventoryCards).createField[Item]("inventoryCards",f => f.inventoryCards, (f,inventoryCards) => f.inventoryCards = inventoryCards, Item) 
-	fields += "inventoryCards" -> inventoryCards
-	val equippedCards = Field.fromValue(Sentinel.equippedCards).createField[Item]("equippedCards",f => f.equippedCards, (f,equippedCards) => f.equippedCards = equippedCards, Item) 
-	fields += "equippedCards" -> equippedCards
 	val equippedFlags = Field.fromValue(Sentinel.equippedFlags).createField[Item]("equippedFlags",f => f.equippedFlags, (f,equippedFlags) => f.equippedFlags = equippedFlags, Item) 
 	fields += "equippedFlags" -> equippedFlags
+	val inventoryCardArchetypes = Field.fromValue(Sentinel.inventoryCardArchetypes).createField[Item]("inventoryCardArchetypes",f => f.inventoryCardArchetypes, (f,inventoryCardArchetypes) => f.inventoryCardArchetypes = inventoryCardArchetypes, Item) 
+	fields += "inventoryCardArchetypes" -> inventoryCardArchetypes
+	val inventoryCards = Field.fromValue(Sentinel.inventoryCards).createField[Item]("inventoryCards",f => f.inventoryCards, (f,inventoryCards) => f.inventoryCards = inventoryCards, Item) 
+	fields += "inventoryCards" -> inventoryCards
+	val equippedCardArchetypes = Field.fromValue(Sentinel.equippedCardArchetypes).createField[Item]("equippedCardArchetypes",f => f.equippedCardArchetypes, (f,equippedCardArchetypes) => f.equippedCardArchetypes = equippedCardArchetypes, Item) 
+	fields += "equippedCardArchetypes" -> equippedCardArchetypes
+	val equippedCards = Field.fromValue(Sentinel.equippedCards).createField[Item]("equippedCards",f => f.equippedCards, (f,equippedCards) => f.equippedCards = equippedCards, Item) 
+	fields += "equippedCards" -> equippedCards
 
 	def apply(f : Item => Unit) : Item = { val v = new Item; f(v); v }
 					 
@@ -217,9 +221,11 @@ object Item extends Clazz[Item]("Item", classOf[Item]){
 		to.heldIn = from.heldIn
 		to.wornOn = from.wornOn
 		to.usesBodyParts = from.usesBodyParts
-		to.inventoryCards = from.inventoryCards
-		to.equippedCards = from.equippedCards
 		to.equippedFlags = from.equippedFlags
+		to.inventoryCardArchetypes = from.inventoryCardArchetypes
+		to.inventoryCards = from.inventoryCards
+		to.equippedCardArchetypes = from.equippedCardArchetypes
+		to.equippedCards = from.equippedCards
 	}
 }
 import arx.ax4.game.entities.Equipment
@@ -374,12 +380,6 @@ object CharacterInfo extends Clazz[CharacterInfo]("CharacterInfo", classOf[Chara
 	fields += "cunning" -> cunning
 	val activeAttack = Field.fromValue(Sentinel.activeAttack).createField[CharacterInfo]("activeAttack",f => f.activeAttack, (f,activeAttack) => f.activeAttack = activeAttack, CharacterInfo) 
 	fields += "activeAttack" -> activeAttack
-	val activeIntent = Field.fromValue(Sentinel.activeIntent).createField[CharacterInfo]("activeIntent",f => f.activeIntent, (f,activeIntent) => f.activeIntent = activeIntent, CharacterInfo) 
-	fields += "activeIntent" -> activeIntent
-	val defaultIntent = Field.fromValue(Sentinel.defaultIntent).createField[CharacterInfo]("defaultIntent",f => f.defaultIntent, (f,defaultIntent) => f.defaultIntent = defaultIntent, CharacterInfo) 
-	fields += "defaultIntent" -> defaultIntent
-	val fallbackIntents = Field.fromValue(Sentinel.fallbackIntents).createField[CharacterInfo]("fallbackIntents",f => f.fallbackIntents, (f,fallbackIntents) => f.fallbackIntents = fallbackIntents, CharacterInfo) 
-	fields += "fallbackIntents" -> fallbackIntents
 	val innateCards = Field.fromValue(Sentinel.innateCards).createField[CharacterInfo]("innateCards",f => f.innateCards, (f,innateCards) => f.innateCards = innateCards, CharacterInfo) 
 	fields += "innateCards" -> innateCards
 
@@ -404,9 +404,6 @@ object CharacterInfo extends Clazz[CharacterInfo]("CharacterInfo", classOf[Chara
 		to.intellect = from.intellect
 		to.cunning = from.cunning
 		to.activeAttack = from.activeAttack
-		to.activeIntent = from.activeIntent
-		to.defaultIntent = from.defaultIntent
-		to.fallbackIntents = from.fallbackIntents
 		to.innateCards = from.innateCards
 	}
 }
@@ -529,10 +526,18 @@ object AttackModifier extends Clazz[AttackModifier]("AttackModifier", classOf[At
 	fields += "accuracyBonus" -> accuracyBonus
 	val strikeCountBonus = Field.fromValue(Sentinel.strikeCountBonus).createField[AttackModifier]("strikeCountBonus",f => f.strikeCountBonus, (f,strikeCountBonus) => f.strikeCountBonus = strikeCountBonus, AttackModifier) 
 	fields += "strikeCountBonus" -> strikeCountBonus
-	val staminaCostIncrease = Field.fromValue(Sentinel.staminaCostIncrease).createField[AttackModifier]("staminaCostIncrease",f => f.staminaCostIncrease, (f,staminaCostIncrease) => f.staminaCostIncrease = staminaCostIncrease, AttackModifier) 
-	fields += "staminaCostIncrease" -> staminaCostIncrease
+	val actionCostDelta = Field.fromValue(Sentinel.actionCostDelta).createField[AttackModifier]("actionCostDelta",f => f.actionCostDelta, (f,actionCostDelta) => f.actionCostDelta = actionCostDelta, AttackModifier) 
+	fields += "actionCostDelta" -> actionCostDelta
+	val actionCostMinimum = Field.fromValue(Sentinel.actionCostMinimum).createField[AttackModifier]("actionCostMinimum",f => f.actionCostMinimum, (f,actionCostMinimum) => f.actionCostMinimum = actionCostMinimum, AttackModifier) 
+	fields += "actionCostMinimum" -> actionCostMinimum
+	val staminaCostDelta = Field.fromValue(Sentinel.staminaCostDelta).createField[AttackModifier]("staminaCostDelta",f => f.staminaCostDelta, (f,staminaCostDelta) => f.staminaCostDelta = staminaCostDelta, AttackModifier) 
+	fields += "staminaCostDelta" -> staminaCostDelta
+	val minRangeDelta = Field.fromValue(Sentinel.minRangeDelta).createField[AttackModifier]("minRangeDelta",f => f.minRangeDelta, (f,minRangeDelta) => f.minRangeDelta = minRangeDelta, AttackModifier) 
+	fields += "minRangeDelta" -> minRangeDelta
 	val minRangeOverride = Field.fromValue(Sentinel.minRangeOverride).createField[AttackModifier]("minRangeOverride",f => f.minRangeOverride, (f,minRangeOverride) => f.minRangeOverride = minRangeOverride, AttackModifier) 
 	fields += "minRangeOverride" -> minRangeOverride
+	val maxRangeDelta = Field.fromValue(Sentinel.maxRangeDelta).createField[AttackModifier]("maxRangeDelta",f => f.maxRangeDelta, (f,maxRangeDelta) => f.maxRangeDelta = maxRangeDelta, AttackModifier) 
+	fields += "maxRangeDelta" -> maxRangeDelta
 	val maxRangeOverride = Field.fromValue(Sentinel.maxRangeOverride).createField[AttackModifier]("maxRangeOverride",f => f.maxRangeOverride, (f,maxRangeOverride) => f.maxRangeOverride = maxRangeOverride, AttackModifier) 
 	fields += "maxRangeOverride" -> maxRangeOverride
 	val damageBonuses = Field.fromValue(Sentinel.damageBonuses).createField[AttackModifier]("damageBonuses",f => f.damageBonuses, (f,damageBonuses) => f.damageBonuses = damageBonuses, AttackModifier) 
@@ -547,8 +552,12 @@ object AttackModifier extends Clazz[AttackModifier]("AttackModifier", classOf[At
 		to.namePrefix = from.namePrefix
 		to.accuracyBonus = from.accuracyBonus
 		to.strikeCountBonus = from.strikeCountBonus
-		to.staminaCostIncrease = from.staminaCostIncrease
+		to.actionCostDelta = from.actionCostDelta
+		to.actionCostMinimum = from.actionCostMinimum
+		to.staminaCostDelta = from.staminaCostDelta
+		to.minRangeDelta = from.minRangeDelta
 		to.minRangeOverride = from.minRangeOverride
+		to.maxRangeDelta = from.maxRangeDelta
 		to.maxRangeOverride = from.maxRangeOverride
 		to.damageBonuses = from.damageBonuses
 		to.targetPatternOverride = from.targetPatternOverride
@@ -560,32 +569,32 @@ object GatherMethod extends Clazz[GatherMethod]("GatherMethod", classOf[GatherMe
 	override def instantiate = new GatherMethod
 	val name = Field.fromValue(Sentinel.name).createField[GatherMethod]("name",f => f.name, (f,name) => f.name = name, GatherMethod) 
 	fields += "name" -> name
-	val toolRequirements = Field.fromValue(Sentinel.toolRequirements).createField[GatherMethod]("toolRequirements",f => f.toolRequirements, (f,toolRequirements) => f.toolRequirements = toolRequirements, GatherMethod) 
-	fields += "toolRequirements" -> toolRequirements
 	val requirements = Field.fromValue(Sentinel.requirements).createField[GatherMethod]("requirements",f => f.requirements, (f,requirements) => f.requirements = requirements, GatherMethod) 
 	fields += "requirements" -> requirements
-	val actionCost = Field.fromValue(Sentinel.actionCost).createField[GatherMethod]("actionCost",f => f.actionCost, (f,actionCost) => f.actionCost = actionCost, GatherMethod) 
-	fields += "actionCost" -> actionCost
-	val staminaCost = Field.fromValue(Sentinel.staminaCost).createField[GatherMethod]("staminaCost",f => f.staminaCost, (f,staminaCost) => f.staminaCost = staminaCost, GatherMethod) 
-	fields += "staminaCost" -> staminaCost
+	val actionCostDelta = Field.fromValue(Sentinel.actionCostDelta).createField[GatherMethod]("actionCostDelta",f => f.actionCostDelta, (f,actionCostDelta) => f.actionCostDelta = actionCostDelta, GatherMethod) 
+	fields += "actionCostDelta" -> actionCostDelta
+	val staminaCostDelta = Field.fromValue(Sentinel.staminaCostDelta).createField[GatherMethod]("staminaCostDelta",f => f.staminaCostDelta, (f,staminaCostDelta) => f.staminaCostDelta = staminaCostDelta, GatherMethod) 
+	fields += "staminaCostDelta" -> staminaCostDelta
 	val skills = Field.fromValue(Sentinel.skills).createField[GatherMethod]("skills",f => f.skills, (f,skills) => f.skills = skills, GatherMethod) 
 	fields += "skills" -> skills
 	val difficulty = Field.fromValue(Sentinel.difficulty).createField[GatherMethod]("difficulty",f => f.difficulty, (f,difficulty) => f.difficulty = difficulty, GatherMethod) 
 	fields += "difficulty" -> difficulty
 	val amount = Field.fromValue(Sentinel.amount).createField[GatherMethod]("amount",f => f.amount, (f,amount) => f.amount = amount, GatherMethod) 
 	fields += "amount" -> amount
+	val gatherFlags = Field.fromValue(Sentinel.gatherFlags).createField[GatherMethod]("gatherFlags",f => f.gatherFlags, (f,gatherFlags) => f.gatherFlags = gatherFlags, GatherMethod) 
+	fields += "gatherFlags" -> gatherFlags
 
 	def apply(f : GatherMethod => Unit) : GatherMethod = { val v = new GatherMethod; f(v); v }
 					 
 	def copyInto(from : GatherMethod, to : GatherMethod) {
 		to.name = from.name
-		to.toolRequirements = from.toolRequirements
 		to.requirements = from.requirements
-		to.actionCost = from.actionCost
-		to.staminaCost = from.staminaCost
+		to.actionCostDelta = from.actionCostDelta
+		to.staminaCostDelta = from.staminaCostDelta
 		to.skills = from.skills
 		to.difficulty = from.difficulty
 		to.amount = from.amount
+		to.gatherFlags = from.gatherFlags
 	}
 }
 }

@@ -2,7 +2,7 @@ package arx.ax4.game.entities
 
 import arx.ax4.game.action.{CompoundSelectable, CompoundSelectableInstance, EntityPredicate, EntitySelector, Selectable, SelectableInstance, SelectionResult, Selector}
 import arx.ax4.game.entities.Companions.CardData
-import arx.ax4.game.entities.cardeffects.{CardEffect, CardEffectConfigLoader, CardEffectInstance, PayActionPoints, PayStamina}
+import arx.ax4.game.entities.cardeffects.{GameEffect, CardEffectConfigLoader, GameEffectInstance, PayActionPoints, PayStamina}
 import arx.core.NoAutoLoad
 import arx.core.macros.GenerateCompanion
 import arx.core.representation.ConfigValue
@@ -46,9 +46,9 @@ object LockedCardType {
 @GenerateCompanion
 class CardData extends AxAuxData {
 	@NoAutoLoad
-	var costs : Vector[CardEffect] = Vector()
+	var costs : Vector[GameEffect] = Vector()
 	@NoAutoLoad
-	var effects : Vector[CardEffect] = Vector()
+	var effects : Vector[GameEffect] = Vector()
 	var cardType : Taxon = CardTypes.GenericCardType
 	var name : String = "Card"
 	var source : Entity = Entity.Sentinel
@@ -116,7 +116,7 @@ case class CardPlay(card : Entity) extends CompoundSelectable {
 	}
 }
 
-case class CardPlayInstance(costs : Vector[(CardEffect, CardEffectInstance)], effects : Vector[(CardEffect, CardEffectInstance)]) extends CompoundSelectableInstance(costs ++ effects) {
+case class CardPlayInstance(costs : Vector[(GameEffect, GameEffectInstance)], effects : Vector[(GameEffect, GameEffectInstance)]) extends CompoundSelectableInstance(costs ++ effects) {
 
 }
 

@@ -11,7 +11,7 @@ Items {
     material : Ironwood
   }
 
-  HayBale : {
+  HayBushel : {
     durability : 2
 
     material : Hay

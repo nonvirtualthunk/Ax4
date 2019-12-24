@@ -5,7 +5,7 @@ import arx.ax4.game.entities.Companions.{CardData, DeckData}
 import arx.ax4.game.entities.cardeffects.{PayActionPoints, PayAttackActionPoints, PayAttackStaminaPoints, PayStamina}
 import arx.ax4.game.entities.{CardData, CardPlay, CardTypes}
 import arx.ax4.game.logic.CardLogic
-import arx.ax4.graphics.data.{SpriteLibrary, TacticalUIData}
+import arx.ax4.graphics.data.{CardImageLibrary, SpriteLibrary, TacticalUIData}
 import arx.core.units.UnitOfTime
 import arx.core.vec.{ReadVec2i, Vec2f, Vec2i}
 import arx.engine.control.components.windowing.Widget
@@ -15,7 +15,7 @@ import arx.engine.control.event.{Mouse, MouseButton, MousePressEvent, MouseRelea
 import arx.engine.data.Moddable
 import arx.engine.entity.{Entity, Taxonomy}
 import arx.engine.world.{HypotheticalWorldView, World, WorldView}
-import arx.graphics.Image
+import arx.graphics.{Image, TToImage}
 import arx.graphics.helpers.{Color, HorizontalPaddingSection, ImageSection, LineBreakSection, RGBA, RichText, RichTextRenderSettings, RichTextSection, TextSection}
 import arx.resource.ResourceManager
 
@@ -255,15 +255,20 @@ object CardInfo {
    		.foldLeft(Seq[RichTextSection]())((t1, t2) => t1 ++ Seq(LineBreakSection(0)) ++ t2)
 		val effectText = RichText(combinedEffectsSections)
 
-		val cardImage = CD.cardType match {
-//			case CardTypes.GatherCard => "third-party/shikashiModified/pickaxe.png"
-			case CardTypes.GatherCard => "graphics/card_images/gather.png"
-			case CardTypes.AttackCard => "graphics/card_images/punch.png"
-			case CardTypes.MoveCard => "graphics/card_images/move.png"
-			case _ => "default/blank_transparent.png"
+
+		val cardImage : TToImage = CardImageLibrary.cardImageOpt(CD.name) match {
+			case Some(img) => img
+			case _ =>
+				CD.cardType match {
+					//			case CardTypes.GatherCard => "third-party/shikashiModified/pickaxe.png"
+					case CardTypes.GatherCard => "graphics/card_images/gather.png"
+					case CardTypes.AttackCard => "graphics/card_images/punch.png"
+					case CardTypes.MoveCard => "graphics/card_images/move.png"
+					case _ => "default/blank_transparent.png"
+				}
 		}
 
-		CardInfo(CD.name.capitalize, ResourceManager.image(cardImage), mainCost, secondaryCost, effectText)
+		CardInfo(CD.name.capitalize, cardImage, mainCost, secondaryCost, effectText)
 	}
 }
 

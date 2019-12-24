@@ -85,6 +85,8 @@ class CardCreationComponent extends GameComponent {
 					item.equippedCardArchetypes.foreach(arch => world.modify(entity, Item.equippedCards append arch.createEntity(world)))
 				}
 
+
+
 		}
 	}
 }

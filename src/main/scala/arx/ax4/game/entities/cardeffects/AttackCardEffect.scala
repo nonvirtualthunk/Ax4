@@ -11,11 +11,11 @@ import arx.engine.world.{World, WorldView}
 import arx.graphics.helpers.{Color, HorizontalPaddingSection, ImageSection, RichText, RichTextRenderSettings, TextSection}
 import arx.Prelude._
 
-case class AttackCardEffect(attackRef: AttackReference) extends CardEffect {
+case class AttackCardEffect(attackRef: AttackReference) extends GameEffect {
 
-	override def instantiate(world: WorldView, attacker: Entity): Either[CardEffectInstance, String] = attackRef.resolve()(world) match {
+	override def instantiate(world: WorldView, attacker: Entity): Either[GameEffectInstance, String] = attackRef.resolve()(world) match {
 		case Some(attackData) =>
-			Left(AttackCardEffectInstance(attacker, attackRef, attackData, this)(world))
+			Left(AttackGameEffectInstance(attacker, attackRef, attackData, this)(world))
 		case None =>
 			Right("Attack could not be resolved")
 	}
@@ -43,7 +43,19 @@ case class AttackCardEffect(attackRef: AttackReference) extends CardEffect {
 	}
 }
 
-case class AttackCardEffectInstance(attacker : Entity, attackRef : AttackReference, attackData : AttackData, cardEffect: AttackCardEffect)(implicit val view : WorldView) extends CardEffectInstance {
+case class SpecialAttackCardEffect(source : Entity, specialAttackKey : AnyRef) extends GameEffect {
+	override def instantiate(world: WorldView, entity: Entity): Either[GameEffectInstance, String] = {
+		implicit val view = world
+		CombatLogic.validSpecialAttacksFor(entity, source, specialAttackKey).headOption.flatMap(aref => aref.resolve().map(aref -> _)) match {
+			case Some((attackRef, attack)) => Left(AttackGameEffectInstance(entity, attackRef, attack, this))
+			case None => Right("No valid special attack")
+		}
+	}
+
+	override def toRichText(settings: RichTextRenderSettings): RichText = RichText("Special Attack")
+}
+
+case class AttackGameEffectInstance(attacker : Entity, attackRef : AttackReference, attackData : AttackData, cardEffect: GameEffect)(implicit val view : WorldView) extends GameEffectInstance {
 	val targetSelector: Either[Selector[Entity], BiasedHexSelector] =
 		attackData.targetPattern match {
 			case hexTargetPattern: HexTargetPattern => Right(BiasedHexSelector(hexTargetPattern, (_, _) => true, cardEffect))

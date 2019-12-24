@@ -17,7 +17,6 @@ class TacticalUIGraphics(anim : AnimationGraphicsComponent) extends AxCanvasGrap
 
 	lazy val actionRenderers = ReflectionAssistant.instancesOfSubtypesOf[TacticalActionPreviewRenderer]
 	lazy val selectorRenderers = ReflectionAssistant.instancesOfSubtypesOf[TacticalSelectorRenderer]
-	lazy val intentOverlays = ReflectionAssistant.instancesOfSubtypesOf[GameActionIntentOverlay]
 
 	lazy val selectableRenderers = ReflectionAssistant.instancesOfSubtypesOf[TacticalSelectableRenderer]
 

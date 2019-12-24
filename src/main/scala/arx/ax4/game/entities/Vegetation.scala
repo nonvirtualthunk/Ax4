@@ -84,13 +84,13 @@ case class Resource(var kind : Taxon = Taxonomy.UnknownThing,
 
 @GenerateCompanion
 case class GatherMethod(var name : String = "unnamed",
-								var toolRequirements : Option[EntityConditional] = None,
 								var requirements : BaseGatherConditional = Conditionals.all,
-								var actionCost : Int = 1,
-								var staminaCost : Int = 1,
+								var actionCostDelta : Int = 0,
+								var staminaCostDelta : Int = 0,
 								var skills : Seq[Taxon] = Nil,
 								var difficulty : Int = 0,
-								var amount : Int = 1) extends TNestedData
+								var amount : Int = 1,
+								var gatherFlags : Set[Taxon] = Set()) extends TNestedData
 
 
 trait BaseGatherProspect {
@@ -98,9 +98,10 @@ trait BaseGatherProspect {
 	def target : Entity
 	def key : ResourceKey
 }
-case class UntargetedGatherProspect(gatherer : Entity, target : Entity, key : ResourceKey) extends BaseGatherProspect
-case class GatherProspect(gatherer : Entity, target : Entity, key : ResourceKey, method : GatherMethod, tool : Option[Entity]) extends BaseGatherProspect
+case class GatherProspect(gatherer : Entity, target : Entity, key : ResourceKey, method : GatherMethod) extends BaseGatherProspect
 
 object GatherConditionals {
-
+	case class gatherer(cond : EntityConditional) extends BaseGatherConditional {
+		override def isTrueFor(implicit view: WorldView, value: BaseGatherProspect): Boolean = cond.isTrueFor(view, value.gatherer)
+	}
 }

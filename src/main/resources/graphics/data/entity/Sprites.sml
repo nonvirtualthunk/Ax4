@@ -34,7 +34,8 @@ Sprites {
     icon: ${shikashi}"/green_potion.png"
   }
 
-  HayBale : {
+  HayBushel
+    : {
     icon: ${DHGZ}"/items/hay_bale.png"
   }
 

@@ -66,7 +66,7 @@ ResourceSelectionItem {
 
       drawBackground : false
 
-      fontScale : 1.5
+      fontScale : 2
     }
     MethodDisplay {
       type : TextDisplayWidget
@@ -79,7 +79,7 @@ ResourceSelectionItem {
 
       drawBackground : false
 
-      fontScale : 1.5
+      fontScale : 2
     }
     DisabledReasonDisplay {
       type : TextDisplayWidget
@@ -92,7 +92,7 @@ ResourceSelectionItem {
 
       drawBackground : false
 
-      fontScale : 1.5
+      fontScale : 2
     }
 
     CostDiv {
@@ -100,6 +100,8 @@ ResourceSelectionItem {
 
       x : 0 from right
       y : centered
+
+      showing : "%(resource.hasExtraCosts)"
 
       children {
         ActionPointCost {
@@ -109,10 +111,10 @@ ResourceSelectionItem {
 
           drawBackground : false
 
-          fontScale : 1.5
+          fontScale : 2
 
           text : [
-            {text : "%(resource.method.actionCost)"}
+            {text : "%(resource.method.actionCostDelta)"}
             {horizontalPadding : 6}
             {image : "graphics/ui/action_point.png", scale : 2, color : "%(resource.iconColor)"}
           ]
@@ -124,10 +126,10 @@ ResourceSelectionItem {
 
           drawBackground : false
 
-          fontScale : 1.5
+          fontScale : 2
 
           text : [
-            {text : "%(resource.method.staminaCost)"}
+            {text : "%(resource.method.staminaCostDelta)"}
             {horizontalPadding : 6}
             {image : "graphics/ui/stamina_point.png", scale : 2, color : "%(resource.iconColor)"}
           ]

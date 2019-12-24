@@ -164,7 +164,7 @@ object CardLibrary extends EntityArchetypeLibrary {
 
 	override protected def topLevelField: String = "Cards"
 
-	override def defaultNamespace: String = "Cards"
+	override def defaultNamespace: String = "CardTypes"
 
 	override def initialLoad(): Unit = {
 		load("game/data/cards/Cards.sml")

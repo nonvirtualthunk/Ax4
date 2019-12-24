@@ -39,7 +39,12 @@ object EntityConditionals {
 	case class isA(taxon : Taxon) extends EntityConditional {
 		override def isTrueFor(implicit view: WorldView, value: Entity): Boolean = value.dataOpt[IdentityData].exists(id => id.isA(taxon))
 	}
+
+	case class hasFlag(flag : Taxon, atLeastValue : Int) extends EntityConditional {
+		override def isTrueFor(implicit view: WorldView, value: Entity): Boolean = value.dataOpt[TagData].exists(td => td.flags.getOrElse(flag, -1) >= atLeastValue)
+	}
 }
+
 
 
 object AttackConditionals {
@@ -61,7 +66,7 @@ object AttackConditionals {
 		def isTrueFor(implicit view: WorldView, attack: AttackData): Boolean
 	}
 
-	case class HasDamageType(damageType : DamageType) extends BaseAttackConditionalHelper {
+	case class HasDamageType(damageType : Taxon) extends BaseAttackConditionalHelper {
 		override def isTrueFor(implicit view: WorldView, attack: AttackData): Boolean = {
 			// true if the attack reference resolves to an attack where one of the kinds of damage it deals is the listed kind
 			attack.damage.values.exists(de => de.damageType == damageType)
