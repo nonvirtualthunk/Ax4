@@ -1,0 +1,16 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="FieldGenerator - Ax4 Test" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="arx.core.introspection.FieldGenerator" />
+    <module name="eldr" />
+    <option name="PROGRAM_PARAMETERS" value="arx.ax4 true" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="arx.core.introspection.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

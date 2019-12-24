@@ -1,0 +1,17 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="WindowingSystemEngine" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="arx.engine.simple.WindowingSystemEngine" />
+    <module name="ledgine" />
+    <option name="VM_PARAMETERS" value="-XstartOnFirstThread -Xmx1g -DuseLocalResources=true" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/../ledgine" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="arx.engine.simple.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/eldr.iml" filepath="$PROJECT_DIR$/eldr.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../ledgine/ledgine.iml" filepath="$PROJECT_DIR$/../ledgine/ledgine.iml" />
+    </modules>
+  </component>
+</project>
