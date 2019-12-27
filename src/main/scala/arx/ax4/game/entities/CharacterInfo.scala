@@ -40,6 +40,8 @@ class CharacterInfo extends AxAuxData {
 	var activeAttack : Option[AttackReference] = None
 
 	var innateCards : Vector[Entity] = Vector()
+
+	var levelUps : Vector[Taxon] = Vector()
 }
 
 @GenerateCompanion

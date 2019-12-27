@@ -43,6 +43,16 @@ object EntityConditionals {
 	case class hasFlag(flag : Taxon, atLeastValue : Int) extends EntityConditional {
 		override def isTrueFor(implicit view: WorldView, value: Entity): Boolean = value.dataOpt[TagData].exists(td => td.flags.getOrElse(flag, -1) >= atLeastValue)
 	}
+
+	case object any extends EntityConditional {
+		override def isTrueFor(implicit view: WorldView, value: Entity): Boolean = true
+	}
+
+	case class hasLevelUp(levelUp : Taxon) extends EntityConditional {
+		override def isTrueFor(implicit view: WorldView, value: Entity): Boolean = {
+			value.dataOpt[CharacterInfo].exists(ci => ci.levelUps.contains(levelUp))
+		}
+	}
 }
 
 

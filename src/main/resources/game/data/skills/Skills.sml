@@ -2,11 +2,8 @@ Skills {
 
   SpearSkill : {
     displayName : "Spear"
-    levels : [
 
-    ]
-
-    levelUpEffects : {
+    levelUpPerks : {
       PiercingStab {
         levelRange : 1-3
       }
@@ -15,11 +12,11 @@ Skills {
       },
       SpearMastery {
         levelRange : 2-5
-        requires : SpearProficiency
+        requires : LevelUp(SpearProficiency)
       },
       CloseRangeSpearFighter {
         levelRange : 2-5
-        requires : SpearProficiency
+        requires : LevelUp(SpearProficiency)
       }
     }
   }
@@ -33,6 +30,8 @@ LevelUpEffects {
   }
   SwiftStab {
     name : "Swift Stab"
+    description : "Stab swiftly at an enemy"
+    effect : SpecialAttack(SwiftStab)
   }
   SpearProficiency {
     name : "Spear Proficiency"

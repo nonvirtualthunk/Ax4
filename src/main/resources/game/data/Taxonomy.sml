@@ -213,4 +213,14 @@ Taxonomy {
   Tags {
     Tool : Tag
   }
+
+  Perk : []
+  Perks {
+    UnknownPerk : Perk
+    PiercingStab : Perk
+    SwiftStab : Perk
+    SpearProficiency : Perk
+    SpearMastery : Perk
+    CloseRangeSpearFighter : Perk
+  }
 }

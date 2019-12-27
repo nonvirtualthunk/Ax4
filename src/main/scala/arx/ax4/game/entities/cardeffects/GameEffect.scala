@@ -1,11 +1,11 @@
 package arx.ax4.game.entities.cardeffects
 
 import arx.application.Noto
-import arx.ax4.game.action.{EntityPredicate, EntitySelector, HexSelector, ResourceGatherSelector, Selectable, SelectableInstance, SelectionResult, Selector, SelfEntityPredicate}
+import arx.ax4.game.action.{EntityPredicate, EntitySelector, HexSelector, OptionSelector, ResourceGatherSelector, Selectable, SelectableInstance, SelectionResult, Selector, SelfEntityPredicate}
 import arx.ax4.game.entities.Companions.{CharacterInfo, CombatData, Equipment, Physical}
 import arx.ax4.game.entities.Conditionals.BaseAttackConditional
-import arx.ax4.game.entities.{AttackModifier, AttackReference, CardSelector, CharacterInfo, DeckData, Equipment, SpecialAttack, TargetPattern, Tiles}
-import arx.ax4.game.logic.{CardLogic, CharacterLogic, GatherLogic, InventoryLogic}
+import arx.ax4.game.entities.{AttackModifier, AttackReference, CardSelector, CharacterInfo, DeckData, EntityArchetype, Equipment, SpecialAttack, TargetPattern, Tiles}
+import arx.ax4.game.logic.{CardAdditionStyle, CardLogic, CharacterLogic, GatherLogic, InventoryLogic}
 import arx.core.introspection.Field
 import arx.core.introspection.FieldOperations.{Add, Sub}
 import arx.core.math.Sext
@@ -221,6 +221,42 @@ case class DrawCards(numCards : Int) extends GameEffect {
 	}
 
 	override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"Draw $numCards Cards")
+}
+
+case class AddCardToDeck(cardArchetypes : Seq[EntityArchetype], cardAdditionStyle: CardAdditionStyle) extends GameEffect {
+	override def instantiate(world: WorldView, entity: Entity): Either[GameEffectInstance, String] = {
+		implicit val view = world
+
+		val cardSelector = OptionSelector(cardArchetypes, AddCardToDeck.this)
+
+		if (cardArchetypes.isEmpty) {
+			Right("Add card to deck attempted with no cards to choose from")
+		} else {
+			entity.dataOpt[DeckData] match {
+				case Some(_) => Left(new GameEffectInstance {
+					override def applyEffect(world: World, selectionResult: SelectionResult): Unit = {
+						val cardArch = selectionResult.single(cardSelector)
+
+						val card = CardLogic.createCard(entity, cardArch)(world)
+						CardLogic.addCard(entity, card, cardAdditionStyle)(world)
+					}
+
+					override def nextSelector(results: SelectionResult): Option[Selector[_]] = if (cardArchetypes.size > 1) {
+						if (results.fullySatisfied(cardSelector)) {
+							None
+						} else {
+							Some(cardSelector)
+						}
+					} else {
+						None
+					}
+				})
+				case _ => Right("Could not add card to entity without a deck")
+			}
+		}
+	}
+
+	override def toRichText(settings: RichTextRenderSettings): RichText = RichText("Add Card")
 }
 
 case class EquipItemEffect(item : Entity) extends GameEffect {

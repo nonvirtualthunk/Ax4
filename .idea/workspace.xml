@@ -1,8 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="53e325d7-d37a-4570-98f4-fe8043c57269" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+    <list default="true" id="739b2d61-3cec-48a9-b219-b6a12786d863" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dictionaries/nvt.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/game/data/Taxonomy.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/game/data/Taxonomy.sml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/game/data/skills/Skills.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/game/data/skills/Skills.sml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/action/CommonSelectors.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/action/CommonSelectors.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/CharacterInfo.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/CharacterInfo.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Conditional.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Conditional.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/SkillsLibrary.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/SkillsLibrary.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/GameEffect.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/GameEffect.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CardLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CardLogic.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/SkillsLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/SkillsLogic.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/data/ConfigDataLoader.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/data/ConfigDataLoader.scala" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -14,62 +27,18 @@
   <component name="CodeStyleSettingsInfer">
     <option name="done" value="true" />
   </component>
-  <component name="FileTemplateManagerImpl">
-    <option name="RECENT_TEMPLATES">
-      <list>
-        <option value="GLSL Shader" />
-        <option value="ScalaTest Class" />
-        <option value="Class" />
-        <option value="AnnotationType" />
-      </list>
-    </option>
-  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="ProjectCodeStyleSettingsMigration">
     <option name="version" value="1" />
   </component>
-  <component name="ProjectId" id="1S3tPZDqiFlTYVScnNHxHhMKzIy" />
-  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectId" id="1VRHvEAdZ0BTg0gszhDMN60oJJe" />
   <component name="PropertiesComponent">
-    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
-    <property name="com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrary" value="ScalaTest" />
-    <property name="com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrarySuperClass.ScalaTest" value="org.scalatest.FunSuite" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities" />
-    <property name="project.structure.last.edited" value="Modules" />
-    <property name="project.structure.proportion" value="0.15" />
+    <property name="project.structure.last.edited" value="Global Libraries" />
+    <property name="project.structure.proportion" value="0.0" />
     <property name="project.structure.side.proportion" value="0.47586206" />
-    <property name="settings.editor.selected.configurable" value="reference.projectsettings.compiler.javacompiler" />
-  </component>
-  <component name="RecentsManager">
-    <key name="CreateTestDialog.RecentsKey">
-      <recent name="arx.engine.control.components.windowing" />
-      <recent name="arx.ax4.game.entities" />
-      <recent name="arx.core.introspection" />
-      <recent name="arx.engine.world" />
-      <recent name="arx.ax4.game.logic" />
-    </key>
-    <key name="CreateTestDialog.Recents.Supers">
-      <recent name="org.scalatest.FunSuite" />
-    </key>
-    <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
-      <recent name="arx.engine.entity" />
-    </key>
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities" />
-    </key>
-    <key name="CopyClassDialog.RECENTS_KEY">
-      <recent name="arx.ax4.game.entities" />
-      <recent name="arx.game.logic" />
-    </key>
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/src/main/resources/game/data/cards" />
-      <recent name="$PROJECT_DIR$/src/main/resources" />
-      <recent name="$PROJECT_DIR$/src/main/resources/game/data/vegetation" />
-      <recent name="$PROJECT_DIR$/src/main/resources/third-party" />
-      <recent name="$PROJECT_DIR$/src/main/resources/ui" />
-    </key>
+    <property name="settings.editor.selected.configurable" value="org.jetbrains.plugins.scala.settings.ScalaProjectSettingsConfigurable" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -83,172 +52,26 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="ScalaTest.Field Generator - ledgine test">
-    <configuration name="Scala Console" type="ScalaScriptConsoleRunConfiguration" factoryName="Scala Console" temporary="true" show_console_on_std_err="false" show_console_on_std_out="false">
-      <module name="eldr" />
-      <option name="allowRunningInParallel" value="false" />
-      <option name="javaOptions" value="-Djline.terminal=NONE" />
-      <option name="myConsoleArgs" value="" />
-      <option name="workingDirectory" value="$PROJECT_DIR$" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="FieldGenerator - ledgine test" type="ScalaTestRunConfiguration" factoryName="ScalaTest" show_console_on_std_err="false" show_console_on_std_out="false">
-      <module name="ledgine" />
-      <option name="allowRunningInParallel" value="false" />
-      <option name="testKind" value="Test name" />
-      <option name="envs">
-        <map />
-      </option>
-      <option name="javaOptions" value="" />
-      <option name="jrePath" value="1.8" />
-      <option name="searchTest" value="Across module dependencies" />
-      <option name="showProgressMessages" value="true" />
-      <option name="testArgs" value="" />
-      <option name="testClassPath" value="arx.core.introspection.FieldGeneratorTest" />
-      <option name="testName" value="generate test class fields" />
-      <option name="useSbt" value="false" />
-      <option name="useUiWithSbt" value="false" />
-      <option name="workingDirectory" value="$PROJECT_DIR$/../ledgine" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="FieldGeneratorTest.generate test class fields" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true" show_console_on_std_err="false" show_console_on_std_out="false">
-      <module name="ledgine" />
-      <option name="allowRunningInParallel" value="false" />
-      <option name="testKind" value="Class" />
-      <option name="envs">
-        <map />
-      </option>
-      <option name="javaOptions" value="" />
-      <option name="jrePath" value="1.8" />
-      <option name="searchTest" value="Across module dependencies" />
-      <option name="showProgressMessages" value="true" />
-      <option name="testArgs" value="" />
-      <option name="testClassPath" value="arx.core.introspection.FieldGeneratorTest" />
-      <option name="useSbt" value="false" />
-      <option name="useUiWithSbt" value="false" />
-      <option name="workingDirectory" value="$PROJECT_DIR$" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="WorldTest.Ledger world should be able to add data and retrieve it from views&#10;Ledger world should be able to support nested field modifications&#10;Ledger world data modification log should contain an accurate reflection of the changes made to a data class (1)" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true" show_console_on_std_err="false" show_console_on_std_out="false">
-      <module name="ledgine" />
-      <option name="allowRunningInParallel" value="false" />
-      <option name="testKind" value="Class" />
-      <option name="envs">
-        <map />
-      </option>
-      <option name="javaOptions" value="" />
-      <option name="jrePath" value="1.8" />
-      <option name="searchTest" value="Across module dependencies" />
-      <option name="showProgressMessages" value="true" />
-      <option name="testArgs" value="" />
-      <option name="testClassPath" value="arx.engine.world.WorldTest" />
-      <option name="useSbt" value="false" />
-      <option name="useUiWithSbt" value="false" />
-      <option name="workingDirectory" value="$PROJECT_DIR$" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="WorldTest.Ledger world should be able to add data and retrieve it from views&#10;Ledger world should be able to support nested field modifications&#10;Ledger world data modification log should contain an accurate reflection of the changes made to a data class (2)" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true" show_console_on_std_err="false" show_console_on_std_out="false">
-      <module name="ledgine" />
-      <option name="allowRunningInParallel" value="false" />
-      <option name="testKind" value="Class" />
-      <option name="envs">
-        <map />
-      </option>
-      <option name="javaOptions" value="" />
-      <option name="jrePath" value="1.8" />
-      <option name="searchTest" value="Across module dependencies" />
-      <option name="showProgressMessages" value="true" />
-      <option name="testArgs" value="" />
-      <option name="testClassPath" value="arx.engine.world.WorldTest" />
-      <option name="useSbt" value="false" />
-      <option name="useUiWithSbt" value="false" />
-      <option name="workingDirectory" value="$PROJECT_DIR$" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="WorldTest.world view should be able to enable and disable modifications and see the effects reflected" type="ScalaTestRunConfiguration" factoryName="ScalaTest" temporary="true" show_console_on_std_err="false" show_console_on_std_out="false">
-      <module name="ledgine" />
-      <option name="allowRunningInParallel" value="false" />
-      <option name="testKind" value="Class" />
-      <option name="envs">
-        <map />
-      </option>
-      <option name="javaOptions" value="" />
-      <option name="jrePath" value="1.8" />
-      <option name="searchTest" value="Across module dependencies" />
-      <option name="showProgressMessages" value="true" />
-      <option name="testArgs" value="" />
-      <option name="testClassPath" value="arx.engine.world.WorldTest" />
-      <option name="useSbt" value="false" />
-      <option name="useUiWithSbt" value="false" />
-      <option name="workingDirectory" value="$PROJECT_DIR$" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration default="true" type="ScalaTestRunConfiguration" factoryName="ScalaTest" show_console_on_std_err="false" show_console_on_std_out="false">
-      <option name="allowRunningInParallel" value="false" />
-      <option name="testKind" value="Class" />
-      <option name="envs">
-        <map />
-      </option>
-      <option name="javaOptions" value="" />
-      <option name="jrePath" value="1.8" />
-      <option name="searchTest" value="Across module dependencies" />
-      <option name="showProgressMessages" value="true" />
-      <option name="testArgs" value="" />
-      <option name="testClassPath" value="" />
-      <option name="useSbt" value="false" />
-      <option name="useUiWithSbt" value="false" />
-      <option name="workingDirectory" value="$PROJECT_DIR$" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <list>
-      <item itemvalue="Application.FieldGenerator - Ax4" />
-      <item itemvalue="Application.FieldGenerator - Ax4 Test" />
-      <item itemvalue="Application.FieldGenerator - ledgine" />
-      <item itemvalue="Application.Ax4Application" />
-      <item itemvalue="Application.WindowingSystemEngine" />
-      <item itemvalue="Scala Console.Scala Console" />
-      <item itemvalue="ScalaTest.Field Generator - Ax4 Test" />
-      <item itemvalue="ScalaTest.Field Generator - ledgine test" />
-      <item itemvalue="ScalaTest.FieldGenerator - ledgine test" />
-      <item itemvalue="ScalaTest.WorldTest.Ledger world should be able to add data and retrieve it from views&#10;Ledger world should be able to support nested field modifications&#10;Ledger world data modification log should contain an accurate reflection of the changes made to a data class (1)" />
-      <item itemvalue="ScalaTest.FieldGeneratorTest.generate test class fields" />
-      <item itemvalue="ScalaTest.WorldTest.Ledger world should be able to add data and retrieve it from views&#10;Ledger world should be able to support nested field modifications&#10;Ledger world data modification log should contain an accurate reflection of the changes made to a data class (2)" />
-      <item itemvalue="ScalaTest.WorldTest.world view should be able to enable and disable modifications and see the effects reflected" />
-    </list>
-    <recent_temporary>
-      <list>
-        <item itemvalue="Scala Console.Scala Console" />
-        <item itemvalue="ScalaTest.WorldTest.world view should be able to enable and disable modifications and see the effects reflected" />
-        <item itemvalue="ScalaTest.WorldTest.Ledger world should be able to add data and retrieve it from views&#10;Ledger world should be able to support nested field modifications&#10;Ledger world data modification log should contain an accurate reflection of the changes made to a data class (2)" />
-        <item itemvalue="ScalaTest.FieldGeneratorTest.generate test class fields" />
-        <item itemvalue="ScalaTest.WorldTest.Ledger world should be able to add data and retrieve it from views&#10;Ledger world should be able to support nested field modifications&#10;Ledger world data modification log should contain an accurate reflection of the changes made to a data class (1)" />
-      </list>
-    </recent_temporary>
+  <component name="RunManager" selected="Application.Ax4Application" />
+  <component name="ScalaProjectSettings">
+    <option name="intInjectionMapping">
+      <map>
+        <entry key="xml" value="XML" />
+      </map>
+    </option>
+    <option name="showNotFoundImplicitArguments" value="false" />
+    <option name="typeMismatchHints" value="false" />
   </component>
   <component name="SvnConfiguration">
     <configuration />
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="53e325d7-d37a-4570-98f4-fe8043c57269" name="Default Changelist" comment="" />
-      <created>1570804083407</created>
+      <changelist id="739b2d61-3cec-48a9-b219-b6a12786d863" name="Default Changelist" comment="" />
+      <created>1577209215779</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1570804083407</updated>
+      <updated>1577209215779</updated>
     </task>
     <servers />
   </component>
@@ -264,42 +87,5 @@
         </entry>
       </map>
     </option>
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="scala-line">
-          <url>file://$PROJECT_DIR$/../ledgine/src/main/scala/arx/graphics/Image.scala</url>
-          <line>382</line>
-          <option name="timeStamp" value="137" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="scala-line">
-          <url>file://$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/entity/Taxonomy.scala</url>
-          <line>57</line>
-          <option name="timeStamp" value="401" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="scala-line">
-          <url>file://$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/entity/Taxonomy.scala</url>
-          <line>62</line>
-          <option name="timeStamp" value="402" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="scala-line">
-          <url>file://$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/world/WorldView.scala</url>
-          <line>204</line>
-          <option name="timeStamp" value="415" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="scala-line">
-          <url>file://$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CardLogic.scala</url>
-          <line>148</line>
-          <option name="timeStamp" value="451" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
-    <watches-manager>
-      <configuration name="Application">
-        <watch expression="(text.resolve(), fontScale, fontColor.resolve(), font, textAlignment, verticalTextAlignment)" language="Scala" />
-        <watch expression="config" />
-      </configuration>
-    </watches-manager>
   </component>
 </project>

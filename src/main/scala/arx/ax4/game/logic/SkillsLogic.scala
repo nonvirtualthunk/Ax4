@@ -89,12 +89,13 @@ object SkillsLogic {
 
 			SkillsLibrary(skill) match {
 				case Some(skillInfo) =>
-					skillInfo.skillLevel(markLevel) match {
-						case Some(skillLevel) =>
-							skillLevel.onLevelGained(world, character)
-						case None =>
-							Noto.warn(s"no actual skill level $markLevel for $skill")
-					}
+					// TODO: Skill level up refactor
+//					skillInfo.skillLevel(markLevel) match {
+//						case Some(skillLevel) =>
+//							skillLevel.onLevelGained(world, character)
+//						case None =>
+//							Noto.warn(s"no actual skill level $markLevel for $skill")
+//					}
 
 				case None =>
 					Noto.warn(s"No information on skill $skill")

@@ -192,6 +192,10 @@ object CardLogic {
 		world.endEvent(CardPlayed(entity, card))
 	}
 
+	def createCard(source: Entity, arch : EntityArchetype)(implicit world: World): Entity = {
+		val card = arch.createEntity(world)
+		card
+	}
 
 	def createCard(source: Entity, cardInit: CardData => Unit)(implicit world: World): Entity = {
 		val ent = world.createEntity()

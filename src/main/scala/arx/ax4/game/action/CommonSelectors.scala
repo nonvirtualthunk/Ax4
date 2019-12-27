@@ -15,6 +15,15 @@ case class EntitySelector(predicates : Seq[EntityPredicate], description: String
 	}
 }
 
+case class OptionSelector[T](options : Seq[T], selectable : Selectable) extends Selector[T](selectable) {
+	override def satisfiedBy(view: WorldView, a: Any): Option[(T, Int)] = {
+		if (options.contains(a)) { Some(a.asInstanceOf[T] -> 1) }
+		else { None }
+	}
+
+	override def description: String = "Select option"
+}
+
 trait EntityPredicate {
 	def matches(view : WorldView, entity : Entity) : Boolean
 }
