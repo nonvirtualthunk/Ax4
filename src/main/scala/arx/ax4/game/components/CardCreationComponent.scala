@@ -26,7 +26,7 @@ class CardCreationComponent extends GameComponent {
 			case EntityCreated(entity) =>
 				for (weapon <- entity.dataOpt[Weapon]) {
 					for ((key, attack) <- weapon.attacks; _ <- 0 until attack.cardCount) yield {
-						val ref = AttackReference(entity, key, None, None)
+						val ref = AttackReference(entity, key, None)
 						val card = CardLogic.createCard(entity, CD => {
 							CD.cardType = CardTypes.AttackCard
 							CD.name = attack.name

@@ -37,7 +37,7 @@ class SkillLevelUpPerk extends ConfigLoadable {
 	var minLevel : Int = 0
 	var maxLevel : Int = 100
 	@NoAutoLoad
-	var requirements : Conditional[Entity] = EntityConditionals.any
+	var requirements : List[Conditional[Entity]] = Nil
 
 	override def customLoadFromConfig(config: ConfigValue): Unit = {
 		for (levelRange <- config.fieldOpt("levelRange")) {
@@ -48,15 +48,15 @@ class SkillLevelUpPerk extends ConfigLoadable {
 				case s => Noto.warn(s"Invalid level range : $s")
 			}
 		}
-		for (requirementConf <- config.fieldOpt("requires")) {
 
-		}
+		requirements = config.fieldAsList("requires").map(c => EntityConditionals.fromConfig(c))
+
 	}
 }
 object SkillLevelUpPerk {
 	val levelRangePattern = "([0-9]+)-([0-9]+)".r
 
-	def apply(perk : Perk, minLevel : Int, maxLevel : Int, requirements : Conditional[Entity]) : SkillLevelUpPerk = {
+	def apply(perk : Perk, minLevel : Int, maxLevel : Int, requirements : List[Conditional[Entity]]) : SkillLevelUpPerk = {
 		val skill = new SkillLevelUpPerk
 		skill.perk = perk
 		skill.minLevel = minLevel

@@ -18,6 +18,7 @@ import arx.engine.data.TWorldAuxData
 import arx.engine.entity.Taxon
 import arx.engine.graphics.components.DrawPriority
 import arx.engine.graphics.data.PovData
+import arx.engine.simple.HexCanvas
 import arx.engine.world.{HypotheticalWorldView, World}
 import arx.graphics.helpers.{Color, HSBA}
 import arx.graphics.{AVBO, GL, Image, TextureBlock}
@@ -43,7 +44,7 @@ class TileGraphics(cullingComponent : CullingGraphicsComponent) extends AxCanvas
 		game.areAnyHypotheticallyModified(Tile, Vegetation, Terrain) || cullRevisionWatcher.hasChanged
 	}
 
-	override def updateCanvas(game: HypotheticalWorldView, display: World, canvas: AxCanvas, dt: UnitOfTime): Unit = {
+	override def updateCanvas(game: HypotheticalWorldView, display: World, canvas: HexCanvas, dt: UnitOfTime): Unit = {
 		val const = display[AxDrawingConstants]
 		val cullData = display[CullingData]
 

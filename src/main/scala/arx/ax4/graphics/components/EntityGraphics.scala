@@ -6,6 +6,7 @@ import arx.core.units.UnitOfTime
 import arx.core.vec.Vec2f
 import arx.core.vec.coordinates.{AxialVec, CartVec, Hex}
 import arx.engine.graphics.components.DrawPriority
+import arx.engine.simple.{DrawLayer, HexCanvas}
 import arx.engine.world.{HypotheticalWorldView, World}
 import arx.graphics.helpers.{Color, RGBA}
 import arx.resource.ResourceManager
@@ -19,7 +20,7 @@ class EntityGraphics extends AxCanvasGraphicsComponent {
 		true
 	}
 
-	override def updateCanvas(game: HypotheticalWorldView, display: World, canvas: AxCanvas, dt: UnitOfTime): Unit = {
+	override def updateCanvas(game: HypotheticalWorldView, display: World, canvas: HexCanvas, dt: UnitOfTime): Unit = {
 //		val const = display[AxDrawingConstants]
 //		val img = ResourceManager.image("third-party/test_character.png")
 //		val scale = (Hex.heightForSize(const.HexSize) * 0.85).toInt / img.height

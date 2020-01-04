@@ -1,22 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="739b2d61-3cec-48a9-b219-b6a12786d863" name="Default Changelist" comment="">
+    <list default="true" id="739b2d61-3cec-48a9-b219-b6a12786d863" name="Default Changelist" comment="ski">
       <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dictionaries/nvt.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/game/data/Taxonomy.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/game/data/Taxonomy.sml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/game/data/cards/Cards.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/game/data/cards/Cards.sml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/game/data/skills/Skills.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/game/data/skills/Skills.sml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/action/CommonSelectors.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/action/CommonSelectors.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/application/scenarios/SimpleMapScenario.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/application/scenarios/SimpleMapScenario.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/CardCreationComponent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/CardCreationComponent.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/CharacterInfo.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/CharacterInfo.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Conditional.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Conditional.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/DeckData.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/DeckData.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/SkillsLibrary.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/SkillsLibrary.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/AttackCardEffect.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/AttackCardEffect.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/GameEffect.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/GameEffect.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CardLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CardLogic.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/SkillsLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/SkillsLogic.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/data/ConfigDataLoader.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/data/ConfigDataLoader.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CombatLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CombatLogic.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/components/AnimationGraphicsComponent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/components/AnimationGraphicsComponent.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/components/AxAttributeProfile.scala" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/components/AxCanvas.scala" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/components/AxCanvasGraphicsComponent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/components/AxCanvasGraphicsComponent.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/components/EntityGraphics.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/components/EntityGraphics.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/components/TacticalUIGraphics.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/components/TacticalUIGraphics.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/components/TileGraphics.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/components/TileGraphics.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/components/subcomponents/TacticalActionPreviewRenderer.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/components/subcomponents/TacticalActionPreviewRenderer.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/scala/arx/ax4/game/logic/CombatLogicTest.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/scala/arx/ax4/game/logic/CombatLogicTest.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/representation/HoconAdapter.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/representation/HoconAdapter.scala" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -27,6 +36,13 @@
   <component name="CodeStyleSettingsInfer">
     <option name="done" value="true" />
   </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Scala Object" />
+      </list>
+    </option>
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
@@ -35,10 +51,16 @@
   </component>
   <component name="ProjectId" id="1VRHvEAdZ0BTg0gszhDMN60oJJe" />
   <component name="PropertiesComponent">
-    <property name="project.structure.last.edited" value="Global Libraries" />
-    <property name="project.structure.proportion" value="0.0" />
+    <property name="last_directory_selection" value="$PROJECT_DIR$/../ledgine/src/main/scala/arx/ax4/graphics/components" />
+    <property name="project.structure.last.edited" value="Modules" />
+    <property name="project.structure.proportion" value="0.15" />
     <property name="project.structure.side.proportion" value="0.47586206" />
     <property name="settings.editor.selected.configurable" value="org.jetbrains.plugins.scala.settings.ScalaProjectSettingsConfigurable" />
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="arx.ax4.graphics.components" />
+    </key>
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">

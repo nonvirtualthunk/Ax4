@@ -43,16 +43,28 @@ case class AttackCardEffect(attackRef: AttackReference) extends GameEffect {
 	}
 }
 
-case class SpecialAttackCardEffect(source : Entity, specialAttackKey : AnyRef) extends GameEffect {
+//case class SpecialAttackByRefCardEffect(source : Entity, specialAttackKey : AnyRef) extends GameEffect {
+//	override def instantiate(world: WorldView, entity: Entity): Either[GameEffectInstance, String] = {
+//		implicit val view = world
+//		CombatLogic.validSpecialAttacksFor(entity, source, specialAttackKey).headOption.flatMap(aref => aref.resolve().map(aref -> _)) match {
+//			case Some((attackRef, attack)) => Left(AttackGameEffectInstance(entity, attackRef, attack, this))
+//			case None => Right("No valid special attack")
+//		}
+//	}
+//
+//	override def toRichText(settings: RichTextRenderSettings): RichText = RichText("Special Attack")
+//}
+
+case class SpecialAttackCardEffect(specialAttack: SpecialAttack) extends GameEffect {
 	override def instantiate(world: WorldView, entity: Entity): Either[GameEffectInstance, String] = {
 		implicit val view = world
-		CombatLogic.validSpecialAttacksFor(entity, source, specialAttackKey).headOption.flatMap(aref => aref.resolve().map(aref -> _)) match {
+		CombatLogic.resolveSpecialAttack(entity, specialAttack).flatMap(aref => aref.resolve().map(aref -> _)) match {
 			case Some((attackRef, attack)) => Left(AttackGameEffectInstance(entity, attackRef, attack, this))
 			case None => Right("No valid special attack")
 		}
 	}
 
-	override def toRichText(settings: RichTextRenderSettings): RichText = RichText("Special Attack")
+	override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"Special Attack")
 }
 
 case class AttackGameEffectInstance(attacker : Entity, attackRef : AttackReference, attackData : AttackData, cardEffect: GameEffect)(implicit val view : WorldView) extends GameEffectInstance {

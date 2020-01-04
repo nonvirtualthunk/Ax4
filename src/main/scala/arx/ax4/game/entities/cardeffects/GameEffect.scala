@@ -4,15 +4,16 @@ import arx.application.Noto
 import arx.ax4.game.action.{EntityPredicate, EntitySelector, HexSelector, OptionSelector, ResourceGatherSelector, Selectable, SelectableInstance, SelectionResult, Selector, SelfEntityPredicate}
 import arx.ax4.game.entities.Companions.{CharacterInfo, CombatData, Equipment, Physical}
 import arx.ax4.game.entities.Conditionals.BaseAttackConditional
-import arx.ax4.game.entities.{AttackModifier, AttackReference, CardSelector, CharacterInfo, DeckData, EntityArchetype, Equipment, SpecialAttack, TargetPattern, Tiles}
-import arx.ax4.game.logic.{CardAdditionStyle, CardLogic, CharacterLogic, GatherLogic, InventoryLogic}
+import arx.ax4.game.entities.{AttackModifier, AttackReference, CardLibrary, CardSelector, CardTypes, CharacterInfo, DeckData, EntityArchetype, Equipment, SpecialAttack, TargetPattern, Tiles}
+import arx.ax4.game.logic.CardAdditionStyle.{DrawDiscardSplit, DrawPile}
+import arx.ax4.game.logic.{CardAdditionStyle, CardLogic, CharacterLogic, CombatLogic, GatherLogic, InventoryLogic}
 import arx.core.introspection.Field
 import arx.core.introspection.FieldOperations.{Add, Sub}
 import arx.core.math.Sext
 import arx.core.representation.ConfigValue
 import arx.core.vec.coordinates.{AxialVec3, HexRingIterator}
 import arx.engine.data.{CustomConfigDataLoader, TAuxData}
-import arx.engine.entity.Entity
+import arx.engine.entity.{Entity, Taxonomy}
 import arx.engine.world.{FieldOperationModifier, World, WorldView}
 import arx.graphics.TToImage
 import arx.graphics.helpers.{Color, HorizontalPaddingSection, ImageSection, RichText, RichTextRenderSettings, THasRichTextRepresentation, TextSection}
@@ -121,6 +122,7 @@ case class PayActionPoints(ap : Int) extends GameEffect {
 	override def toRichText(settings: RichTextRenderSettings): RichText = RichText(TextSection(s"Pay $ap ") :: HorizontalPaddingSection(10) :: ImageSection("graphics/ui/action_point.png", 2.0f, Color.White) :: Nil)
 }
 
+
 case class PayAttackActionPoints(attackReference : AttackReference) extends GameEffect {
 
 	override def instantiate(world: WorldView, entity: Entity): Either[GameEffectInstance, String] = attackReference.resolve()(world) match {
@@ -137,6 +139,56 @@ case class PayAttackActionPoints(attackReference : AttackReference) extends Game
 	}
 
 	override def toRichText(settings: RichTextRenderSettings): RichText = RichText("Pay Attack AP")
+}
+
+case class PaySpecialAttackActionPoints(specialAttack : SpecialAttack) extends GameEffect {
+
+	override def instantiate(world: WorldView, entity: Entity): Either[GameEffectInstance, String] = {
+		CombatLogic.resolveSpecialAttack(entity, specialAttack) match {
+			case Some(attackReference) =>
+				attackReference.resolve()(world) match {
+					case Some(attackData) =>
+						if (CharacterLogic.curActionPoints(entity)(world) >= attackData.actionCost) {
+							Left(new GameEffectInstance {
+								override def applyEffect(world: World, selectionResult: SelectionResult): Unit = CharacterLogic.useActionPoints(entity, attackData.actionCost)(world)
+
+								override def nextSelector(results: SelectionResult): Option[Selector[_]] = None
+							})
+						} else {
+							Right("Insufficient action points")
+						}
+					case None => Right("Could not resolve attack")
+				}
+			case None => Right("No valid weapon attack to use special attack with")
+		}
+	}
+
+	override def toRichText(settings: RichTextRenderSettings): RichText = RichText("Pay Special Attack AP")
+}
+
+case class PaySpecialAttackStamina(specialAttack : SpecialAttack) extends GameEffect {
+
+	override def instantiate(world: WorldView, entity: Entity): Either[GameEffectInstance, String] = {
+		CombatLogic.resolveSpecialAttack(entity, specialAttack) match {
+			case Some(attackReference) =>
+				attackReference.resolve()(world) match {
+					case Some(attackData) =>
+						if (CharacterLogic.curStamina(entity)(world) >= attackData.staminaCost) {
+							Left(new GameEffectInstance {
+								override def applyEffect(world: World, selectionResult: SelectionResult): Unit = CharacterLogic.useStamina(entity, attackData.staminaCost)(world)
+
+								override def nextSelector(results: SelectionResult): Option[Selector[_]] = None
+							})
+						} else {
+							Right("Insufficient stamina points")
+						}
+					case None => Right("Could not resolve attack")
+				}
+			case None => Right("No valid weapon attack to use special attack with")
+		}
+	}
+
+	override def toRichText(settings: RichTextRenderSettings): RichText = RichText("Pay Special Attack Stamina")
 }
 
 case class PayAttackStaminaPoints(attackReference : AttackReference) extends GameEffect {
@@ -300,25 +352,35 @@ case class AddAttackModifierEffect(condition : BaseAttackConditional, modifier :
 	override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"Attack Modifier : $modifier")
 }
 
-case class AddSpecialAttackEffect(key : AnyRef, specialAttack : SpecialAttack) extends GameEffect {
-	override def instantiate(world: WorldView, entity: Entity): Either[GameEffectInstance, String] = {
-		Left(new GameEffectInstance {
-			override def applyEffect(world: World, selectionResult: SelectionResult): Unit = world.modify(entity, CombatData.specialAttacks.put(key, specialAttack))
+//case class AddSpecialAttackCardEffect(key : AnyRef, specialAttack : SpecialAttack) extends GameEffect {
+//	override def instantiate(world: WorldView, entity: Entity): Either[GameEffectInstance, String] = {
+//		Left(new GameEffectInstance {
+//			override def applyEffect(world: World, selectionResult: SelectionResult): Unit = {
+//				CardLogic.createCard(entity, cd => {
+//					cd.cardType = CardTypes.AttackCard
+//					cd.effects = Vector()
+//				})
+//				CardLogic.addCard()
+//				world.modify(entity, CombatData.specialAttacks.put(key, specialAttack))
+//			}
+//
+//			override def nextSelector(results: SelectionResult): Option[Selector[_]] = None
+//		})
+//	}
+//
+//	override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"Gain Special Attack : $specialAttack")
+//}
 
-			override def nextSelector(results: SelectionResult): Option[Selector[_]] = None
-		})
-	}
 
-	override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"Gain Special Attack : $specialAttack")
-}
-
-
-object CardEffectConfigLoader extends CustomConfigDataLoader[GameEffect] {
-	val APPattern = "AP\\(([0-9]*)\\)".r
-	val MovePattern = "Move\\(([0-9]*)\\)".r
-	val StaminaPattern = "Stamina\\(([0-9]*)\\)".r
-	val GatherPattern = "Gather\\(([0-9]*)\\)".r
-	val SpecialAttackPattern = "SpecialAttack\\((.+?)\\)".r
+object GameEffectConfigLoader extends CustomConfigDataLoader[GameEffect] {
+	val APPattern = "(?i)AP\\(([0-9]*)\\)".r
+	val MovePattern = "(?i)Move\\(([0-9]*)\\)".r
+	val StaminaPattern = "(?i)Stamina\\(([0-9]*)\\)".r
+	val GatherPattern = "(?i)Gather\\(([0-9]*)\\)".r
+	val AddCardPattern = "(?i)AddCard\\(([a-zA-Z0-9]+)\\)".r
+//	val SpecialAttackPattern = "SpecialAttackCard\\((.+?)\\)".r
+	val SpecialAttackPattern = "(?i)SpecialAttack\\(([a-zA-Z0-9]+)\\)".r
+	val PaySpecialAttackAPCostPattern = "(?i)SpecialAttackAPCost\\(([a-zA-Z0-9])\\)".r
 
 	override def loadedType = typeOf[GameEffect]
 
@@ -329,7 +391,10 @@ object CardEffectConfigLoader extends CustomConfigDataLoader[GameEffect] {
 				case StaminaPattern(stam) => PayStamina(stam.toInt)
 				case GatherPattern(range) => GatherCardEffect(range.toInt)
 				case MovePattern(mp) => GainMovePoints(mp.toInt)
-				case SpecialAttackPattern(attName) if SpecialAttack.withNameExists(attName) => AddSpecialAttackEffect(attName, SpecialAttack.withName(attName))
+//				case SpecialAttackPattern(attName) if SpecialAttack.withNameExists(attName) => AddSpecialAttackCardEffect(attName, SpecialAttack.withName(attName))
+				case AddCardPattern(cardName) => AddCardToDeck(List(CardLibrary.withKind(Taxonomy(cardName))), DrawPile)
+				case SpecialAttackPattern(attackName) => SpecialAttackCardEffect(SpecialAttack.withName(attackName))
+				case PaySpecialAttackAPCostPattern(attackName) => PaySpecialAttackActionPoints(SpecialAttack.withName(attackName))
 				case _ =>
 					Noto.warn(s"Unparseable card effect : ${config.str}")
 					GameEffect.Sentinel

@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 import arx.ax4.graphics.data.{AxDrawingConstants, AxGraphicsComponent}
 import arx.core.units.UnitOfTime
 import arx.engine.graphics.data.PovData
+import arx.engine.simple.HexCanvas
 import arx.engine.world.{HypotheticalWorldView, World}
 import arx.graphics.GL
 import arx.graphics.shader.Shader
@@ -13,7 +14,7 @@ import org.lwjgl.opengl.GL11
 
 abstract class AxCanvasGraphicsComponent extends AxGraphicsComponent {
 
-	val canvas : AxCanvas = new AxCanvas(128)
+	val canvas : HexCanvas = new HexCanvas(128)
 	canvas.useHighCapacity(true)
 	canvas.useTexFilters(GL11.GL_LINEAR, GL11.GL_NEAREST)
 	var updatePending = new AtomicBoolean(false)
@@ -55,5 +56,5 @@ abstract class AxCanvasGraphicsComponent extends AxGraphicsComponent {
 	}
 
 	def requiresUpdate(game : HypotheticalWorldView, display : World) : Boolean
-	def updateCanvas(game: HypotheticalWorldView, display: World, canvas : AxCanvas, dt: UnitOfTime): Unit
+	def updateCanvas(game: HypotheticalWorldView, display: World, canvas : HexCanvas, dt: UnitOfTime): Unit
 }

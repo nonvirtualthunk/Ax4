@@ -9,6 +9,7 @@ import arx.ax4.graphics.logic.EntityDrawLogic
 import arx.core.introspection.ReflectionAssistant
 import arx.core.units.UnitOfTime
 import arx.core.vec.coordinates.{CartVec, CartVec3}
+import arx.engine.simple.{DrawLayer, HexCanvas}
 import arx.engine.world.{HypotheticalWorldView, World}
 import arx.graphics.helpers.Color
 import arx.resource.ResourceManager
@@ -29,7 +30,7 @@ class TacticalUIGraphics(anim : AnimationGraphicsComponent) extends AxCanvasGrap
 
 
 
-	override def updateCanvas(game: HypotheticalWorldView, display: World, canvas: AxCanvas, dt: UnitOfTime): Unit = {
+	override def updateCanvas(game: HypotheticalWorldView, display: World, canvas: HexCanvas, dt: UnitOfTime): Unit = {
 		implicit  val view = game
 		val tuid = display[TacticalUIData]
 		import tuid._

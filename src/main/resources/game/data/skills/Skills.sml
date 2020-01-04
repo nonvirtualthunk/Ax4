@@ -12,26 +12,26 @@ Skills {
       },
       SpearMastery {
         levelRange : 2-5
-        requires : LevelUp(SpearProficiency)
+        requires : Perk(SpearProficiency)
       },
       CloseRangeSpearFighter {
         levelRange : 2-5
-        requires : LevelUp(SpearProficiency)
+        requires : Perk(SpearProficiency)
       }
     }
   }
 }
 
-LevelUpEffects {
+Perks {
   PiercingStab {
     name : "Piercing Stab"
     description : "Strike through multiple enemies with a powerful stab"
-    effect : SpecialAttack(PiercingStab)
+    effect : AddCard(PiercingStab)
   }
   SwiftStab {
     name : "Swift Stab"
     description : "Stab swiftly at an enemy"
-    effect : SpecialAttack(SwiftStab)
+    effect : AddCard(SwiftStab)
   }
   SpearProficiency {
     name : "Spear Proficiency"

@@ -1,8 +1,10 @@
 package arx.ax4.game.entities
 
+import arx.application.Noto
 import arx.ax4.game.entities.Conditionals.{BaseAttackConditional, EntityConditional}
 import arx.ax4.game.entities.DamageType.{Piercing, Slashing}
-import arx.engine.entity.{Entity, IdentityData, Taxon}
+import arx.core.representation.ConfigValue
+import arx.engine.entity.{Entity, IdentityData, Taxon, Taxonomy}
 import arx.engine.world.{World, WorldView}
 import arx.game.data.DicePoolBuilder._
 
@@ -48,9 +50,29 @@ object EntityConditionals {
 		override def isTrueFor(implicit view: WorldView, value: Entity): Boolean = true
 	}
 
-	case class hasLevelUp(levelUp : Taxon) extends EntityConditional {
+	case class hasPerk(perkIdentity : Taxon) extends EntityConditional {
 		override def isTrueFor(implicit view: WorldView, value: Entity): Boolean = {
-			value.dataOpt[CharacterInfo].exists(ci => ci.levelUps.contains(levelUp))
+			value.dataOpt[CharacterInfo].exists(ci => ci.perks.contains(perkIdentity))
+		}
+	}
+
+	val PerkPattern = "(?i)Perk\\((.+)\\)".r
+	val IsAPattern = "(?i)isA\\((.+)\\)".r
+	val HasFlagPattern = "(?i)hasFlag\\((.+),([0-9]+)\\)".r
+	def fromConfig(configValue : ConfigValue) : EntityConditional = {
+		if (configValue.isStr) {
+			configValue.str match {
+				case PerkPattern(perkName) => hasPerk(Taxonomy(perkName))
+				case IsAPattern(target) => isA(Taxonomy(target))
+				case HasFlagPattern(flag, amount) => hasFlag(Taxonomy(flag), amount.toInt)
+				case _ =>
+					Noto.warn(s"unrecognized entity conditional string : ${configValue.str}")
+					any
+			}
+
+		} else {
+			Noto.warn("Non str config for entity conditional, cannot parse")
+			any
 		}
 	}
 }

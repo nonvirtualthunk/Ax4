@@ -2,7 +2,7 @@ package arx.ax4.game.entities
 
 import arx.ax4.game.action.{CompoundSelectable, CompoundSelectableInstance, EntityPredicate, EntitySelector, Selectable, SelectableInstance, SelectionResult, Selector}
 import arx.ax4.game.entities.Companions.CardData
-import arx.ax4.game.entities.cardeffects.{GameEffect, CardEffectConfigLoader, GameEffectInstance, PayActionPoints, PayStamina}
+import arx.ax4.game.entities.cardeffects.{GameEffect, GameEffectConfigLoader, GameEffectInstance, PayActionPoints, PaySpecialAttackActionPoints, PaySpecialAttackStamina, PayStamina, SpecialAttackCardEffect}
 import arx.core.NoAutoLoad
 import arx.core.macros.GenerateCompanion
 import arx.core.representation.ConfigValue
@@ -40,7 +40,7 @@ sealed trait LockedCardType
 object LockedCardType {
 	case object Empty extends LockedCardType
 	case class SpecificCard(card : Entity) extends LockedCardType
-	case class MetaAttackCard(key : AttackKey, specialSource : Option[Entity], specialKey : AnyRef) extends LockedCardType
+	case class MetaAttackCard(key : AttackKey, specialAttack : Option[SpecialAttack]) extends LockedCardType
 }
 
 @GenerateCompanion
@@ -61,11 +61,17 @@ class CardData extends AxAuxData {
 		if (config.hasField("staminaCost")) {
 			costs :+= PayStamina(config.staminaCost.int)
 		}
-		for (costsConf <- config.fieldOpt("costs") ; conf <- costsConf.arr) {
-			costs :+= CardEffectConfigLoader.loadFrom(conf)
+		for (conf <- config.fieldAsList("costs")) {
+			costs :+= GameEffectConfigLoader.loadFrom(conf)
 		}
-		for (effectsConf <- config.fieldOpt("effects") ; conf <- effectsConf.arr) {
-			effects :+= CardEffectConfigLoader.loadFrom(conf)
+		for (conf <- config.fieldAsList("effects")) {
+			effects :+= GameEffectConfigLoader.loadFrom(conf)
+		}
+		for (specialAttackConf <- config.fieldOpt("specialAttack")) {
+			val specialAttack = SpecialAttack.withName(specialAttackConf.str)
+			costs :+= PaySpecialAttackActionPoints(specialAttack)
+			costs :+= PaySpecialAttackStamina(specialAttack)
+			effects :+= SpecialAttackCardEffect(specialAttack)
 		}
 	}
 }

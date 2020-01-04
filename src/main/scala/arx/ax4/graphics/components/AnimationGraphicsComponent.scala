@@ -18,6 +18,7 @@ import arx.engine.data.{Reduceable, TAuxData, TWorldAuxData}
 import arx.engine.entity.Entity
 import arx.engine.graphics.components.{DrawPriority, GraphicsComponent}
 import arx.engine.graphics.data.TGraphicsData
+import arx.engine.simple.{DrawLayer, HexCanvas}
 import arx.engine.world.EventState.Started
 import arx.engine.world.{GameEventClock, HypotheticalWorld, HypotheticalWorldView, World, WorldQueryParser, WorldView}
 import arx.graphics.Image
@@ -118,7 +119,7 @@ class AnimationGraphicsComponent extends  GraphicsComponent {
 class AnimationGraphicsRenderingComponent extends AxCanvasGraphicsComponent {
 	override def requiresUpdate(game: HypotheticalWorldView, display: World): Boolean = display[AxAnimatingWorldData].animations.nonEmpty
 
-	override def updateCanvas(game: HypotheticalWorldView, display: World, canvas: AxCanvas, dt: UnitOfTime): Unit = {
+	override def updateCanvas(game: HypotheticalWorldView, display: World, canvas: HexCanvas, dt: UnitOfTime): Unit = {
 		val animData = display[AxAnimatingWorldData]
 
 		for (anim <- animData.animations) {
@@ -139,7 +140,7 @@ object AnimationGraphicsComponent {
 trait Animation {
 	var blocking : Boolean = true
 	def apply(world : World, time : UnitOfTime) : Boolean
-	def draw(implicit world : WorldView, canvas : AxCanvas, time : UnitOfTime) : Unit = {}
+	def draw(implicit world : WorldView, canvas : HexCanvas, time : UnitOfTime) : Unit = {}
 
 	def nonBlocking() : this.type = {
 		blocking = false
@@ -176,7 +177,7 @@ case class ImageAnimation(image : Interpolation[Image],
 		time >= endTime - 0.0166666667.seconds
 	}
 
-	override def draw(implicit world: WorldView, canvas: AxCanvas, time: UnitOfTime): Unit = {
+	override def draw(implicit world: WorldView, canvas: HexCanvas, time: UnitOfTime): Unit = {
 		val pcnt = ((time - startTime).inSeconds / (endTime - startTime).inSeconds).clamp(0.0f,1.0f)
 
 		var builder = canvas.quad(position.interpolate(pcnt).xy)

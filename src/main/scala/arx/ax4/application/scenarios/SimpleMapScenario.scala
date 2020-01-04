@@ -150,7 +150,7 @@ object SimpleMapScenario extends Scenario {
 		CardLogic.addLockedCardSlot(torbold, LockedCardSlot(Seq(CardPredicate.IsCard), "Any Card"))(world)
 
 		CardLogic.setLockedCard(torbold, 0, LockedCardType.SpecificCard(moveCard))(world)
-		CardLogic.setLockedCard(torbold, 1, LockedCardType.MetaAttackCard(AttackKey.Primary, None, None))(world)
+		CardLogic.setLockedCard(torbold, 1, LockedCardType.MetaAttackCard(AttackKey.Primary, None))(world)
 
 		val longspearArch = WeaponLibrary.withKind(Taxonomy("longspear", "Items.Weapons"))
 		val longspear = longspearArch.createEntity(world)

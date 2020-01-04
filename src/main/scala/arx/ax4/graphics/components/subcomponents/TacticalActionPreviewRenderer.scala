@@ -4,7 +4,6 @@ import arx.ai.search.PathStep
 import arx.application.Noto
 import arx.ax4.game.action.{AttackAction, BiasedHexSelector, CompoundSelectable, CompoundSelectableInstance, GameAction, HexSelector, MoveAction, MoveCharacter, MoveCharacterInstance, ResourceGatherSelector, Selectable, SelectableInstance, SelectionResult, Selector}
 import arx.ax4.game.entities.Companions.{CharacterInfo, Physical, ResourceSourceData}
-import arx.ax4.graphics.components.{AxCanvas, DrawLayer}
 import arx.core.vec.{Vec2f, Vec3f}
 import arx.core.vec.coordinates.{AxialVec3, BiasedAxialVec3, HexRingIterator}
 import arx.engine.world.{HypotheticalWorldView, World, WorldView}
@@ -22,16 +21,17 @@ import arx.engine.control.components.windowing.Widget
 import arx.engine.control.components.windowing.widgets.{ListItemSelected, PositionExpression, TopLeft, TopRight}
 import arx.engine.data.{Moddable, TMutableAuxData, TWorldAuxData}
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
+import arx.engine.simple.{DrawLayer, HexCanvas}
 import arx.graphics.{GL, ScaledImage}
 import arx.graphics.helpers.{Color, RGBA}
 
 trait TacticalActionPreviewRenderer {
-	def previewAction(game: HypotheticalWorldView, display: World, canvas: AxCanvas): PartialFunction[GameAction, _]
+	def previewAction(game: HypotheticalWorldView, display: World, canvas: HexCanvas): PartialFunction[GameAction, _]
 }
 
 
 class MoveActionPreviewRenderer extends TacticalActionPreviewRenderer {
-	override def previewAction(game: HypotheticalWorldView, display: World, canvas: AxCanvas): PartialFunction[GameAction, _] = {
+	override def previewAction(game: HypotheticalWorldView, display: World, canvas: HexCanvas): PartialFunction[GameAction, _] = {
 		case MoveAction(entity, path) =>
 			if (path.steps.size > 1) {
 				implicit val view = game
@@ -58,7 +58,7 @@ class MoveActionPreviewRenderer extends TacticalActionPreviewRenderer {
 }
 
 class AttackActionPreviewRenderer extends TacticalActionPreviewRenderer {
-	override def previewAction(game: HypotheticalWorldView, display: World, canvas: AxCanvas): PartialFunction[GameAction, _] = {
+	override def previewAction(game: HypotheticalWorldView, display: World, canvas: HexCanvas): PartialFunction[GameAction, _] = {
 		case AttackAction(attacker, attack, attackFrom, targets, preMove, postMove) =>
 			implicit val view = game
 			val img = ResourceManager.image("third-party/DHGZ/sword1.png")
@@ -96,11 +96,11 @@ class AttackActionPreviewRenderer extends TacticalActionPreviewRenderer {
 
 
 trait TacticalSelectorRenderer {
-	def renderSelection(game: HypotheticalWorldView, display: World, canvas: AxCanvas, selector: Selector[_], selected: List[Any]): Unit
+	def renderSelection(game: HypotheticalWorldView, display: World, canvas: HexCanvas, selector: Selector[_], selected: List[Any]): Unit
 }
 
 class HexSelectorRenderer extends TacticalSelectorRenderer {
-	override def renderSelection(game: HypotheticalWorldView, display: World, canvas: AxCanvas, selector: Selector[_], selected: List[Any]): Unit = selector pmatch {
+	override def renderSelection(game: HypotheticalWorldView, display: World, canvas: HexCanvas, selector: Selector[_], selected: List[Any]): Unit = selector pmatch {
 		case hs : HexSelector =>
 			selected.foreach {
 				case a: AxialVec3 => canvas.quad(a)
@@ -122,7 +122,7 @@ class HexSelectorRenderer extends TacticalSelectorRenderer {
 
 
 trait TacticalSelectableRenderer {
-	def renderSelectable(game: HypotheticalWorldView, display: World, entity: Entity, canvas: AxCanvas, selectable: Selectable, selectableInst: SelectableInstance, selectionResults: SelectionResult): Unit
+	def renderSelectable(game: HypotheticalWorldView, display: World, entity: Entity, canvas: HexCanvas, selectable: Selectable, selectableInst: SelectableInstance, selectionResults: SelectionResult): Unit
 
 	def updateUI(game: WorldView, display: World, entity: Entity, selectable: Selectable, selectableInst: SelectableInstance, consideredSelectionResult: SelectionResult, activeSelectionResults: SelectionResult, desktop: Widget): Unit = {}
 	def update(game: WorldView, display: World, entity: Entity, selectable: Selectable, selectableInst: SelectableInstance, selectionResult: SelectionResult): Unit = {}
@@ -131,7 +131,7 @@ trait TacticalSelectableRenderer {
 object CompoundSelectableRenderer extends TacticalSelectableRenderer  {
 	lazy val otherRenderers = ReflectionAssistant.instancesOfSubtypesOf[TacticalSelectableRenderer].filterNot(_ == CompoundSelectableRenderer)
 
-	override def renderSelectable(game: HypotheticalWorldView, display: World, entity: Entity, canvas: AxCanvas, selectable: Selectable, selectableInst: SelectableInstance, selectionResults: SelectionResult): Unit = {
+	override def renderSelectable(game: HypotheticalWorldView, display: World, entity: Entity, canvas: HexCanvas, selectable: Selectable, selectableInst: SelectableInstance, selectionResults: SelectionResult): Unit = {
 		selectableInst match {
 			case compound : CompoundSelectableInstance =>
 				for ((subSel, subSelInst) <- compound.subSelectableInstances ; renderer <- otherRenderers) {
@@ -165,7 +165,7 @@ object CompoundSelectableRenderer extends TacticalSelectableRenderer  {
 object AttackCardEffectRenderer extends TacticalSelectableRenderer {
 	var widgets : Map[SelectableInstance,Map[Entity,Widget]] = Map()
 
-	override def renderSelectable(game: HypotheticalWorldView, display: World, entity: Entity, canvas: AxCanvas, selectable: Selectable, selectableInst: SelectableInstance, selectionResults: SelectionResult): Unit = {
+	override def renderSelectable(game: HypotheticalWorldView, display: World, entity: Entity, canvas: HexCanvas, selectable: Selectable, selectableInst: SelectableInstance, selectionResults: SelectionResult): Unit = {
 		selectableInst match {
 			case ce @ AttackGameEffectInstance(attacker, attackRef, attack, _) =>
 				implicit val view = game
@@ -274,7 +274,7 @@ object AttackCardEffectRenderer extends TacticalSelectableRenderer {
 }
 
 case object MoveCharacterRenderer extends TacticalSelectableRenderer {
-	override def renderSelectable(game: HypotheticalWorldView, display: World, entity: Entity, canvas: AxCanvas, selectable: Selectable, selectableInst: SelectableInstance, selectionResults: SelectionResult): Unit = {
+	override def renderSelectable(game: HypotheticalWorldView, display: World, entity: Entity, canvas: HexCanvas, selectable: Selectable, selectableInst: SelectableInstance, selectionResults: SelectionResult): Unit = {
 		selectableInst match {
 			case mce @ MoveCharacterInstance(_) =>
 				val selector = mce.pathSelector
@@ -308,7 +308,7 @@ case object MoveCharacterRenderer extends TacticalSelectableRenderer {
 }
 
 case object GatherEffectRenderer extends TacticalSelectableRenderer {
-	override def renderSelectable(game: HypotheticalWorldView, display: World, entity: Entity, canvas: AxCanvas, selectable: Selectable, selectableInst: SelectableInstance, selectionResults: SelectionResult): Unit = {
+	override def renderSelectable(game: HypotheticalWorldView, display: World, entity: Entity, canvas: HexCanvas, selectable: Selectable, selectableInst: SelectableInstance, selectionResults: SelectionResult): Unit = {
 		implicit val view = game
 		selectable match {
 			case GatherCardEffect(range) =>

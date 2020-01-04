@@ -233,12 +233,11 @@ object CardLogic {
 	def resolveLockedCard(source: Entity, lockedCard: LockedCardType)(implicit view: WorldView): Entity = {
 		lockedCard match {
 			case LockedCardType.SpecificCard(card) => card
-			case LockedCardType.MetaAttackCard(attackKey, specialSource, specialKey) => source[DeckData].allAvailableCards.find(c =>
+			case LockedCardType.MetaAttackCard(attackKey, specialAttack) => source[DeckData].allAvailableCards.find(c =>
 				c[CardData].effects.exists {
 					case AttackCardEffect(attackRef) =>
 						attackRef.attackKey == attackKey &&
-							attackRef.specialKey == specialKey &&
-							attackRef.specialSource == specialSource
+							attackRef.specialAttack == specialAttack
 					case _ => false
 				}).getOrElse(Entity.Sentinel)
 			case LockedCardType.Empty => Entity.Sentinel
