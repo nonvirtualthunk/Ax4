@@ -4,7 +4,7 @@ import arx.ai.search.Path
 import arx.application.Noto
 import arx.ax4.game.entities.Companions.{CharacterInfo, Physical}
 import arx.ax4.game.entities.cardeffects.{GameEffect, GameEffectInstance}
-import arx.ax4.game.entities.{AllegianceData, AttackProspect, AttackReference, CharacterInfo, EntityTarget, FactionData, HexTargetPattern, Physical, TargetPattern, Tile, Tiles}
+import arx.ax4.game.entities.{AllegianceData, AttackData, AttackProspect, CharacterInfo, EntityTarget, FactionData, HexTargetPattern, Physical, TargetPattern, Tile, Tiles}
 import arx.ax4.game.event.AttackEventInfo
 import arx.ax4.game.logic.{AllegianceLogic, AxPathfinder, CharacterLogic, CombatLogic, MovementLogic}
 import arx.core.vec.coordinates.{AxialVec, AxialVec3, HexDirection}
@@ -31,7 +31,7 @@ case class MoveAction(character: Entity, path: Path[AxialVec3]) extends GameActi
 }
 
 case class AttackAction(attacker: Entity,
-								attack: AttackReference,
+								attack: AttackData,
 								from : AxialVec3,
 								targets: Either[Seq[Entity], Seq[AxialVec3]],
 								preMove: Option[Path[AxialVec3]],
@@ -45,7 +45,7 @@ case class AttackAction(attacker: Entity,
 case object MoveCharacter extends GameEffect {
 	def forceInstantiate(world: WorldView, entity : Entity) = MoveCharacterInstance(entity)
 
-	override def instantiate(world: WorldView, entity: Entity): Either[GameEffectInstance, String] = Left(forceInstantiate(world, entity))
+	override def instantiate(world: WorldView, entity: Entity, effectSource: Entity): Either[GameEffectInstance, String] = Left(forceInstantiate(world, entity))
 
 	override def toRichText(settings: RichTextRenderSettings): RichText = RichText("Move")
 }

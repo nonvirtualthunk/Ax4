@@ -7,7 +7,7 @@ import arx.ax4.game.components.{CardCreationComponent, DeckComponent, TurnCompon
 import arx.ax4.game.entities.Companions.{CardData, CharacterInfo, DeckData, Physical, Tile, TurnData}
 import arx.ax4.game.entities.EntityConditionals._
 import arx.ax4.game.entities.GatherConditionals._
-import arx.ax4.game.entities.{AllegianceData, AttackData, AttackKey, AttackReference, AxAuxData, CardData, CardPredicate, CardSelector, CardTypes, CharacterInfo, CombatData, DamageElement, DamageType, DeckData, EntityConditionals, Equipment, FactionData, GatherConditionals, GatherMethod, Inventory, ItemLibrary, LockedCardSlot, LockedCardType, Physical, QualitiesData, ReactionData, Resource, ResourceKey, ResourceOrigin, ResourceSourceData, TargetPattern, Terrain, TerrainLibrary, Tile, Tiles, TurnData, Vegetation, VegetationLayer, VegetationLayerType, VegetationLibrary, Weapon, WeaponLibrary}
+import arx.ax4.game.entities.{AllegianceData, AttackData, AttackKey, AxAuxData, CardData, CardLibrary, CardPredicate, CardSelector, CardTypes, CharacterInfo, CombatData, DamageElement, DamageType, DeckData, EntityConditionals, Equipment, FactionData, GatherConditionals, GatherMethod, Inventory, ItemLibrary, LockedCardSlot, LockedCardType, Physical, QualitiesData, ReactionData, Resource, ResourceKey, ResourceOrigin, ResourceSourceData, TargetPattern, Terrain, TerrainLibrary, Tile, Tiles, TurnData, Vegetation, VegetationLayer, VegetationLayerType, VegetationLibrary, Weapon, WeaponLibrary}
 import arx.ax4.game.logic.{CardLogic, CharacterLogic, InventoryLogic, MovementLogic}
 import arx.ax4.graphics.components.{AnimationGraphicsComponent, AnimationGraphicsRenderingComponent, EntityGraphics, TacticalUIGraphics, TileGraphics}
 import arx.ax4.graphics.data.{AxGraphicsData, TacticalUIData}
@@ -35,9 +35,10 @@ import arx.graphics.helpers.RGBA
 import arx.graphics.pov.{PixelCamera, TopDownCamera}
 import org.lwjgl.glfw.GLFW
 import arx.ax4.game.entities.UnitOfGameTimeFloat._
-import arx.ax4.game.entities.cardeffects.{AttackCardEffect, GainMovePoints, PayActionPoints, PayStamina}
+import arx.ax4.game.entities.cardeffects.{AttackGameEffect, GainMovePoints, PayActionPoints, PayStamina}
 import arx.ax4.game.event.EntityCreated
 import arx.ax4.game.event.TurnEvents.TurnStartedEvent
+import arx.ax4.game.logic.CardAdditionStyle.DrawPile
 import arx.core.gen.SimplexNoise
 import arx.resource.ResourceManager
 
@@ -143,6 +144,9 @@ object SimpleMapScenario extends Scenario {
 		world.modify(torbold, IdentityData.name -> Some("Torbold"), None)
 
 		playerCharacter = torbold
+
+		val specialAttackCard = CardLibrary.withKind(Taxonomy("PiercingStab", "CardTypes")).createEntity(world)
+		CardLogic.addCard(torbold, specialAttackCard, DrawPile)(world)
 
 		val moveCard = torbold(DeckData)(world.view).allCards.find(c => c(CardData)(world.view).cardType == CardTypes.MoveCard).get
 

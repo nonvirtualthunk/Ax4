@@ -3,7 +3,6 @@ package arx.ax4.game.entities
 import arx.Prelude.none
 import arx.application.Noto
 import arx.ax4.game.entities.Companions.{CardData, Consumable, Equipment, Inventory, Item, TagData, Weapon}
-import arx.ax4.game.entities.cardeffects.{AttackCardEffect, PayAttackActionPoints, PayAttackStaminaPoints}
 import arx.ax4.game.logic.CardLogic
 import arx.core.NoAutoLoad
 import arx.core.introspection.Clazz
@@ -81,7 +80,7 @@ class Weapon extends AxAuxData {
 	override def customLoadFromConfig(config: ConfigValue): Unit = {
 		for (attField <- config.fieldOpt("attacks")) {
 			for ((attName, attDataConfig) <- attField.fields) {
-				val attData = new AttackData().loadFromConfig(attDataConfig)
+				val attData = new AttackData(Entity.Sentinel).loadFromConfig(attDataConfig)
 				attacks += AttackKey.parse(attName) -> attData
 			}
 		}

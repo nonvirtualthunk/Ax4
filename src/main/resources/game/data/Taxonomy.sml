@@ -202,6 +202,9 @@ Taxonomy {
     Gather : GatherCard
     Move : MoveCard
     Slash : AttackCard
+
+    SwiftStab : AttackCard
+    PiercingStab : AttackCard
   }
 
   Flag : []

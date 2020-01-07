@@ -4,7 +4,7 @@ import arx.engine.entity.Entity
 import arx.engine.world.WorldView
 
 trait Selectable {
-	def instantiate(world : WorldView, entity : Entity) : Either[SelectableInstance, String]
+	def instantiate(world: WorldView, entity: Entity, effectSource: Entity): Either[SelectableInstance, String]
 }
 
 trait SelectableInstance {
@@ -16,9 +16,9 @@ trait SelectableInstance {
 trait CompoundSelectable extends Selectable {
 	def subSelectables(world : WorldView) : Traversable[Selectable]
 
-	override def instantiate(world: WorldView, entity: Entity): Either[SelectableInstance, String] = {
+	override def instantiate(world: WorldView, entity: Entity, effectSource: Entity): Either[SelectableInstance, String] = {
 		val subSel = subSelectables(world)
-		val subSelectableInstRaw = subSel.map(s => s -> s.instantiate(world, entity))
+		val subSelectableInstRaw = subSel.map(s => s -> s.instantiate(world, entity, effectSource))
 
 		var subSelectableInst = Vector[(Selectable, SelectableInstance)]()
 		subSelectableInstRaw.foreach {

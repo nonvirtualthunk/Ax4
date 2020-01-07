@@ -3,7 +3,7 @@ package arx.ax4.control.components
 import arx.ai.search.Pathfinder
 import arx.application.Noto
 import arx.ax4.game.entities.Companions.{CharacterInfo, Physical, Tile, TurnData}
-import arx.ax4.game.entities.{AllegianceData, AttackData, AttackKey, AttackReference, CharacterInfo, DamageElement, FactionData, Physical, SkillsLibrary, Tile, Tiles, TurnData}
+import arx.ax4.game.entities.{AllegianceData, AttackData, AttackKey, CharacterInfo, DamageElement, FactionData, Physical, SkillsLibrary, Tile, Tiles, TurnData}
 import arx.ax4.game.event.{EntityMoved}
 import arx.ax4.graphics.components.EntityGraphics
 import arx.ax4.graphics.data.{AxDrawingConstants, SpriteLibrary, TacticalUIData, TacticalUIMode}
@@ -166,16 +166,7 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 
 			desktop.bind("selectedCharacter.speed", () => selC[CharacterInfo].moveSpeed)
 
-			tuid.selectedCharacterInfoWidget.bind("attacks", () => {
-				CombatLogic.availableAttacks(selC, includeBaseAttacks = true,  includeSpecialAttacks = false)
-   				.sortBy(aref => aref.attackKey != AttackKey.Primary)
-					.map(aref => {
-					CombatLogic.resolveUntargetedConditionalAttackData(game, selC, aref) match {
-						case Some((attackData, modifiers)) => SimpleAttackDisplayInfo.fromAttackData(aref, attackData)
-						case None => SimpleAttackDisplayInfo(aref, "unresolved", AttackBonus(0), DamageExpression(Map()))
-					}
-				}).toList
-			})
+			tuid.selectedCharacterInfoWidget.bind("attacks", () => Nil)
 
 			tuid.selectedCharacterInfoWidget.bind("skills", () => {
 				SkillsLogic.skillLevels(selC).toList.map {
@@ -234,12 +225,12 @@ case class AttackBonus(bonus : Int) {
 	import arx.Prelude.int2RicherInt
 	override def toString: String = bonus.toSignedString
 }
-case class SimpleAttackDisplayInfo(attackRef : AttackReference, name : String, accuracyBonus : AttackBonus, damage : DamageExpression)
-object SimpleAttackDisplayInfo {
-	def fromAttackData(aref : AttackReference, attackData : AttackData) : SimpleAttackDisplayInfo = {
-		SimpleAttackDisplayInfo(aref, attackData.name.capitalize, AttackBonus(attackData.accuracyBonus), DamageExpression(attackData.damage))
-	}
-}
+//case class SimpleAttackDisplayInfo(attackRef : AttackReference, name : String, accuracyBonus : AttackBonus, damage : DamageExpression)
+//object SimpleAttackDisplayInfo {
+//	def fromAttackData(aref : AttackReference, attackData : AttackData) : SimpleAttackDisplayInfo = {
+//		SimpleAttackDisplayInfo(aref, attackData.name.capitalize, AttackBonus(attackData.accuracyBonus), DamageExpression(attackData.damage))
+//	}
+//}
 
 case class SimpleSkillDisplayInfo(name : String, level : Int, icon : TToImage, currentXp : Int, requiredXp : Int)
 

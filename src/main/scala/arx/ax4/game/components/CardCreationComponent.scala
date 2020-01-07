@@ -1,17 +1,16 @@
 package arx.ax4.game.components
 
+import arx.Prelude._
 import arx.ax4.game.entities.Companions.{CharacterInfo, Item, Weapon}
-import arx.ax4.game.entities.cardeffects.{AttackCardEffect, EquipItemEffect, GainMovePoints, GatherCardEffect, PayActionPoints, PayAttackActionPoints, PayAttackStaminaPoints}
-import arx.ax4.game.entities.{AttackReference, CardTypes, CharacterInfo, Item, Weapon}
+import arx.ax4.game.entities.cardeffects._
+import arx.ax4.game.entities.{CardTypes, CharacterInfo, Item, Weapon}
 import arx.ax4.game.event.EntityCreated
-import arx.ax4.game.logic.CardAdditionStyle.DrawPile
 import arx.ax4.game.logic.{CardLogic, IdentityLogic}
+import arx.core.introspection.FieldOperations._
+import arx.core.math.Sext
 import arx.core.units.UnitOfTime
 import arx.engine.game.components.GameComponent
 import arx.engine.world.World
-import arx.core.introspection.FieldOperations._
-import arx.core.math.Sext
-import arx.Prelude._
 
 class CardCreationComponent extends GameComponent {
 	override protected def onUpdate(world: World, dt: UnitOfTime): Unit = {
@@ -26,12 +25,11 @@ class CardCreationComponent extends GameComponent {
 			case EntityCreated(entity) =>
 				for (weapon <- entity.dataOpt[Weapon]) {
 					for ((key, attack) <- weapon.attacks; _ <- 0 until attack.cardCount) yield {
-						val ref = AttackReference(entity, key, None)
 						val card = CardLogic.createCard(entity, CD => {
 							CD.cardType = CardTypes.AttackCard
 							CD.name = attack.name
-							CD.effects = Vector(AttackCardEffect(ref))
-							CD.costs = Vector(PayAttackActionPoints(ref), PayAttackStaminaPoints(ref))
+							CD.effects = Vector(AttackGameEffect(key, attack.copy(weapon = entity)))
+							CD.costs = Vector(PayActionPoints(attack.actionCost), PayStamina(attack.staminaCost))
 							CD.source = entity
 						})
 						if (entity.hasData[Item]) { world.modify(entity, Item.equippedCards append card) }

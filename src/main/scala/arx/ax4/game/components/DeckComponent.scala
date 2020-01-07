@@ -1,10 +1,13 @@
 package arx.ax4.game.components
 
+import arx.ax4.game.entities.Companions.CardData
 import arx.ax4.game.entities.cardeffects.{GainMovePoints, PayActionPoints}
-import arx.ax4.game.entities.{CardData, CardTypes, CharacterInfo, DeckData, Item, Weapon}
-import arx.ax4.game.event.{EntityCreated, EntityPlaced, EquipItem, TransferItem, UnequipItem}
+import arx.ax4.game.entities.{CardData, CardInDeck, CardTypes, CharacterInfo, DeckData, Item, Weapon}
+import arx.ax4.game.event.CardEvents.AttachedCardsChanged
+import arx.ax4.game.event.{DeckModificationEvent, EntityCreated, EntityPlaced, EquipItem, TransferItem, UnequipItem}
 import arx.ax4.game.logic.CardAdditionStyle.{DrawDiscardSplit, DrawPile}
 import arx.ax4.game.logic.{CardAdditionStyle, CardLogic}
+import arx.core.introspection.FieldOperations.MapField
 import arx.core.math.Sext
 import arx.core.units.UnitOfTime
 import arx.engine.entity.Entity
@@ -66,7 +69,10 @@ class DeckComponent extends GameComponent {
 				if (entity.hasData[DeckData]) {
 					initializeDeck(entity)
 				}
+			case dm : DeckModificationEvent =>
+				reconcileAttachments()
 			case ge : GameEvent =>
+
 		}
 	}
 
@@ -81,6 +87,38 @@ class DeckComponent extends GameComponent {
 	def addNaturalAttackCards(entity : Entity)(implicit world : World, view : WorldView): Unit = {
 		for (weapon <- entity.dataOpt[Weapon] if weapon.naturalWeapon ; card <- weapon.attackCards) {
 			CardLogic.addCard(entity, card, DrawDiscardSplit)
+		}
+	}
+
+	def reconcileAttachments()(implicit world : World, view : WorldView): Unit = {
+		for (deckEnt <- view.entitiesWithData[DeckData]) {
+			val deck = deckEnt[DeckData]
+
+			val availableCardSet = deck.allNonExhaustedCards.toSet
+			for (card <- deck.allCards) {
+				val cd = card[CardData]
+				for ((key, attachedCards) <- cd.attachedCards) {
+					val cardsToRemove = attachedCards.filterNot(availableCardSet.contains)
+					cardsToRemove.foreach(toRemove => CardLogic.detachCard(deckEnt, card, key, toRemove))
+				}
+
+				for ((key,attachment) <- cd.attachments) {
+					// if it's an automatic attachment, but does not have the full complement of attached cards, find some
+					val currentlyAttached = cd.attachedCards.getOrElse(key, Vector())
+					val missingCount = attachment.count - currentlyAttached.size
+					if (attachment.automaticAttachment && missingCount > 0) {
+						val possibleAttachments = availableCardSet
+							.filterNot(currentlyAttached.contains)
+   						.filter(card => attachment.condition.forall(condition => condition.isTrueFor(view, CardInDeck(deckEnt, card))))
+   						.toVector
+
+						val newAttachments = possibleAttachments.take(missingCount)
+						newAttachments.foreach(newCard => CardLogic.attachCard(deckEnt, card, key, newCard))
+					}
+				}
+			}
+
+			deck.allAvailableCards
 		}
 	}
 }

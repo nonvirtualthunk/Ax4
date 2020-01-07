@@ -37,8 +37,6 @@ class CharacterInfo extends AxAuxData {
 	var intellect : Sext = 0
 	var cunning : Sext = 0
 
-	var activeAttack : Option[AttackReference] = None
-
 	var innateCards : Vector[Entity] = Vector()
 
 	var perks : Vector[Taxon] = Vector()
@@ -62,20 +60,7 @@ class CombatData extends AxAuxData {
 	var specialAttacks = Map[AnyRef, SpecialAttack]()
 }
 
-case class AttackReference(weapon : Entity, attackKey : AttackKey, specialAttack : Option[SpecialAttack]) {
 
-	def resolve()(implicit view : WorldView) : Option[AttackData] = {
-		val baseAttackData = view.data[Weapon](weapon).attacks.get(attackKey)
-		specialAttack.map(_.attackModifier) match {
-			case Some(mod) => baseAttackData.map(ba => {
-				val bac = ba.copy();
-				bac.merge(mod);
-				bac
-			})
-			case None => baseAttackData
-		}
-	}
-}
 
 
 

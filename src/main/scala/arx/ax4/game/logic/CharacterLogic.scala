@@ -55,7 +55,7 @@ object CharacterLogic {
 		world.attachData(creature, new ReactionData)
 		world.attachData(creature, new TagData)
 		world.attachDataWith(creature, (wd : Weapon) => {
-			wd.attacks += AttackKey.Primary -> AttackData("Punch", 0, 1, 1, 1, 0, 1, Map(AttackData.PrimaryDamageKey -> DamageElement(DicePool(1).d(4), 0, 1.0f, DamageType.Bludgeoning)), TargetPattern.SingleEnemy, cardCount = 2)
+			wd.attacks += AttackKey.Primary -> AttackData(creature, "Punch", 0, 1, 1, 1, 0, 1, Map(AttackData.PrimaryDamageKey -> DamageElement(DicePool(1).d(4), 0, 1.0f, DamageType.Bludgeoning)), TargetPattern.SingleEnemy, cardCount = 2)
 			wd.weaponSkills = List(Taxonomy("UnarmedSkill"))
 			wd.naturalWeapon = true
 		})

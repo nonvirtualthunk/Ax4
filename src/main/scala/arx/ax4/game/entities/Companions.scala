@@ -84,6 +84,8 @@ object DeckData extends Clazz[DeckData]("DeckData", classOf[DeckData]){
 	fields += "hand" -> hand
 	val exhaustPile = Field.fromValue(Sentinel.exhaustPile).createField[DeckData]("exhaustPile",f => f.exhaustPile, (f,exhaustPile) => f.exhaustPile = exhaustPile, DeckData) 
 	fields += "exhaustPile" -> exhaustPile
+	val attachedCards = Field.fromValue(Sentinel.attachedCards).createField[DeckData]("attachedCards",f => f.attachedCards, (f,attachedCards) => f.attachedCards = attachedCards, DeckData) 
+	fields += "attachedCards" -> attachedCards
 	val lockedCards = Field.fromValue(Sentinel.lockedCards).createField[DeckData]("lockedCards",f => f.lockedCards, (f,lockedCards) => f.lockedCards = lockedCards, DeckData) 
 	fields += "lockedCards" -> lockedCards
 	val lockedCardSlots = Field.fromValue(Sentinel.lockedCardSlots).createField[DeckData]("lockedCardSlots",f => f.lockedCardSlots, (f,lockedCardSlots) => f.lockedCardSlots = lockedCardSlots, DeckData) 
@@ -98,6 +100,7 @@ object DeckData extends Clazz[DeckData]("DeckData", classOf[DeckData]){
 		to.discardPile = from.discardPile
 		to.hand = from.hand
 		to.exhaustPile = from.exhaustPile
+		to.attachedCards = from.attachedCards
 		to.lockedCards = from.lockedCards
 		to.lockedCardSlots = from.lockedCardSlots
 		to.drawCount = from.drawCount
@@ -132,6 +135,8 @@ import arx.ax4.game.entities.CardData
 object CardData extends Clazz[CardData]("CardData", classOf[CardData]){
 	val Sentinel = new CardData
 	override def instantiate = new CardData
+	val attachedTo = Field.fromValue(Sentinel.attachedTo).createField[CardData]("attachedTo",f => f.attachedTo, (f,attachedTo) => f.attachedTo = attachedTo, CardData) 
+	fields += "attachedTo" -> attachedTo
 	val cardType = Field.fromValue(Sentinel.cardType).createField[CardData]("cardType",f => f.cardType, (f,cardType) => f.cardType = cardType, CardData) 
 	fields += "cardType" -> cardType
 	val name = Field.fromValue(Sentinel.name).createField[CardData]("name",f => f.name, (f,name) => f.name = name, CardData) 
@@ -144,16 +149,23 @@ object CardData extends Clazz[CardData]("CardData", classOf[CardData]){
 	fields += "costs" -> costs
 	val effects = Field.fromValue(Sentinel.effects).createField[CardData]("effects",f => f.effects, (f,effects) => f.effects = effects, CardData) 
 	fields += "effects" -> effects
+	val attachments = Field.fromValue(Sentinel.attachments).createField[CardData]("attachments",f => f.attachments, (f,attachments) => f.attachments = attachments, CardData) 
+	fields += "attachments" -> attachments
+	val attachedCards = Field.fromValue(Sentinel.attachedCards).createField[CardData]("attachedCards",f => f.attachedCards, (f,attachedCards) => f.attachedCards = attachedCards, CardData) 
+	fields += "attachedCards" -> attachedCards
 
 	def apply(f : CardData => Unit) : CardData = { val v = new CardData; f(v); v }
 					 
 	def copyInto(from : CardData, to : CardData) {
+		to.attachedTo = from.attachedTo
 		to.cardType = from.cardType
 		to.name = from.name
 		to.source = from.source
 		to.exhausted = from.exhausted
 		to.costs = from.costs
 		to.effects = from.effects
+		to.attachments = from.attachments
+		to.attachedCards = from.attachedCards
 	}
 }
 import arx.ax4.game.entities.Inventory
@@ -378,10 +390,10 @@ object CharacterInfo extends Clazz[CharacterInfo]("CharacterInfo", classOf[Chara
 	fields += "intellect" -> intellect
 	val cunning = Field.fromValue(Sentinel.cunning).createField[CharacterInfo]("cunning",f => f.cunning, (f,cunning) => f.cunning = cunning, CharacterInfo) 
 	fields += "cunning" -> cunning
-	val activeAttack = Field.fromValue(Sentinel.activeAttack).createField[CharacterInfo]("activeAttack",f => f.activeAttack, (f,activeAttack) => f.activeAttack = activeAttack, CharacterInfo) 
-	fields += "activeAttack" -> activeAttack
 	val innateCards = Field.fromValue(Sentinel.innateCards).createField[CharacterInfo]("innateCards",f => f.innateCards, (f,innateCards) => f.innateCards = innateCards, CharacterInfo) 
 	fields += "innateCards" -> innateCards
+	val perks = Field.fromValue(Sentinel.perks).createField[CharacterInfo]("perks",f => f.perks, (f,perks) => f.perks = perks, CharacterInfo) 
+	fields += "perks" -> perks
 
 	def apply(f : CharacterInfo => Unit) : CharacterInfo = { val v = new CharacterInfo; f(v); v }
 					 
@@ -403,8 +415,8 @@ object CharacterInfo extends Clazz[CharacterInfo]("CharacterInfo", classOf[Chara
 		to.dexterity = from.dexterity
 		to.intellect = from.intellect
 		to.cunning = from.cunning
-		to.activeAttack = from.activeAttack
 		to.innateCards = from.innateCards
+		to.perks = from.perks
 	}
 }
 import arx.ax4.game.entities.FactionData
@@ -448,56 +460,6 @@ object Weapon extends Clazz[Weapon]("Weapon", classOf[Weapon]){
 		to.attackCards = from.attackCards
 	}
 }
-import arx.ax4.game.entities.VegetationLayer
-object VegetationLayer extends Clazz[VegetationLayer]("VegetationLayer", classOf[VegetationLayer]){
-	val Sentinel = new VegetationLayer
-	override def instantiate = new VegetationLayer
-	val cover = Field.fromValue(Sentinel.cover).createField[VegetationLayer]("cover",f => f.cover, (f,cover) => f.cover = cover, VegetationLayer) 
-	fields += "cover" -> cover
-	val moveCost = Field.fromValue(Sentinel.moveCost).createField[VegetationLayer]("moveCost",f => f.moveCost, (f,moveCost) => f.moveCost = moveCost, VegetationLayer) 
-	fields += "moveCost" -> moveCost
-	val kind = Field.fromValue(Sentinel.kind).createField[VegetationLayer]("kind",f => f.kind, (f,kind) => f.kind = kind, VegetationLayer) 
-	fields += "kind" -> kind
-
-	def apply(f : VegetationLayer => Unit) : VegetationLayer = { val v = new VegetationLayer; f(v); v }
-					 
-	def copyInto(from : VegetationLayer, to : VegetationLayer) {
-		to.cover = from.cover
-		to.moveCost = from.moveCost
-		to.kind = from.kind
-	}
-}
-import arx.ax4.game.entities.Resource
-object Resource extends Clazz[Resource]("Resource", classOf[Resource]){
-	val Sentinel = new Resource
-	override def instantiate = new Resource
-	val kind = Field.fromValue(Sentinel.kind).createField[Resource]("kind",f => f.kind, (f,kind) => f.kind = kind, Resource) 
-	fields += "kind" -> kind
-	val amount = Field.fromValue(Sentinel.amount).createField[Resource]("amount",f => f.amount, (f,amount) => f.amount = amount, Resource) 
-	fields += "amount" -> amount
-	val recoveryAmount = Field.fromValue(Sentinel.recoveryAmount).createField[Resource]("recoveryAmount",f => f.recoveryAmount, (f,recoveryAmount) => f.recoveryAmount = recoveryAmount, Resource) 
-	fields += "recoveryAmount" -> recoveryAmount
-	val recoveryPeriod = Field.fromValue(Sentinel.recoveryPeriod).createField[Resource]("recoveryPeriod",f => f.recoveryPeriod, (f,recoveryPeriod) => f.recoveryPeriod = recoveryPeriod, Resource) 
-	fields += "recoveryPeriod" -> recoveryPeriod
-	val canRecoverFromZero = Field.fromValue(Sentinel.canRecoverFromZero).createField[Resource]("canRecoverFromZero",f => f.canRecoverFromZero, (f,canRecoverFromZero) => f.canRecoverFromZero = canRecoverFromZero, Resource) 
-	fields += "canRecoverFromZero" -> canRecoverFromZero
-	val structural = Field.fromValue(Sentinel.structural).createField[Resource]("structural",f => f.structural, (f,structural) => f.structural = structural, Resource) 
-	fields += "structural" -> structural
-	val gatherMethods = Field.fromValue(Sentinel.gatherMethods).createField[Resource]("gatherMethods",f => f.gatherMethods, (f,gatherMethods) => f.gatherMethods = gatherMethods, Resource) 
-	fields += "gatherMethods" -> gatherMethods
-
-	def apply(f : Resource => Unit) : Resource = { val v = new Resource; f(v); v }
-					 
-	def copyInto(from : Resource, to : Resource) {
-		to.kind = from.kind
-		to.amount = from.amount
-		to.recoveryAmount = from.recoveryAmount
-		to.recoveryPeriod = from.recoveryPeriod
-		to.canRecoverFromZero = from.canRecoverFromZero
-		to.structural = from.structural
-		to.gatherMethods = from.gatherMethods
-	}
-}
 import arx.ax4.game.entities.DefenseModifier
 object DefenseModifier extends Clazz[DefenseModifier]("DefenseModifier", classOf[DefenseModifier]){
 	val Sentinel = new DefenseModifier
@@ -532,6 +494,8 @@ object AttackModifier extends Clazz[AttackModifier]("AttackModifier", classOf[At
 	fields += "actionCostMinimum" -> actionCostMinimum
 	val staminaCostDelta = Field.fromValue(Sentinel.staminaCostDelta).createField[AttackModifier]("staminaCostDelta",f => f.staminaCostDelta, (f,staminaCostDelta) => f.staminaCostDelta = staminaCostDelta, AttackModifier) 
 	fields += "staminaCostDelta" -> staminaCostDelta
+	val staminaCostMinimum = Field.fromValue(Sentinel.staminaCostMinimum).createField[AttackModifier]("staminaCostMinimum",f => f.staminaCostMinimum, (f,staminaCostMinimum) => f.staminaCostMinimum = staminaCostMinimum, AttackModifier) 
+	fields += "staminaCostMinimum" -> staminaCostMinimum
 	val minRangeDelta = Field.fromValue(Sentinel.minRangeDelta).createField[AttackModifier]("minRangeDelta",f => f.minRangeDelta, (f,minRangeDelta) => f.minRangeDelta = minRangeDelta, AttackModifier) 
 	fields += "minRangeDelta" -> minRangeDelta
 	val minRangeOverride = Field.fromValue(Sentinel.minRangeOverride).createField[AttackModifier]("minRangeOverride",f => f.minRangeOverride, (f,minRangeOverride) => f.minRangeOverride = minRangeOverride, AttackModifier) 
@@ -555,6 +519,7 @@ object AttackModifier extends Clazz[AttackModifier]("AttackModifier", classOf[At
 		to.actionCostDelta = from.actionCostDelta
 		to.actionCostMinimum = from.actionCostMinimum
 		to.staminaCostDelta = from.staminaCostDelta
+		to.staminaCostMinimum = from.staminaCostMinimum
 		to.minRangeDelta = from.minRangeDelta
 		to.minRangeOverride = from.minRangeOverride
 		to.maxRangeDelta = from.maxRangeDelta
@@ -595,6 +560,56 @@ object GatherMethod extends Clazz[GatherMethod]("GatherMethod", classOf[GatherMe
 		to.difficulty = from.difficulty
 		to.amount = from.amount
 		to.gatherFlags = from.gatherFlags
+	}
+}
+import arx.ax4.game.entities.Resource
+object Resource extends Clazz[Resource]("Resource", classOf[Resource]){
+	val Sentinel = new Resource
+	override def instantiate = new Resource
+	val kind = Field.fromValue(Sentinel.kind).createField[Resource]("kind",f => f.kind, (f,kind) => f.kind = kind, Resource) 
+	fields += "kind" -> kind
+	val amount = Field.fromValue(Sentinel.amount).createField[Resource]("amount",f => f.amount, (f,amount) => f.amount = amount, Resource) 
+	fields += "amount" -> amount
+	val recoveryAmount = Field.fromValue(Sentinel.recoveryAmount).createField[Resource]("recoveryAmount",f => f.recoveryAmount, (f,recoveryAmount) => f.recoveryAmount = recoveryAmount, Resource) 
+	fields += "recoveryAmount" -> recoveryAmount
+	val recoveryPeriod = Field.fromValue(Sentinel.recoveryPeriod).createField[Resource]("recoveryPeriod",f => f.recoveryPeriod, (f,recoveryPeriod) => f.recoveryPeriod = recoveryPeriod, Resource) 
+	fields += "recoveryPeriod" -> recoveryPeriod
+	val canRecoverFromZero = Field.fromValue(Sentinel.canRecoverFromZero).createField[Resource]("canRecoverFromZero",f => f.canRecoverFromZero, (f,canRecoverFromZero) => f.canRecoverFromZero = canRecoverFromZero, Resource) 
+	fields += "canRecoverFromZero" -> canRecoverFromZero
+	val structural = Field.fromValue(Sentinel.structural).createField[Resource]("structural",f => f.structural, (f,structural) => f.structural = structural, Resource) 
+	fields += "structural" -> structural
+	val gatherMethods = Field.fromValue(Sentinel.gatherMethods).createField[Resource]("gatherMethods",f => f.gatherMethods, (f,gatherMethods) => f.gatherMethods = gatherMethods, Resource) 
+	fields += "gatherMethods" -> gatherMethods
+
+	def apply(f : Resource => Unit) : Resource = { val v = new Resource; f(v); v }
+					 
+	def copyInto(from : Resource, to : Resource) {
+		to.kind = from.kind
+		to.amount = from.amount
+		to.recoveryAmount = from.recoveryAmount
+		to.recoveryPeriod = from.recoveryPeriod
+		to.canRecoverFromZero = from.canRecoverFromZero
+		to.structural = from.structural
+		to.gatherMethods = from.gatherMethods
+	}
+}
+import arx.ax4.game.entities.VegetationLayer
+object VegetationLayer extends Clazz[VegetationLayer]("VegetationLayer", classOf[VegetationLayer]){
+	val Sentinel = new VegetationLayer
+	override def instantiate = new VegetationLayer
+	val cover = Field.fromValue(Sentinel.cover).createField[VegetationLayer]("cover",f => f.cover, (f,cover) => f.cover = cover, VegetationLayer) 
+	fields += "cover" -> cover
+	val moveCost = Field.fromValue(Sentinel.moveCost).createField[VegetationLayer]("moveCost",f => f.moveCost, (f,moveCost) => f.moveCost = moveCost, VegetationLayer) 
+	fields += "moveCost" -> moveCost
+	val kind = Field.fromValue(Sentinel.kind).createField[VegetationLayer]("kind",f => f.kind, (f,kind) => f.kind = kind, VegetationLayer) 
+	fields += "kind" -> kind
+
+	def apply(f : VegetationLayer => Unit) : VegetationLayer = { val v = new VegetationLayer; f(v); v }
+					 
+	def copyInto(from : VegetationLayer, to : VegetationLayer) {
+		to.cover = from.cover
+		to.moveCost = from.moveCost
+		to.kind = from.kind
 	}
 }
 }

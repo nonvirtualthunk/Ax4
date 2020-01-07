@@ -1,24 +1,26 @@
 package arx.ax4.game.entities
 
 import arx.application.Noto
-import arx.ax4.game.entities.AttackConditionals.AnyAttackReference
+import arx.ax4.game.entities.AttackConditionals.AnyAttack
 import arx.ax4.game.entities.Conditionals.BaseAttackConditional
 import arx.ax4.game.entities.DamageType.{Piercing, Unknown}
 import arx.ax4.game.entities.TargetPattern.Point
 import arx.ax4.game.entities.cardeffects.{DrawCards, GameEffect}
 import arx.ax4.game.logic.AllegianceLogic
+import arx.core.NoAutoLoad
 import arx.core.introspection.{CopyAssistant, ReflectionAssistant, TEagerSingleton}
 import arx.core.macros.GenerateCompanion
 import arx.core.math.Sext
 import arx.core.representation.ConfigValue
 import arx.core.vec.coordinates.{AxialVec, AxialVec3, CartVec}
-import arx.engine.data.{ConfigLoadable, TNestedData}
+import arx.engine.data.{ConfigLoadable, CustomConfigDataLoader, TNestedData}
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.world.{Breakdown, WorldView}
 import arx.game.data.DicePool
 
 
-case class AttackData(var name: String = "Strike",
+case class AttackData(var weapon : Entity,
+							 var name: String = "Strike",
 							 var accuracyBonus: Int = 0,
 							 var strikeCount: Int = 1,
 							 var staminaCost: Int = 1,
@@ -34,8 +36,8 @@ case class AttackData(var name: String = "Strike",
 		name = modifiers.nameOverride.getOrElse(name)
 		accuracyBonus += modifiers.accuracyBonus
 		strikeCount += modifiers.strikeCountBonus
-		staminaCost += modifiers.staminaCostDelta
-		actionCost = (actionCost + modifiers.actionCostDelta).max(modifiers.actionCostMinimum)
+		staminaCost = (staminaCost + modifiers.staminaCostDelta).max(modifiers.staminaCostMinimum.getOrElse(-1000))
+		actionCost = (actionCost + modifiers.actionCostDelta).max(modifiers.actionCostMinimum.getOrElse(-1000))
 		minRange = modifiers.minRangeOverride.getOrElse(minRange)
 		minRange = minRange + modifiers.minRangeDelta.getOrElse(0)
 		maxRange = modifiers.maxRangeOverride.getOrElse(maxRange)
@@ -57,6 +59,12 @@ case class AttackData(var name: String = "Strike",
 			}
 			damage += src -> newDmg
 		}
+	}
+
+	def mergedWith(modifiers : AttackModifier) : AttackData = {
+		val ret = copy()
+		ret.merge(modifiers)
+		ret
 	}
 
 	override def customLoadFromConfig(config: ConfigValue): Unit = {
@@ -98,23 +106,27 @@ case class AttackModifier(var nameOverride: Option[String] = None,
 								  var accuracyBonus: Int = 0,
 								  var strikeCountBonus: Int = 0,
 								  var actionCostDelta : Int = 0,
-								  var actionCostMinimum : Int = 0,
+								  var actionCostMinimum : Option[Int] = None,
 								  var staminaCostDelta: Int = 0,
+								  var staminaCostMinimum : Option[Int] = None,
 								  var minRangeDelta : Option[Int] = None,
 								  var minRangeOverride: Option[Int] = None,
 								  var maxRangeDelta : Option[Int] = None,
 								  var maxRangeOverride: Option[Int] = None,
-								  var damageBonuses: Map[AnyRef, DamageElementDelta] = Map(),
-								  var targetPatternOverride: Option[TargetPattern] = None) extends TNestedData
+								  @NoAutoLoad var damageBonuses: Map[AnyRef, DamageElementDelta] = Map(),
+								  var targetPatternOverride: Option[TargetPattern] = None) extends TNestedData with ConfigLoadable {
+
+}
 
 @GenerateCompanion
 case class DefenseModifier(var dodgeBonus: Int = 0,
 									var armorBonus: Int = 0) extends TNestedData
 
 class SpecialAttack {
-	var condition: BaseAttackConditional = AnyAttackReference
+	var condition: BaseAttackConditional = AnyAttack
 	var attackModifier: AttackModifier = AttackModifier()
 	var additionalEffects : Seq[GameEffect] = Nil
+	var additionalCosts : Seq[GameEffect] = Nil
 }
 
 object SpecialAttack {
@@ -132,7 +144,7 @@ object SpecialAttack {
 	}
 
 	case object PowerAttack extends SpecialAttack {
-		condition = AttackConditionals.AnyAttackReference
+		condition = AttackConditionals.AnyAttack
 		attackModifier = AttackModifier(
 			namePrefix = Some("power attack : "),
 			accuracyBonus = -2,
@@ -147,7 +159,7 @@ object SpecialAttack {
 			accuracyBonus = -1,
 			damageBonuses = Map(AttackData.PrimaryDamageKey -> DamageElementDelta(damageBonus = Some(-1))),
 			actionCostDelta = -1,
-			actionCostMinimum = 1
+			actionCostMinimum = Some(1)
 		)
 		additionalEffects = Seq(
 			DrawCards(1)
@@ -212,12 +224,12 @@ object DamageElement {
 trait BaseAttackProspect {
 	def attacker: Entity
 
-	def attackReference: AttackReference
+	def attackData: AttackData
 }
 
-case class UntargetedAttackProspect(attacker: Entity, attackReference: AttackReference) extends BaseAttackProspect
+case class UntargetedAttackProspect(attacker: Entity, attackData: AttackData) extends BaseAttackProspect
 
-case class AttackProspect(attacker: Entity, attackReference: AttackReference, target: Entity, allTargets: Seq[Entity], attackData: AttackData, defenseData: DefenseData) extends BaseAttackProspect
+case class AttackProspect(attacker: Entity, target: Entity, allTargets: Seq[Entity], attackData: AttackData, defenseData: DefenseData) extends BaseAttackProspect
 
 
 //case class AttackResult(attacker: Entity, defender: Entity, strikes: List[StrikeResult])
@@ -257,7 +269,7 @@ trait HexTargetPattern extends TargetPattern {
 	def targetedHexes(sourcePoint: AxialVec3, targetPoint: AxialVec3): Seq[AxialVec3]
 }
 
-object TargetPattern {
+object TargetPattern extends CustomConfigDataLoader[TargetPattern] {
 
 	case class Enemies(count: Int) extends EntityTarget {
 		override def matches(view: WorldView, attacker: Entity, target: Entity): Boolean = AllegianceLogic.areEnemies(attacker, target)(view)
@@ -279,4 +291,21 @@ object TargetPattern {
 		}
 	}
 
+	override def loadedType: AnyRef = scala.reflect.runtime.universe.typeOf[TargetPattern]
+
+	val singleEnemyPattern = "(?i)SingleEnemy".r
+	val enemiesPattern = "(?i)Enemies\\(([0-9]+)\\)".r
+	val linePattern = "(?i)Line\\(([0-9]+),([0-9]+)\\)".r
+	val pointPattern = "(?i)Point".r
+	override def loadFrom(config: ConfigValue): TargetPattern = {
+		config.str match {
+			case singleEnemyPattern() => SingleEnemy
+			case enemiesPattern(enemyCount) => Enemies(enemyCount.toInt)
+			case linePattern(start, length) => Line(start.toInt, length.toInt)
+			case pointPattern() => Point
+			case _ =>
+				Noto.warn(s"Invalid target pattern config : $config")
+				SingleEnemy
+		}
+	}
 }

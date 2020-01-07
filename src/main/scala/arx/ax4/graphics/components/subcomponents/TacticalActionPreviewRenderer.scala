@@ -2,7 +2,7 @@ package arx.ax4.graphics.components.subcomponents
 
 import arx.ai.search.PathStep
 import arx.application.Noto
-import arx.ax4.game.action.{AttackAction, BiasedHexSelector, CompoundSelectable, CompoundSelectableInstance, GameAction, HexSelector, MoveAction, MoveCharacter, MoveCharacterInstance, ResourceGatherSelector, Selectable, SelectableInstance, SelectionResult, Selector}
+import arx.ax4.game.action.{AttackAction, HexPatternSelector, CompoundSelectable, CompoundSelectableInstance, GameAction, HexSelector, MoveAction, MoveCharacter, MoveCharacterInstance, ResourceGatherSelector, Selectable, SelectableInstance, SelectionResult, Selector}
 import arx.ax4.game.entities.Companions.{CharacterInfo, Physical, ResourceSourceData}
 import arx.core.vec.{Vec2f, Vec3f}
 import arx.core.vec.coordinates.{AxialVec3, BiasedAxialVec3, HexRingIterator}
@@ -12,7 +12,7 @@ import arx.Prelude._
 import arx.ax4.control.components.DamageExpression
 import arx.ax4.control.event.SelectionMadeEvent
 import arx.ax4.game.entities.{GatherMethod, GatherProspect, ResourceSourceData, Tiles}
-import arx.ax4.game.entities.cardeffects.{AttackCardEffect, AttackGameEffectInstance, GatherCardEffect}
+import arx.ax4.game.entities.cardeffects.{AttackGameEffect, AttackGameEffectInstance, GatherCardEffect}
 import arx.ax4.game.logic.{CharacterLogic, CombatLogic, GatherLogic, TagLogic}
 import arx.ax4.graphics.data.{AxGraphicsData, CullingData, SpriteLibrary, TacticalUIData}
 import arx.ax4.graphics.logic.GameWidgetLogic
@@ -109,12 +109,15 @@ class HexSelectorRenderer extends TacticalSelectorRenderer {
 					.draw()
 				case other => Noto.warn(s"Unexpected selected value for hex selector $other")
 			}
-		case BiasedHexSelector(pattern, hexPredicate, selectable) =>
+		case HexPatternSelector(sourcePoint, pattern, hexPredicate, selectable) =>
 			selected.foreach {
-				case a: BiasedAxialVec3 => canvas.quad(a.vec)
-					.layer(DrawLayer.UnderEntity)
-					.texture("third-party/DHGZ/frame11.png")
-					.draw()
+				case v : Vector[AxialVec3] =>
+					for (a <- v) {
+						canvas.quad(a)
+							.layer(DrawLayer.UnderEntity)
+							.texture("third-party/DHGZ/frame11.png")
+							.draw()
+					}
 				case other => Noto.warn(s"Unexpected selected value for hex selector $other")
 			}
 	}
@@ -167,7 +170,7 @@ object AttackCardEffectRenderer extends TacticalSelectableRenderer {
 
 	override def renderSelectable(game: HypotheticalWorldView, display: World, entity: Entity, canvas: HexCanvas, selectable: Selectable, selectableInst: SelectableInstance, selectionResults: SelectionResult): Unit = {
 		selectableInst match {
-			case ce @ AttackGameEffectInstance(attacker, attackRef, attack, _) =>
+			case ce @ AttackGameEffectInstance(attacker, attack, _) =>
 				implicit val view = game
 
 				val targetSel = ce.targetSelector
@@ -179,7 +182,7 @@ object AttackCardEffectRenderer extends TacticalSelectableRenderer {
 					val startPos = attackFrom
 					val endPos = targets match {
 						case Left(entities) => entities.head(Physical).position
-						case Right(hexes) => hexes.head.vec
+						case Right(hexes) => hexes.flatten.head
 					}
 
 					canvas.quad((startPos.qr.asCartesian + endPos.qr.asCartesian) * 0.5f)
@@ -196,8 +199,8 @@ object AttackCardEffectRenderer extends TacticalSelectableRenderer {
 									.draw()
 							}
 						case Right(hexes) =>
-							for (h <- hexes) {
-								canvas.quad(h.vec)
+							for (h <- hexes.flatten) {
+								canvas.quad(h)
 									.texture(ResourceManager.image("third-party/zeshioModified/ui/hex_selection.png"))
 									.color(RGBA(0.7f, 0.1f, 0.1f, 0.8f))
 									.hexBottomOrigin()
@@ -220,15 +223,15 @@ object AttackCardEffectRenderer extends TacticalSelectableRenderer {
 
 		for ((selectable, selectableInst) <- allSelectablePairs) {
 			selectableInst match {
-				case ace@AttackGameEffectInstance(attacker, attackRef, attack, _) =>
+				case ace@AttackGameEffectInstance(attacker, attack, _) =>
 					val targetSel = ace.targetSelector
 					val targets = consideredSelectionResult(targetSel)
-					val targetEntities = CombatLogic.targetedEntities(targets)
+					val targetEntities = CombatLogic.targetedEntities(targets.map(lv => lv.flatten))
 
 					val existingWidgets = widgets.getOrElse(selectableInst, Map())
 
 
-					val widgetsByTarget = for ((target, strikes) <- CombatLogic.effectiveAttackData(entity, entity(Physical).position, targetEntities, attackRef).strikesByTarget) yield {
+					val widgetsByTarget = for ((target, strikes) <- CombatLogic.effectiveAttackData(entity, entity(Physical).position, targetEntities, attack).strikesByTarget) yield {
 						existingWidgets.get(target) match {
 							case Some(w) => target -> w
 							case None =>

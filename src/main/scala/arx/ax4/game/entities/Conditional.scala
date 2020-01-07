@@ -1,9 +1,12 @@
 package arx.ax4.game.entities
 
 import arx.application.Noto
-import arx.ax4.game.entities.Conditionals.{BaseAttackConditional, EntityConditional}
+import arx.ax4.game.entities.Conditionals.{BaseAttackConditional, CardInDeckConditional, EntityConditional}
 import arx.ax4.game.entities.DamageType.{Piercing, Slashing}
-import arx.core.representation.ConfigValue
+import arx.ax4.game.entities.cardeffects.AttackGameEffect
+import arx.ax4.game.logic.SpecialAttackLogic
+import arx.core.representation.{ConfigValue, StringConfigValue}
+import arx.engine.data.CustomConfigDataLoader
 import arx.engine.entity.{Entity, IdentityData, Taxon, Taxonomy}
 import arx.engine.world.{World, WorldView}
 import arx.game.data.DicePoolBuilder._
@@ -24,6 +27,7 @@ object Conditionals {
 	type BaseAttackConditional = Conditional[BaseAttackProspect]
 	type BaseGatherConditional = Conditional[BaseGatherProspect]
 	type EntityConditional = Conditional[Entity]
+	type CardInDeckConditional = Conditional[CardInDeck]
 
 	private object AllConditional extends Conditional[Any] {
 		override def isTrueFor(implicit view: WorldView, value: Any): Boolean = true
@@ -32,6 +36,8 @@ object Conditionals {
 
 	//	case class AttackOfType
 }
+
+case class CardInDeck(entity : Entity, card : Entity)
 
 trait WorldConditional {
 	def isTrueFor(view : WorldView) : Boolean
@@ -77,23 +83,34 @@ object EntityConditionals {
 	}
 }
 
+object CardConditionals {
+	case class CardMatchesSpecialAttack(specialAttack : SpecialAttack) extends CardInDeckConditional {
+		override def isTrueFor(implicit view: WorldView, value: CardInDeck): Boolean = value.card.dataOpt[CardData] match {
+			case Some(cardData) => cardData.effects.exists {
+				case AttackGameEffect(_, attackData) => specialAttack.condition.isTrueFor(view, UntargetedAttackProspect(value.entity, attackData))
+				case _ => false
+			}
+			case None =>
+				Noto.warn("Card in deck conditional evaluating against card with no card data")
+				false
+		}
+	}
+}
 
-
-object AttackConditionals {
-
+object AttackConditionals extends CustomConfigDataLoader[BaseAttackConditional] {
 	case class WeaponIs(isA : Taxon) extends BaseAttackConditional {
 		override def isTrueFor(implicit view: WorldView, value: BaseAttackProspect): Boolean = {
-			value.attackReference.weapon.dataOpt[IdentityData].exists(id => id.isA(isA))
+			value.attackData.weapon.dataOpt[IdentityData].exists(id => id.isA(isA))
 		}
 	}
 
-	case object AnyAttackReference extends BaseAttackConditional {
+	case object AnyAttack extends BaseAttackConditional {
 		override def isTrueFor(implicit view: WorldView, value: BaseAttackProspect): Boolean = true
 	}
 
 	abstract class BaseAttackConditionalHelper extends BaseAttackConditional {
 		override def isTrueFor(implicit view: WorldView, attack: BaseAttackProspect): Boolean = {
-			attack.attackReference.resolve().exists(AD => isTrueFor(view, AD))
+			isTrueFor(view, attack.attackData)
 		}
 		def isTrueFor(implicit view: WorldView, attack: AttackData): Boolean
 	}
@@ -128,5 +145,33 @@ object AttackConditionals {
 
 	case object SingleTarget extends AttackConditional {
 		override def isTrueForProspect(implicit view: WorldView, value: AttackProspect): Boolean = value.allTargets.size == 1
+	}
+
+
+
+	val weaponIsPattern = "(?i)WeaponIsA\\((.+)\\)".r
+	val anyAttackPattern = "(?i)Any".r
+	val hasDamageTypePattern = "(?i)HasDamageType\\((.+)\\)".r
+	val hasTargetPattern = "(?i)HasTargetPattern\\((.+)\\)".r
+
+	override def loadedType: AnyRef = scala.reflect.runtime.universe.typeOf[BaseAttackConditional]
+	override def loadFrom(config: ConfigValue): BaseAttackConditional = if (config.isStr) {
+		config.str match {
+			case weaponIsPattern(weaponType) => WeaponIs(Taxonomy(weaponType))
+			case anyAttackPattern() => AnyAttack
+			case hasDamageTypePattern(damageType) => HasDamageType(Taxonomy(damageType))
+			case hasTargetPattern(patternStr) => HasTargetPattern(TargetPattern.loadFrom(StringConfigValue(patternStr)))
+			case _ =>
+				Noto.warn(s"Invalid attack conditional string : ${config.str}")
+				AnyAttack
+		}
+	} else if (config.isArr) {
+		config.arr.map(c => loadFrom(c)).reduce((a,b) => a.and(b))
+	} else if (config.isObj) {
+		Noto.warn(s"Attack conditional object config not yet written : $config")
+		AnyAttack
+	} else {
+		Noto.warn(s"Invalid configuration representation of attack conditional : $config")
+		AnyAttack
 	}
 }

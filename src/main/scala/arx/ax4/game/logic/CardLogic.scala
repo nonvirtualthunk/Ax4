@@ -1,14 +1,17 @@
 package arx.ax4.game.logic
 
+import arx.Prelude.toArxVector
 import arx.application.Noto
 import arx.ax4.game.action.SelectionResult
-import arx.ax4.game.entities.Companions.DeckData
-import arx.ax4.game.entities.cardeffects.AttackCardEffect
+import arx.ax4.game.entities.Companions.{CardData, DeckData}
+import arx.ax4.game.entities.cardeffects.{AttackGameEffect, GameEffect}
 import arx.ax4.game.entities._
 import arx.ax4.game.event.CardEvents._
 import arx.engine.entity.Entity
 import arx.engine.world.{World, WorldView}
 import arx.game.logic.Randomizer
+
+import scala.collection.GenTraversableOnce
 
 object CardLogic {
 	import arx.core.introspection.FieldOperations._
@@ -127,15 +130,10 @@ object CardLogic {
 		if (deck.containsCard(card)) {
 			world.startEvent(CardRemoved(entity, card))
 
-			if (deck.discardPile.contains(card)) {
-				world.modify(entity, DeckData.discardPile remove card)
-			} else if (deck.drawPile.contains(card)) {
-				world.modify(entity, DeckData.drawPile remove card)
-			} else if (deck.hand.contains(card)) {
-				world.modify(entity, DeckData.hand remove card)
-			} else {
-				Noto.warn("Unhandled card removal case")
-			}
+			// detach all attached cards before removing the card itself
+			detachedAllFromCard(entity, card)
+
+			removeCardFromCurrentPile(entity, card)
 
 			world.endEvent(CardRemoved(entity, card))
 		}
@@ -177,8 +175,8 @@ object CardLogic {
 
 		world.startEvent(CardPlayed(entity, card))
 
-		world.modify(entity, DeckData.discardPile append card)
 		world.modify(entity, DeckData.hand remove card)
+		world.modify(entity, DeckData.discardPile append card)
 
 		val CD = card[CardData]
 		for ((_, cost) <- cardPlayInstance.costs) {
@@ -233,11 +231,10 @@ object CardLogic {
 	def resolveLockedCard(source: Entity, lockedCard: LockedCardType)(implicit view: WorldView): Entity = {
 		lockedCard match {
 			case LockedCardType.SpecificCard(card) => card
+				// TODO: Special attacks and locked card interaction
 			case LockedCardType.MetaAttackCard(attackKey, specialAttack) => source[DeckData].allAvailableCards.find(c =>
 				c[CardData].effects.exists {
-					case AttackCardEffect(attackRef) =>
-						attackRef.attackKey == attackKey &&
-							attackRef.specialAttack == specialAttack
+					case AttackGameEffect(key, attackData) => key == attackKey
 					case _ => false
 				}).getOrElse(Entity.Sentinel)
 			case LockedCardType.Empty => Entity.Sentinel
@@ -282,8 +279,88 @@ object CardLogic {
 	}
 
 	def isPlayable(card: Entity)(implicit view : WorldView): Boolean = {
+		val (costs,effects) = effectiveCostsAndEffects(card)
+		costs.nonEmpty || effects.nonEmpty
+	}
+
+	private def removeCardFromCurrentPile(entity : Entity, card : Entity)(implicit world : World) = {
+		implicit val view = world.view
+
+		val deck = entity[DeckData]
+		if (deck.drawPile.contains(card)) {
+			world.modify(entity, DeckData.drawPile remove card)
+		} else if (deck.discardPile.contains(card)) {
+			world.modify(entity, DeckData.discardPile remove card)
+		} else if (deck.hand.contains(card)) {
+			world.modify(entity, DeckData.hand remove card)
+		} else if (deck.exhaustPile.contains(card)) {
+			world.modify(entity, DeckData.exhaustPile remove card)
+		} else if (deck.attachedCards.contains(card)) {
+			world.modify(entity, DeckData.attachedCards remove card)
+		} else {
+			Noto.warn(s"Could not find card to remove from pile in any supported pile : $entity, $card")
+		}
+	}
+
+	def attachCard(entity : Entity, attachTo : Entity, key : AnyRef, attached : Entity)(implicit world : World) : Unit = {
+		implicit val view = world.view
+		val currentAttachment = attachTo[CardData].attachedCards.getOrElse(key, Vector())
+
+		world.eventStmt(AttachedCardsChanged(entity, attachTo, key)) {
+			world.modify(attached, CardData.attachedTo + attachTo)
+			world.modify(attachTo, CardData.attachedCards.put(key, currentAttachment :+ attached))
+			removeCardFromCurrentPile(entity, attached)
+			world.modify(entity, DeckData.attachedCards append attached)
+		}
+	}
+
+	def detachCard(entity : Entity, attachedTo : Entity, key : AnyRef, toRemove : Entity)(implicit world : World) : Unit = {
+		implicit val view = world.view
+		val currentAttachment = attachedTo[CardData].attachedCards.getOrElse(key, Vector())
+		if (currentAttachment.contains(toRemove)) {
+			val deck = entity[DeckData]
+			world.eventStmt(AttachedCardsChanged(entity, attachedTo, key)) {
+				world.modify(toRemove, CardData.attachedTo - attachedTo)
+				world.modify(attachedTo, CardData.attachedCards.put(key, currentAttachment without toRemove))
+				// if the detached card is in the attachedCards section, move it to discard
+				if (deck.attachedCards.contains(toRemove)) {
+					world.modify(entity, DeckData.attachedCards remove toRemove)
+					world.modify(entity, DeckData.discardPile append toRemove)
+				} else {
+					Noto.warn("Attached card was not in the attachedCards section")
+				}
+			}
+		}
+	}
+
+	def detachedAllFromCard(entity : Entity, card : Entity)(implicit world : World) : Unit = {
+		implicit val view = world.view
+		card[CardData].attachedCards.foreach{ case (key, attachedV) => attachedV.foreach(a => detachCard(entity, card, key, a)) }
+	}
+
+	def effectiveCostsAndEffects(card : Entity)(implicit view : WorldView) : (Vector[GameEffect], Vector[GameEffect]) = {
 		val CD = card[CardData]
-		CD.costs.nonEmpty || CD.effects.nonEmpty
+		var costs = CD.costs
+		var effects = CD.effects
+
+		for ((key,attachment) <- CD.attachments; attachedCards = CD.attachedCards.getOrElse(key, Vector())) {
+			attachment.attachmentStyle match {
+				case AttachmentStyle.Contained =>
+				// do nothing, nothing specific happens to the contained card
+				case AttachmentStyle.PlayModified(effectModifiers) =>
+					// if this is a play-modified attachment, add all of the costs and effects from the attached card to this one
+					for (attachedCardEnt <- attachedCards; attachedCard = attachedCardEnt[CardData]) {
+						costs ++= attachedCard.costs.map(c => GameEffectModifier.applyAll(c, effectModifiers))
+						effects ++= attachedCard.effects.map(c => GameEffectModifier.applyAll(c, effectModifiers))
+					}
+			}
+		}
+
+		(costs, effects)
+	}
+
+	def cardAndAllAttachments(card: Entity)(implicit view : WorldView): List[Entity] = {
+		card :: card[CardData].attachedCards.values.flatten.flatMap(c => cardAndAllAttachments(c)).toList
 	}
 }
 

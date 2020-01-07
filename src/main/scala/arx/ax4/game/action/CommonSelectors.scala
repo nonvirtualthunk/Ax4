@@ -2,7 +2,7 @@ package arx.ax4.game.action
 
 import arx.ai.search.Path
 import arx.ax4.game.entities.Companions.Physical
-import arx.ax4.game.entities.{Physical, TargetPattern, Tile}
+import arx.ax4.game.entities.{HexTargetPattern, Physical, TargetPattern, Tile}
 import arx.ax4.game.logic.{AllegianceLogic, AxPathfinder}
 import arx.core.vec.coordinates.{AxialVec, AxialVec3, BiasedAxialVec3}
 import arx.engine.entity.Entity
@@ -116,9 +116,9 @@ abstract class PathSelector(entity : Entity, pattern : TargetPattern, selectable
 }
 
 
-case class BiasedHexSelector(pattern: TargetPattern, hexPredicate: (WorldView, BiasedAxialVec3) => Boolean, selectable : Selectable) extends Selector[BiasedAxialVec3](selectable) {
-	override def satisfiedBy(view: WorldView, a: Any): Option[(BiasedAxialVec3, Int)] = a match {
-		case bv : BiasedAxialVec3 if hexPredicate(view, bv) => Some(bv -> 1)
+case class HexPatternSelector(sourcePoint : AxialVec3, pattern: HexTargetPattern, hexPredicate: (WorldView, BiasedAxialVec3) => Boolean, selectable : Selectable) extends Selector[Vector[AxialVec3]](selectable) {
+	override def satisfiedBy(view: WorldView, a: Any): Option[(Vector[AxialVec3], Int)] = a match {
+		case bv : BiasedAxialVec3 if hexPredicate(view, bv) => Some(pattern.targetedHexes(sourcePoint, bv.vec).toVector -> 1)
 		case _ => None
 	}
 
