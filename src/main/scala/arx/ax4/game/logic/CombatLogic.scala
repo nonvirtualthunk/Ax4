@@ -41,8 +41,8 @@ object CombatLogic {
 				val toHitScore = accuracyRoll + effAttack.accuracyBonus - effDefense.dodgeBonus
 
 				if (toHitScore > 0) {
-					for ((src, dmg) <- effAttack.damage) {
-						doDamage(world, target, ((dmg.damageDice.roll().total + dmg.damageBonus) * dmg.damageMultiplier).toInt, dmg.damageType, effDefense, Some(src.toString))
+					for (dmg <- effAttack.damage) {
+						doDamage(world, target, ((dmg.damageDice.roll().total + dmg.damageBonus) * dmg.damageMultiplier).toInt, dmg.damageType, effDefense)
 					}
 				} else {
 					world.addEvent(DodgeEvent(target))
@@ -83,7 +83,7 @@ object CombatLogic {
 		EffectiveAttackData(strikesByTarget)
 	}
 
-	def doDamage(world: World, target: Entity, damage: Int, damageType: Taxon, defenseData: DefenseData, source: Option[String]): Unit = {
+	def doDamage(world: World, target: Entity, damage: Int, damageType: Taxon, defenseData: DefenseData): Unit = {
 		val effDamage = if (damageType.isA(DamageType.Physical)) {
 			damage - defenseData.armor
 		} else {
@@ -93,7 +93,7 @@ object CombatLogic {
 
 		if (effDamage > 0) {
 			world.startEvent(DamageEvent(target, effDamage, damageType))
-			world.modify(target, CharacterInfo.health reduceBy effDamage, source)
+			world.modify(target, CharacterInfo.health reduceBy effDamage)
 			world.endEvent(DamageEvent(target, effDamage, damageType))
 		} else {
 			world.addEvent(DeflectEvent(target, damage))

@@ -2,7 +2,7 @@ package arx.ax4.graphics.components.subcomponents
 
 import arx.ai.search.PathStep
 import arx.application.Noto
-import arx.ax4.game.action.{AttackAction, HexPatternSelector, CompoundSelectable, CompoundSelectableInstance, GameAction, HexSelector, MoveAction, MoveCharacter, MoveCharacterInstance, ResourceGatherSelector, Selectable, SelectableInstance, SelectionResult, Selector}
+import arx.ax4.game.action.{AttackAction, CompoundSelectable, CompoundSelectableInstance, GameAction, HexPatternSelector, HexSelector, MoveAction, MoveCharacter, MoveCharacterInstance, ResourceGatherSelector, Selectable, SelectableInstance, SelectionResult, Selector}
 import arx.ax4.game.entities.Companions.{CharacterInfo, Physical, ResourceSourceData}
 import arx.core.vec.{Vec2f, Vec3f}
 import arx.core.vec.coordinates.{AxialVec3, BiasedAxialVec3, HexRingIterator}
@@ -14,7 +14,7 @@ import arx.ax4.control.event.SelectionMadeEvent
 import arx.ax4.game.entities.{GatherMethod, GatherProspect, ResourceSourceData, Tiles}
 import arx.ax4.game.entities.cardeffects.{AttackGameEffect, AttackGameEffectInstance, GatherCardEffect}
 import arx.ax4.game.logic.{CharacterLogic, CombatLogic, GatherLogic, TagLogic}
-import arx.ax4.graphics.data.{AxGraphicsData, CullingData, SpriteLibrary, TacticalUIData}
+import arx.ax4.graphics.data.{AxGraphicsData, CullingData, TacticalUIData}
 import arx.ax4.graphics.logic.GameWidgetLogic
 import arx.core.introspection.ReflectionAssistant
 import arx.engine.control.components.windowing.Widget
@@ -22,6 +22,7 @@ import arx.engine.control.components.windowing.widgets.{ListItemSelected, Positi
 import arx.engine.data.{Moddable, TMutableAuxData, TWorldAuxData}
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.simple.{DrawLayer, HexCanvas}
+import arx.graphics.data.SpriteLibrary
 import arx.graphics.{GL, ScaledImage}
 import arx.graphics.helpers.{Color, RGBA}
 
@@ -238,7 +239,7 @@ object AttackCardEffectRenderer extends TacticalSelectableRenderer {
 								val w = desktop.createChild("AttackInfoWidgets.ConsideredAttackInfo")
 
 								w.bind("attack", AttackPreviewData(strikes.head.attackData.name, strikes.head.attackData.accuracyBonus.toSignedString, DamageExpression(strikes.head.attackData.damage),
-									target(CharacterInfo).health.currentValue, strikes.head.defenseData.dodgeBonus.toSignedString, Taxonomy("DefenseBonus")))
+									target(CharacterInfo).health.currentValue, strikes.head.defenseData.dodgeBonus.toSignedString, Taxonomy("Defense")))
 
 								target -> w.widget
 						}

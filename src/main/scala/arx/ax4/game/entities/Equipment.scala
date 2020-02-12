@@ -70,12 +70,12 @@ class TagData extends AxAuxData {
 
 @GenerateCompanion
 class Weapon extends AxAuxData {
-	var attacks: Map[AttackKey, AttackData] = Map()
+	@NoAutoLoad var attacks: Map[AttackKey, AttackData] = Map()
 	var primaryAttack: AttackKey = AttackKey.Primary
 	var weaponSkills: List[Taxon] = Nil
 	var naturalWeapon: Boolean = false
 
-	var attackCards: Vector[Entity] = Vector()
+	@NoAutoLoad var attackCards: Vector[Entity] = Vector()
 
 	override def customLoadFromConfig(config: ConfigValue): Unit = {
 		for (attField <- config.fieldOpt("attacks")) {

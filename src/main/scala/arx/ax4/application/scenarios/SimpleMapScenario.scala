@@ -2,13 +2,13 @@ package arx.ax4.application.scenarios
 
 import arx.Prelude
 import arx.application.Noto
-import arx.ax4.control.components.{CardControl, SelectionControl, TacticalUIControl}
+import arx.ax4.control.components.{CardControl, PerkPickControl, SelectionControl, TacticalUIControl}
 import arx.ax4.game.components.{CardCreationComponent, DeckComponent, TurnComponent}
 import arx.ax4.game.entities.Companions.{CardData, CharacterInfo, DeckData, Physical, Tile, TurnData}
 import arx.ax4.game.entities.EntityConditionals._
 import arx.ax4.game.entities.GatherConditionals._
 import arx.ax4.game.entities.{AllegianceData, AttackData, AttackKey, AxAuxData, CardData, CardLibrary, CardPredicate, CardSelector, CardTypes, CharacterInfo, CombatData, DamageElement, DamageType, DeckData, EntityConditionals, Equipment, FactionData, GatherConditionals, GatherMethod, Inventory, ItemLibrary, LockedCardSlot, LockedCardType, Physical, QualitiesData, ReactionData, Resource, ResourceKey, ResourceOrigin, ResourceSourceData, TargetPattern, Terrain, TerrainLibrary, Tile, Tiles, TurnData, Vegetation, VegetationLayer, VegetationLayerType, VegetationLibrary, Weapon, WeaponLibrary}
-import arx.ax4.game.logic.{CardLogic, CharacterLogic, InventoryLogic, MovementLogic}
+import arx.ax4.game.logic.{CardLogic, CharacterLogic, InventoryLogic, MovementLogic, SkillsLogic}
 import arx.ax4.graphics.components.{AnimationGraphicsComponent, AnimationGraphicsRenderingComponent, EntityGraphics, TacticalUIGraphics, TileGraphics}
 import arx.ax4.graphics.data.{AxGraphicsData, TacticalUIData}
 import arx.core.async.Executor
@@ -145,8 +145,8 @@ object SimpleMapScenario extends Scenario {
 
 		playerCharacter = torbold
 
-		val specialAttackCard = CardLibrary.withKind(Taxonomy("PiercingStab", "CardTypes")).createEntity(world)
-		CardLogic.addCard(torbold, specialAttackCard, DrawPile)(world)
+//		val specialAttackCard = CardLibrary.withKind(Taxonomy("PiercingStab", "CardTypes")).createEntity(world)
+//		CardLogic.addCard(torbold, specialAttackCard, DrawPile)(world)
 
 		val moveCard = torbold(DeckData)(world.view).allCards.find(c => c(CardData)(world.view).cardType == CardTypes.MoveCard).get
 
@@ -181,6 +181,8 @@ object SimpleMapScenario extends Scenario {
 
 		world.addEvent(TurnStartedEvent(player, 0))
 
+//		SkillsLogic.gainSkillXP(playerCharacter, Taxonomy("spearSkill"),20)(world)
+//
 		Mouse.setImage(ResourceManager.image("third-party/shikashiModified/staff1.png"), Vec2i(4,4))
 	}
 
@@ -218,6 +220,7 @@ object SimpleMapScenario extends Scenario {
 //		controlEngine.register[TacticalUIActionControl]
 		controlEngine.register[CardControl]
 		controlEngine.register[SelectionControl]
+		controlEngine.register[PerkPickControl]
 	}
 
 	override def serialGraphicsEngine(universe: Universe): Boolean = true

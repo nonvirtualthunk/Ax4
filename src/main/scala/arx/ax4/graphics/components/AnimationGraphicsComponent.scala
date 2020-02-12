@@ -7,7 +7,7 @@ import arx.ax4.game.entities.Companions.{CharacterInfo, Physical}
 import arx.ax4.game.entities.{ColorComponentMix, HueShift, Physical}
 import arx.ax4.game.event.CardEvents.{CardDrawn, HandDiscarded, HandDrawn}
 import arx.ax4.game.event.{DamageEvent, EntityMoved, GainSkillLevelEvent, StrikeEvent}
-import arx.ax4.graphics.data.{AxAnimatingWorldData, AxDrawingConstants, AxGraphicsData, SpriteLibrary}
+import arx.ax4.graphics.data.{AxAnimatingWorldData, AxDrawingConstants, AxGraphicsData}
 import arx.ax4.graphics.logic.EntityDrawLogic
 import arx.core.introspection.Field
 import arx.core.math.Interpolation
@@ -22,6 +22,7 @@ import arx.engine.simple.{DrawLayer, HexCanvas}
 import arx.engine.world.EventState.Started
 import arx.engine.world.{GameEventClock, HypotheticalWorld, HypotheticalWorldView, World, WorldQueryParser, WorldView}
 import arx.graphics.Image
+import arx.graphics.data.SpriteLibrary
 import arx.graphics.helpers.{Color, RGBA}
 import arx.resource.ResourceManager
 import sun.java2d.cmm.ColorTransform

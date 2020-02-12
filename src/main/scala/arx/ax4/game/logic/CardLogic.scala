@@ -339,7 +339,9 @@ object CardLogic {
 	}
 
 	def effectiveCostsAndEffects(card : Entity)(implicit view : WorldView) : (Vector[GameEffect], Vector[GameEffect]) = {
-		val CD = card[CardData]
+		effectiveCostsAndEffects(card(CardData))
+	}
+	def effectiveCostsAndEffects(CD : CardData)(implicit view : WorldView) : (Vector[GameEffect], Vector[GameEffect]) = {
 		var costs = CD.costs
 		var effects = CD.effects
 

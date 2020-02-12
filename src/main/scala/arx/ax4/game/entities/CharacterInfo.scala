@@ -10,7 +10,7 @@ import arx.core.vec.coordinates.{AxialVec3, CartVec, CartVec3, HexDirection}
 import arx.engine.data.Reduceable
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.world.WorldView
-import arx.graphics.helpers.{Color, RGBA}
+import arx.graphics.helpers.{Color, RGBA, RichText, RichTextRenderSettings, THasRichTextRepresentation, TaxonSections, TextSection}
 
 @GenerateCompanion
 class CharacterInfo extends AxAuxData {
@@ -40,6 +40,7 @@ class CharacterInfo extends AxAuxData {
 	var innateCards : Vector[Entity] = Vector()
 
 	var perks : Vector[Taxon] = Vector()
+	var pendingPerkPicks : Vector[PendingPerkPicks] = Vector()
 }
 
 @GenerateCompanion
@@ -61,8 +62,22 @@ class CombatData extends AxAuxData {
 }
 
 
+case class PendingPerkPicks(possiblePerks : Vector[Taxon], source : PerkSource)
 
+sealed trait PerkSource extends THasRichTextRepresentation
+object PerkSource {
+	import arx.Prelude._
 
+	case class SkillLevelUp(skill : Taxon, level : Int) extends PerkSource {
+		override def toString: String = skill.name.fromCamelCase.capitalizeAll + " Up"
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = {
+			RichText(
+				TextSection(skill.displayName) :: TaxonSections(Taxonomy("SkillLevelUp"))
+			)
+		}
+	}
+}
 
 
 sealed trait ColorTransform {

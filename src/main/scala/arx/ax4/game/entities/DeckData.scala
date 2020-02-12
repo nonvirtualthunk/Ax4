@@ -10,6 +10,8 @@ import arx.core.macros.GenerateCompanion
 import arx.core.representation.ConfigValue
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.world.WorldView
+import arx.graphics.helpers.{RichText, RichTextRenderSettings, THasRichTextRepresentation}
+import arx.Prelude._
 
 @GenerateCompanion
 class DeckData extends AxAuxData {
@@ -48,7 +50,7 @@ object LockedCardType {
 }
 
 
-trait GameEffectModifier {
+trait GameEffectModifier extends THasRichTextRepresentation {
 	def modify(gameEffect : GameEffect) : PartialFunction[GameEffect,GameEffect]
 	def modifyIfDefined(gameEffect : GameEffect) : GameEffect = {
 		val f = modify(gameEffect)
@@ -66,15 +68,29 @@ case class ApCostDeltaModifier(apDelta : Int, min : Option[Int]) extends GameEff
 	override def modify(gameEffect: GameEffect) = {
 		case PayActionPoints(ap) => PayActionPoints((ap + apDelta).max(min.getOrElse(-1000)))
 	}
+
+	override def toRichText(settings: RichTextRenderSettings): RichText = {
+		val minStr = min.map(i => s" (min $i)").getOrElse("")
+		RichText.parse(s"${apDelta.toSignedString} [ActionPoint]$minStr")
+	}
 }
 case class StaminaCostDeltaModifier(staminaDelta : Int, min : Option[Int]) extends GameEffectModifier {
 	override def modify(gameEffect: GameEffect) = {
 		case PayStamina(stamina) => PayStamina((stamina + staminaDelta).max(min.getOrElse(-1000)))
 	}
+
+	override def toRichText(settings: RichTextRenderSettings): RichText = {
+		val minStr = min.map(i => s" (min $i)").getOrElse("")
+		RichText.parse(s"${staminaDelta.toSignedString} [StaminaPoint]$minStr")
+	}
 }
 case class AttackGameEffectModifier(modifier : AttackModifier) extends GameEffectModifier {
 	override def modify(gameEffect: GameEffect): PartialFunction[GameEffect, GameEffect] = {
 		case AttackGameEffect(key, attackData) => AttackGameEffect(key, attackData.mergedWith(modifier))
+	}
+
+	override def toRichText(settings: RichTextRenderSettings): RichText = {
+		modifier.toRichText(settings)
 	}
 }
 

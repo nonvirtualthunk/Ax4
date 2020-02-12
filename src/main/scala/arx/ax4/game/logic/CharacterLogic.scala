@@ -1,7 +1,7 @@
 package arx.ax4.game.logic
 
 
-import arx.ax4.game.entities.{AllegianceData, AttackData, AttackKey, CharacterInfo, CombatData, DamageElement, DamageType, DeckData, Equipment, Inventory, Physical, QualitiesData, ReactionData, TagData, TargetPattern, Weapon}
+import arx.ax4.game.entities.{AllegianceData, AttackData, AttackKey, CharacterInfo, CombatData, DamageElement, DamageKey, DamageType, DeckData, Equipment, Inventory, Physical, QualitiesData, ReactionData, TagData, TargetPattern, Weapon}
 import arx.ax4.game.entities.Companions.CharacterInfo
 import arx.ax4.game.event.{EntityCreated, MovePointsGained}
 import arx.engine.entity.{Entity, IdentityData, Taxonomy}
@@ -55,7 +55,7 @@ object CharacterLogic {
 		world.attachData(creature, new ReactionData)
 		world.attachData(creature, new TagData)
 		world.attachDataWith(creature, (wd : Weapon) => {
-			wd.attacks += AttackKey.Primary -> AttackData(creature, "Punch", 0, 1, 1, 1, 0, 1, Map(AttackData.PrimaryDamageKey -> DamageElement(DicePool(1).d(4), 0, 1.0f, DamageType.Bludgeoning)), TargetPattern.SingleEnemy, cardCount = 2)
+			wd.attacks += AttackKey.Primary -> AttackData(creature, "Punch", 0, 1, 1, 1, 0, 1, Vector(DamageElement(DamageKey.Primary, DicePool(1).d(4), 0, 1.0f, DamageType.Bludgeoning)), TargetPattern.SingleEnemy, cardCount = 2)
 			wd.weaponSkills = List(Taxonomy("UnarmedSkill"))
 			wd.naturalWeapon = true
 		})

@@ -8,4 +8,6 @@ CardImages {
   Gather : ${imgPath}/gather.png
   Move : ${imgPath}/move.png
   "Hay Bushel" : ${imgPath}/bushel.png
+  "Piercing Stab" : ${imgPath}/piercingStab.png
+  "Equip Longspear" : ${imgPath}/spear.png
 }

@@ -1,8 +1,9 @@
 package arx.ax4.control.components
 import arx.application.Noto
+import arx.ax4.control.components.widgets.CardWidget
 import arx.ax4.game.entities.Companions.{CardData, DeckData}
 import arx.ax4.game.entities.cardeffects.{PayActionPoints, PayStamina}
-import arx.ax4.game.entities.{CardData, CardPlay, CardTypes}
+import arx.ax4.game.entities.{AttachmentStyle, CardData, CardPlay, CardTypes}
 import arx.ax4.game.logic.CardLogic
 import arx.ax4.graphics.data.{CardImageLibrary, TacticalUIData}
 import arx.core.units.UnitOfTime
@@ -43,18 +44,8 @@ class CardControl(selectionControl : SelectionControl) extends AxControlComponen
 			val handAndAttachments = DD.hand.flatMap(c => CardLogic.cardAndAllAttachments(c)(gameView))
 			for (card <- handAndAttachments) {
 				if (!cardWidgets.contains(card)) {
-					val cardWidget = tuid.mainSectionWidget.createChild("CardWidgets.CardWidget")
+					val cardWidget = CardWidget(tuid.mainSectionWidget, selC, card)
 					cardWidget.y = PositionExpression.Absolute(cardWidget.parent.drawing.absolutePosition.y + cardWidget.parent.drawing.effectiveDimensions.y + unselectedDepth, TopLeft)
-					cardWidget.drawing.backgroundImage = Some(card(CardData)(gameView).cardType match {
-						case CardTypes.ItemCard => ResourceManager.image("graphics/ui/item_card_border.png")
-						case CardTypes.AttackCard => ResourceManager.image("graphics/ui/attack_card_border.png")
-						case _ => ResourceManager.image("graphics/ui/card_border_no_padding.png")
-					})
-
-
-					cardWidget.bind("card", () => {
-						CardInfo(selC, card)(gameView)
-					})
 
 					cardWidget.onEvent {
 						case MousePressEvent(button, pos, modifiers) =>
@@ -64,21 +55,6 @@ class CardControl(selectionControl : SelectionControl) extends AxControlComponen
 							cardDropped(game, display)
 							heldCard = None
 					}
-
-					cardWidget.attachData[OverlayData]
-					val od = cardWidget[OverlayData]
-					od.overlays += CardControl.LockedOverlay -> WidgetOverlay(
-						overlayImage = ResourceManager.image("graphics/ui/locked_overlay.png"),
-						overlayEdgeColor = Moddable(RGBA(0.3f,0.3f,0.3f,1.0f)),
-						pixelScale = 2
-					)
-					od.overlays += CardControl.ActiveOverlay -> WidgetOverlay(
-						drawOverlay = false,
-						overlayImage = ResourceManager.image("graphics/ui/active_card_overlay.png"),
-						overlayEdgeColor = Moddable(RGBA(1.0f,1.0f,1.0f,1.0f)),
-						pixelScale = 2,
-						pixelSizeDelta = Vec2i(3,3)
-					)
 
 					cardWidgets += card -> cardWidget
 				}
@@ -101,7 +77,7 @@ class CardControl(selectionControl : SelectionControl) extends AxControlComponen
 				widget.z = if (activeDisplay) {
 					100 + (if (card[CardData].attachedTo.nonEmpty ) { -1 } else { 0 })
 				} else {
-					20 + (if (card[CardData].attachedTo.nonEmpty ) { -20 } else { - index })
+					20 + (if (card[CardData].attachedTo.nonEmpty) { if (activeDisplay) { 20 } else { -20 } } else { - index })
 				}
 
 
@@ -202,7 +178,7 @@ class CardControl(selectionControl : SelectionControl) extends AxControlComponen
 
 				val od = widget[OverlayData]
 
-				od.overlays(CardControl.ActiveOverlay).drawOverlay = if (heldCard.contains(card) && widget.drawing.absolutePosition.y < (widget.parent.drawing.effectiveDimensions.y - 1000) && CardLogic.isPlayable(card)(game.view)) {
+				od.overlays(CardControl.ActiveOverlay).drawOverlay = Moddable(if (heldCard.contains(card) && widget.drawing.absolutePosition.y < (widget.parent.drawing.effectiveDimensions.y - 1000) && CardLogic.isPlayable(card)(game.view)) {
 					useCardOnDrop = true
 					true
 				} else {
@@ -210,9 +186,9 @@ class CardControl(selectionControl : SelectionControl) extends AxControlComponen
 						useCardOnDrop = false
 					}
 					false
-				}
+				})
 
-				od.overlays(CardControl.LockedOverlay).drawOverlay = isLockedCard
+				od.overlays(CardControl.LockedOverlay).drawOverlay = Moddable(isLockedCard)
 			}
 		}
 
@@ -258,10 +234,15 @@ object CardControl {
 
 case class CardInfo(name : String, image : Image, mainCost : RichText, secondaryCost : RichText, effects : RichText)
 object CardInfo {
-	def apply(character : Entity, card : Entity)(implicit view : WorldView) : CardInfo = {
-		val CD = card[CardData]
+	import arx.Prelude._
 
-		val (costs, effects) = CardLogic.effectiveCostsAndEffects(card)
+	def apply(character : Entity, card : Entity)(implicit view : WorldView) : CardInfo = {
+		CardInfo(Some(character), card(CardData))
+	}
+	def apply(character : Option[Entity], CD : CardData)(implicit view : WorldView) : CardInfo = {
+		val settings = RichTextRenderSettings()
+
+		val (costs, effects) = CardLogic.effectiveCostsAndEffects(CD)
 		val apCosts = costs.collect {
 			case PayActionPoints(ap) => ap
 		}
@@ -281,10 +262,32 @@ object CardInfo {
 			RichText.Empty
 		}
 
-		val combinedEffectsSections = effects.map(e => e.toRichText(view, character, RichTextRenderSettings()).sections)
-   		.foldLeft(Seq[RichTextSection]())((t1, t2) => t1 ++ Seq(LineBreakSection(0)) ++ t2)
-		val effectText = RichText(combinedEffectsSections)
+		val combinedEffectsSections = effects.map(e => {
+			character match {
+				case Some(c) => e.toRichText(view, c, RichTextRenderSettings()).sections
+				case None => e.toRichText(settings).sections
+			}
+		}).reduceLeftOrElse((t1, t2) => t1 ++ Seq(LineBreakSection(0)) ++ t2, Vector())
 
+		var attachmentSections = Vector[RichTextSection]()
+
+		for ((attachKey, attachment) <- CD.attachments) {
+			if (! CD.attachedCards.contains(attachKey)) {
+				attachment.attachmentStyle match {
+					case AttachmentStyle.Contained =>
+					case AttachmentStyle.PlayModified(effectModifiers) =>
+						val conditionSections : Vector[RichTextSection] = attachment.condition.flatMap(_.toRichText(settings).sections)
+						attachmentSections ++= TaxonSections("Attach")
+						attachmentSections ++= conditionSections
+						attachmentSections :+= LineBreakSection(0)
+
+						attachmentSections ++= effectModifiers.map(e => e.toRichText(settings).sections)
+							.reduceLeftOrElse((t1, t2) => t1 ++ Seq(LineBreakSection(0)) ++ t2, Vector())
+				}
+			}
+		}
+
+		val effectText = RichText(attachmentSections ++ combinedEffectsSections)
 
 		val cardImage : TToImage = CardImageLibrary.cardImageOpt(CD.name) match {
 			case Some(img) => img

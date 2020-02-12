@@ -10,16 +10,23 @@ import arx.engine.data.CustomConfigDataLoader
 import arx.engine.entity.{Entity, IdentityData, Taxon, Taxonomy}
 import arx.engine.world.{World, WorldView}
 import arx.game.data.DicePoolBuilder._
+import arx.graphics.helpers.{RichText, RichTextRenderSettings, THasRichTextRepresentation, TextSection}
 
-trait Conditional[-T] {
+trait Conditional[-T] extends THasRichTextRepresentation {
 	def source : String = ""
 
 	private def outer = this
 	def isTrueFor(implicit view : WorldView, value : T) : Boolean
 	def and[U <: T](other : Conditional[U]) = new Conditional[U] {
-		override def isTrueFor(implicit view: WorldView, value: U): Boolean = outer.isTrueFor(view, value) && other.isTrueFor(view, value) }
+		override def isTrueFor(implicit view: WorldView, value: U): Boolean = outer.isTrueFor(view, value) && other.isTrueFor(view, value)
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = outer.toRichText(settings).append(" and ").append(other.toRichText(settings))
+	}
 	def or[U <: T](other : Conditional[U]) = new Conditional[U] {
-		override def isTrueFor(implicit view: WorldView, value: U): Boolean = outer.isTrueFor(view, value) || other.isTrueFor(view, value) }
+		override def isTrueFor(implicit view: WorldView, value: U): Boolean = outer.isTrueFor(view, value) || other.isTrueFor(view, value)
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = outer.toRichText(settings).append(" or ").append(other.toRichText(settings))
+	}
 }
 
 object Conditionals {
@@ -31,6 +38,8 @@ object Conditionals {
 
 	private object AllConditional extends Conditional[Any] {
 		override def isTrueFor(implicit view: WorldView, value: Any): Boolean = true
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = "always"
 	}
 	def all[T] : Conditional[T] = AllConditional.asInstanceOf[Conditional[T]]
 
@@ -46,20 +55,28 @@ trait WorldConditional {
 object EntityConditionals {
 	case class isA(taxon : Taxon) extends EntityConditional {
 		override def isTrueFor(implicit view: WorldView, value: Entity): Boolean = value.dataOpt[IdentityData].exists(id => id.isA(taxon))
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = s"is a ${taxon.displayName}"
 	}
 
 	case class hasFlag(flag : Taxon, atLeastValue : Int) extends EntityConditional {
 		override def isTrueFor(implicit view: WorldView, value: Entity): Boolean = value.dataOpt[TagData].exists(td => td.flags.getOrElse(flag, -1) >= atLeastValue)
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = s"has ${flag.displayName} at least ${atLeastValue}"
 	}
 
 	case object any extends EntityConditional {
 		override def isTrueFor(implicit view: WorldView, value: Entity): Boolean = true
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = s"always"
 	}
 
 	case class hasPerk(perkIdentity : Taxon) extends EntityConditional {
 		override def isTrueFor(implicit view: WorldView, value: Entity): Boolean = {
 			value.dataOpt[CharacterInfo].exists(ci => ci.perks.contains(perkIdentity))
 		}
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = s"has perk ${perkIdentity.displayName}"
 	}
 
 	val PerkPattern = "(?i)Perk\\((.+)\\)".r
@@ -94,6 +111,9 @@ object CardConditionals {
 				Noto.warn("Card in deck conditional evaluating against card with no card data")
 				false
 		}
+
+		override def toRichText(settings: RichTextRenderSettings): RichText =
+			specialAttack.condition.toRichText(settings)
 	}
 }
 
@@ -102,10 +122,14 @@ object AttackConditionals extends CustomConfigDataLoader[BaseAttackConditional] 
 		override def isTrueFor(implicit view: WorldView, value: BaseAttackProspect): Boolean = {
 			value.attackData.weapon.dataOpt[IdentityData].exists(id => id.isA(isA))
 		}
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"weapon is a ${isA.displayName}")
 	}
 
 	case object AnyAttack extends BaseAttackConditional {
 		override def isTrueFor(implicit view: WorldView, value: BaseAttackProspect): Boolean = true
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"any attack")
 	}
 
 	abstract class BaseAttackConditionalHelper extends BaseAttackConditional {
@@ -118,19 +142,27 @@ object AttackConditionals extends CustomConfigDataLoader[BaseAttackConditional] 
 	case class HasDamageType(damageType : Taxon) extends BaseAttackConditionalHelper {
 		override def isTrueFor(implicit view: WorldView, attack: AttackData): Boolean = {
 			// true if the attack reference resolves to an attack where one of the kinds of damage it deals is the listed kind
-			attack.damage.values.exists(de => de.damageType == damageType)
+			attack.damage.exists(de => de.damageType == damageType)
 		}
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"attack deals ${damageType.displayName} damage")
 	}
 
 	case class HasTargetPattern(pattern: TargetPattern) extends BaseAttackConditionalHelper {
 		override def isTrueFor(implicit view: WorldView, attack: AttackData): Boolean = attack.targetPattern == pattern
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"attack targets ${pattern}")
 	}
 
 	case class HasAtLeastMinRange(minRange : Int) extends BaseAttackConditionalHelper {
 		override def isTrueFor(implicit view: WorldView, attack: AttackData): Boolean = attack.minRange >= minRange
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"attack has at least ${minRange} min range")
 	}
 	case class HasAtLeastMaxRange(maxRange : Int) extends BaseAttackConditionalHelper {
 		override def isTrueFor(implicit view: WorldView, attack: AttackData): Boolean = attack.maxRange >= maxRange
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"attack has at least ${maxRange} max range")
 	}
 
 	abstract class AttackConditional extends BaseAttackConditional {
@@ -145,11 +177,13 @@ object AttackConditionals extends CustomConfigDataLoader[BaseAttackConditional] 
 
 	case object SingleTarget extends AttackConditional {
 		override def isTrueForProspect(implicit view: WorldView, value: AttackProspect): Boolean = value.allTargets.size == 1
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"attack has a single target")
 	}
 
 
 
-	val weaponIsPattern = "(?i)WeaponIsA\\((.+)\\)".r
+	val weaponIsPattern = "(?i)WeaponIsA?\\((.+)\\)".r
 	val anyAttackPattern = "(?i)Any".r
 	val hasDamageTypePattern = "(?i)HasDamageType\\((.+)\\)".r
 	val hasTargetPattern = "(?i)HasTargetPattern\\((.+)\\)".r

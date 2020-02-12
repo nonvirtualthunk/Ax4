@@ -4,9 +4,9 @@ import arx.ai.search.Pathfinder
 import arx.application.Noto
 import arx.ax4.game.entities.Companions.{CharacterInfo, Physical, Tile, TurnData}
 import arx.ax4.game.entities.{AllegianceData, AttackData, AttackKey, CharacterInfo, DamageElement, FactionData, Physical, SkillsLibrary, Tile, Tiles, TurnData}
-import arx.ax4.game.event.{EntityMoved}
+import arx.ax4.game.event.EntityMoved
 import arx.ax4.graphics.components.EntityGraphics
-import arx.ax4.graphics.data.{AxDrawingConstants, SpriteLibrary, TacticalUIData, TacticalUIMode}
+import arx.ax4.graphics.data.{AxDrawingConstants, TacticalUIData, TacticalUIMode}
 import arx.core.units.UnitOfTime
 import arx.core.vec.{ReadVec2f, Vec3f, Vec4f}
 import arx.core.vec.coordinates.{AxialVec, AxialVec3, BiasedAxialVec3, HexDirection}
@@ -29,6 +29,7 @@ import arx.engine.control.data.WindowingControlData
 import arx.engine.data.Moddable
 import arx.engine.entity.{Entity, IdentityData}
 import arx.engine.event.Event
+import arx.graphics.data.SpriteLibrary
 import arx.graphics.helpers.{Color, ImageSection, RGBA, RichText, RichTextRenderSettings, RichTextSection, THasRichTextRepresentation, TextSection}
 import arx.resource.ResourceManager
 import org.lwjgl.glfw.GLFW
@@ -70,8 +71,8 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 		mainSection.drawing.drawBackground = false
 		tuid.mainSectionWidget = mainSection
 
-		tuid.inventoryWidget = new InventoryWidget(mainSection)
-		tuid.inventoryWidget.widget.showing = Moddable(() => tuid.activeUIMode == TacticalUIMode.InventoryMode)
+//		tuid.inventoryWidget = new InventoryWidget(mainSection)
+//		tuid.inventoryWidget.widget.showing = Moddable(() => tuid.activeUIMode == TacticalUIMode.InventoryMode)
 
 
 
@@ -171,22 +172,22 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 			tuid.selectedCharacterInfoWidget.bind("skills", () => {
 				SkillsLogic.skillLevels(selC).toList.map {
 					case (taxon, level) =>
-						SkillsLibrary(taxon) match {
+						SkillsLibrary.getWithKind(taxon) match {
 							case Some(skill) => SimpleSkillDisplayInfo(skill.displayName.capitalize, level, SpriteLibrary.iconFor(taxon), SkillsLogic.currentLevelXp(selC, taxon), SkillsLogic.currentLevelXpRequired(selC, taxon))
 							case None => Noto.error(s"Skill display couldn't find info for skill $taxon")
 						}
 				}
 			})
 
-			tuid.inventoryWidget.updateBindings(game, display, selC)
+//			tuid.inventoryWidget.updateBindings(game, display, selC)
 		}
 	}
 }
 
-case class DamageExpression(damageElements : Map[AnyRef, DamageElement]) extends THasRichTextRepresentation  {
+case class DamageExpression(damageElements : Vector[DamageElement]) extends THasRichTextRepresentation  {
 	import arx.Prelude.int2RicherInt
 	override def toString: String = {
-		damageElements.values.map(de => {
+		damageElements.map(de => {
 			var sections : List[String] = Nil
 			sections ::= de.damageDice.toString
 			if (de.damageMultiplier != 1.0f) {
@@ -201,7 +202,7 @@ case class DamageExpression(damageElements : Map[AnyRef, DamageElement]) extends
 	}
 
 	override def toRichText(settings: RichTextRenderSettings): RichText = {
-		val sections = damageElements.values.flatMap(de => {
+		val sections = damageElements.flatMap(de => {
 			var sections = List[RichTextSection]()
 			sections ::= TextSection(de.damageDice.toString)
 			if (de.damageMultiplier != 1.0f) {
@@ -221,10 +222,8 @@ case class DamageExpression(damageElements : Map[AnyRef, DamageElement]) extends
 		RichText(sections.toList)
 	}
 }
-case class AttackBonus(bonus : Int) {
-	import arx.Prelude.int2RicherInt
-	override def toString: String = bonus.toSignedString
-}
+
+
 //case class SimpleAttackDisplayInfo(attackRef : AttackReference, name : String, accuracyBonus : AttackBonus, damage : DamageExpression)
 //object SimpleAttackDisplayInfo {
 //	def fromAttackData(aref : AttackReference, attackData : AttackData) : SimpleAttackDisplayInfo = {

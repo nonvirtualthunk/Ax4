@@ -14,6 +14,7 @@ import arx.engine.entity.Taxonomy
 import arx.engine.world.{World, WorldQuery, WorldView}
 import arx.game.data.RandomizationStyle.Median
 import arx.game.data.{DefaultGameAuxData, RandomizationWorldData}
+import arx.graphics.helpers.{RichText, RichTextRenderSettings}
 import arx.resource.ResourceManager
 import org.scalatest.FunSuite
 
@@ -88,11 +89,15 @@ object CombatLogicTest {
 		override def isTrueForProspect(implicit view : WorldView, prospect: AttackProspect): Boolean = {
 			prospect.attacker.dataOpt[CharacterInfo].exists(ci => ci.species == Taxonomy("MudMonster"))
 		}
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = RichText("Anti mud defense")
 	}
 
 	case object SingleAttackBuff extends AttackConditional {
 		override def source: String = "single attack buff"
 		override def isTrueForProspect(implicit view: WorldView, prospect: AttackProspect): Boolean = prospect.allTargets.size == 1
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = RichText("single attack buff")
 	}
 
 	case object TestPowerAttack extends SpecialAttack {
@@ -100,7 +105,7 @@ object CombatLogicTest {
 		attackModifier = AttackModifier(
 			namePrefix = Some("power attack : "),
 			accuracyBonus = -10,
-			damageBonuses = Map(AttackData.PrimaryDamageKey -> DamageElementDelta(damageMultiplier = Some(2.0f)))
+			damageBonuses = Vector(DamageModifier(DamagePredicate.All, DamageDelta.DamageMultiplier(2.0f)))
 		)
 	}
 

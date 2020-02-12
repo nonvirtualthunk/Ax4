@@ -56,7 +56,15 @@ Sprites {
     icon: "graphics/ui/bludgeoning.png"
   }
 
-  DefenseBonus : {
+  Defense : {
     icon: "graphics/ui/defense.png"
+  }
+
+  Accuracy : {
+    icon: "graphics/ui/crosshairs.png"
+  }
+
+  SkillLevelUp : {
+    icon : "graphics/icons/up.png"
   }
 }

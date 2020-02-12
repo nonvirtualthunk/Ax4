@@ -20,29 +20,42 @@ Skills {
       }
     }
   }
+
+  UnarmedSkill : {
+    displayName : "Unarmed"
+
+    levelUpPerks : {
+
+    }
+  }
 }
 
 Perks {
   PiercingStab {
     name : "Piercing Stab"
     description : "Strike through multiple enemies with a powerful stab"
+    icon : "graphics/icons/card_back_large.png"
     effect : AddCard(PiercingStab)
   }
   SwiftStab {
     name : "Swift Stab"
     description : "Stab swiftly at an enemy"
+    icon : "graphics/icons/card_back_large.png"
     effect : AddCard(SwiftStab)
   }
   SpearProficiency {
     name : "Spear Proficiency"
     description : "Become proficient in the use of the spear and increase your accuracy and damage"
+    icon : "graphics/icons/spear.png"
     effect {
       type : ConditionalAttackModifier
 
       condition : WeaponIs(Items.Weapons.spear)
 
-      accuracyBonus : 1
-      damageBonus : 1
+      modifier {
+        accuracyBonus: 1
+        damageBonus: 1
+      }
     }
   }
   SpearMastery {
@@ -53,8 +66,10 @@ Perks {
 
       condition : WeaponIs(Items.Weapons.spear)
 
-      accuracyBonus : 2
-      damageBonus : 2
+      modifier {
+        accuracyBonus: 2
+        damageBonus: 2
+      }
     }
   }
   CloseRangeSpearFighter {
@@ -64,8 +79,9 @@ Perks {
       type : ConditionalAttackModifier
 
       condition : WeaponIs(Items.Weapons.spear)
-
-      minRangeDelta : -1
+      modifier {
+        minRangeDelta : -1
+      }
     }
   }
 }

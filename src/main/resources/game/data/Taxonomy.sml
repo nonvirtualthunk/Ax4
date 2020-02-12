@@ -158,10 +158,17 @@ Taxonomy {
 
   GameConcept : []
   GameConcepts {
-    AccuracyBonus : GameConcept
-    DefenseBonus : GameConcept
-    ArmorValue : GameConcept
-
+    Accuracy : GameConcept
+    Defense : GameConcept
+    Armor : GameConcept
+    ActionPoint : GameConcept
+    StaminaPoint : GameConcept
+    MinimumRange : GameConcept
+    MaximumRange : GameConcept
+    SkillLevelUp : GameConcept
+    Range : GameConcept
+    Damage : GameConcept
+    Attach : GameConcept
   }
 
   DamageType : []

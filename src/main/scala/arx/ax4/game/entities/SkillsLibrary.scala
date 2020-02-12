@@ -1,39 +1,30 @@
 package arx.ax4.game.entities
 
 import arx.application.Noto
-import arx.ax4.game.entities.Companions.CombatData
-import arx.ax4.game.entities.cardeffects.GameEffect
+import arx.ax4.game.entities.Companions.{CombatData, Skill}
+import arx.ax4.game.entities.cardeffects.{GameEffect, GameEffectConfigLoader}
 import arx.core.NoAutoLoad
+import arx.core.macros.GenerateCompanion
 import arx.core.representation.ConfigValue
 import arx.engine.data.{ConfigLoadable, TAuxData}
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.world.{Modifier, World}
+import arx.graphics.TToImage
 
 import scala.reflect.ClassTag
 
 
-case class SkillLevel(onLevelGainedFunctions: List[(World, Entity) => Unit]) {
-	def onLevelGained(world: World, entity: Entity) = {
-		onLevelGainedFunctions.foreach(f => f(world, entity))
-	}
-
-	def withModifier[C <: TAuxData](mod : Modifier[C])(implicit classTag: ClassTag[C]) = {
-		val newFunc : (World,Entity) => Unit = (world : World, entity : Entity) => {world.modify(entity, mod)(classTag)}
-		copy(onLevelGainedFunctions = newFunc :: onLevelGainedFunctions)
-	}
-}
-
-object SkillLevel{
-	def apply(onLevelGainedFunctions: ((World, Entity) => Unit) *) = new SkillLevel(onLevelGainedFunctions.toList)
-}
-
-case class Perk(identity : Taxon, name : String, description : String, effects : Seq[GameEffect])
+case class Perk(kind : Taxon,
+					 name : String,
+					 description : String,
+					 effects : Seq[GameEffect],
+					 icon : Option[TToImage]) extends ConfigLoadable
 object Perk {
-	val Sentinel = Perk(Taxonomy("UnknownPerk"), "Sentinel", "sentinel", Nil)
+	val Sentinel = Perk(Taxonomy("UnknownPerk"), "Sentinel", "sentinel", Nil, None)
 }
 
 class SkillLevelUpPerk extends ConfigLoadable {
-	var perk : Perk = Perk.Sentinel
+	var perk : Taxon = Taxonomy.UnknownThing
 	var minLevel : Int = 0
 	var maxLevel : Int = 100
 	@NoAutoLoad
@@ -58,7 +49,7 @@ object SkillLevelUpPerk {
 
 	def apply(perk : Perk, minLevel : Int, maxLevel : Int, requirements : List[Conditional[Entity]]) : SkillLevelUpPerk = {
 		val skill = new SkillLevelUpPerk
-		skill.perk = perk
+		skill.perk = perk.kind
 		skill.minLevel = minLevel
 		skill.maxLevel = maxLevel
 		skill.requirements = requirements
@@ -66,48 +57,61 @@ object SkillLevelUpPerk {
 	}
 }
 
-case class  Skill(displayName : String, var levelUpPerks: List[SkillLevelUpPerk]) {
+@GenerateCompanion
+class Skill extends ConfigLoadable {
+	var displayName : String = "Unnamed Skill"
+	@NoAutoLoad
+	var levelUpPerks: Vector[SkillLevelUpPerk] = Vector()
 
+	override def customLoadFromConfig(config: ConfigValue): Unit = {
+		for (perksConf <- config.fieldOpt("levelUpPerks"); (k,v) <- perksConf.fields) {
+			val perk = new SkillLevelUpPerk
+			perk.perk = Taxonomy(k, "perks")
+			perk.loadFromConfig(v)
+			levelUpPerks :+= perk
+		}
+	}
+}
+
+
+object PerksLibrary extends Library[Perk] {
+	override protected def topLevelField: String = "Perks"
+
+	override protected def createBlank(): Perk = {
+		Perk(Taxonomy("perk"), "default perk", "default description", Nil, None)
+	}
+
+	override def load(config: ConfigValue): Unit = {
+		for (topLevel <- config.fieldOpt("Perks"); (perkName, perkConf) <- topLevel.fields) {
+			val kind = Taxonomy(perkName, "perks")
+			val effects = (perkConf.fieldAsList("effect") ::: perkConf.fieldAsList("effects")).map(GameEffectConfigLoader.loadFrom)
+			val perk = Perk(
+				kind,
+				perkConf.name.strOrElse("Unknown name perk"),
+				perkConf.description.strOrElse("Unknown name perk"),
+				effects,
+				perkConf.fieldOpt("icon").map(_.str)
+			)
+			byKind += kind -> perk
+		}
+	}
+
+	override def initialLoad(): Unit = {
+		load("game/data/skills/Skills.sml")
+	}
 }
 
 
 
-object SkillsLibrary {
-	// TODO : Bring this in from skills.sml
+object SkillsLibrary extends ConfigLoadableLibrary[Skill](Skill) {
 
-	import arx.core.introspection.FieldOperations._
-	import AttackConditionals._
+	override def defaultNamespace: String = "Skills"
 
-	var byTaxon: Map[Taxon, Skill] = Map()
+	override protected def topLevelField: String = "Skills"
 
-	def apply(skill : Taxon) : Option[Skill] = byTaxon.get(skill)
+	override protected def createBlank(): Skill = new Skill
 
-//	byTaxon += Taxonomy("spearSkill", "Skills") -> Skill("Spear",
-//		SkillLevelUpPerk(Perk(Taxonomy("SpearProficiency", "Perks"), "Spear Proficiency", ""))
-//	)
-//
-//	byTaxon += Taxonomy("spearSkill", "Skills") -> Skill("Spear",
-//		List(
-//			SkillLevel(
-//				(world, entity) => world.modify(entity, CombatData.conditionalAttackModifiers append (AttackConditionals.WeaponIs(Taxonomy("spear", "Items.Weapons")) -> AttackModifier(accuracyBonus = 1))),
-//				(world, entity) => world.modify(entity, CombatData.specialAttacks.put("piercing stab", SpecialAttack.PiercingStab))
-//			), SkillLevel(
-//				(world, entity) => world.modify(entity, CombatData.conditionalAttackModifiers append (AttackConditionals.WeaponIs(Taxonomy("spear", "Items.Weapons")) -> AttackModifier(damageBonuses = Map(AttackKey.Primary -> DamageElementDelta.damageBonus(2)))))
-//			), SkillLevel(
-//				(world, entity) => world.modify(entity, CombatData.conditionalAttackModifiers append (AttackConditionals.WeaponIs(Taxonomy("spear", "Items.Weapons")) -> AttackModifier(minRangeOverride = Some(1))))
-//			)
-//		)
-//	)
-//	byTaxon += Taxonomy("swordSkill", "Skills") -> Skill("Sword",
-//		List(
-//			SkillLevel()
-//				.withModifier(CombatData.conditionalAttackModifiers append (WeaponIs(Taxonomy("sword", "Items.Weapons")) -> AttackModifier(accuracyBonus = 1)))
-////   			.withModifier(CombatData.specialAttacks.put(""))
-//		)
-//	)
-//	byTaxon += Taxonomy("unarmedSkill", "Skills") -> Skill("Unarmed",
-//		List(
-//			SkillLevel()
-//		)
-//	)
+	override def initialLoad(): Unit = {
+		load("game/data/skills/Skills.sml")
+	}
 }

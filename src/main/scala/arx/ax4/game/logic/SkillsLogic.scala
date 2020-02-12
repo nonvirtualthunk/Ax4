@@ -1,9 +1,9 @@
 package arx.ax4.game.logic
 
 import arx.application.Noto
-import arx.ax4.game.entities.{CharacterInfo, SkillsLibrary}
+import arx.ax4.game.entities.{CharacterInfo, PendingPerkPicks, PerkSource, SkillsLibrary}
 import arx.ax4.game.entities.Companions.CharacterInfo
-import arx.ax4.game.event.{GainSkillLevelEvent, GainSkillXPEvent}
+import arx.ax4.game.event.{GainSkillLevelEvent, GainSkillXPEvent, NewPerkPicksAvailable}
 import arx.engine.entity.{Entity, Taxon}
 import arx.engine.world.{NestedKeyedModifier, NestedModifier, World, WorldView}
 
@@ -87,16 +87,17 @@ object SkillsLogic {
 			world.startEvent(GainSkillLevelEvent(character, skill, markLevel))
 			world.modify(character, CharacterInfo.skillLevels.put(skill, markLevel))
 
-			SkillsLibrary(skill) match {
-				case Some(skillInfo) =>
-					// TODO: Skill level up refactor
-//					skillInfo.skillLevel(markLevel) match {
-//						case Some(skillLevel) =>
-//							skillLevel.onLevelGained(world, character)
-//						case None =>
-//							Noto.warn(s"no actual skill level $markLevel for $skill")
-//					}
 
+			SkillsLibrary.getWithKind(skill) match {
+				case Some(skillInfo) =>
+					val possiblePerks = skillInfo.levelUpPerks.filter(perk => {
+						markLevel >= perk.minLevel && markLevel <= perk.maxLevel &&
+							perk.requirements.forall(req => req.isTrueFor(view, character))
+					})
+					val newPicks = possiblePerks.map(_.perk)
+					world.startEvent(NewPerkPicksAvailable(character, newPicks))
+					world.modify(character, CharacterInfo.pendingPerkPicks append PendingPerkPicks(newPicks, PerkSource.SkillLevelUp(skill, markLevel)))
+					world.endEvent(NewPerkPicksAvailable(character, newPicks))
 				case None =>
 					Noto.warn(s"No information on skill $skill")
 			}

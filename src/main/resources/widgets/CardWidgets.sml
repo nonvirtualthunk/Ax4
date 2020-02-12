@@ -71,7 +71,8 @@ CardWidget {
       text : "%(card.effects)"
 
       x : 5
-      y : 265
+//      y : 265
+      y : 0 below CardImage
       width : rel(-10)
 
       textAlignment : centered

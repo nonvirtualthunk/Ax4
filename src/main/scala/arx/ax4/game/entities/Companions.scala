@@ -394,6 +394,8 @@ object CharacterInfo extends Clazz[CharacterInfo]("CharacterInfo", classOf[Chara
 	fields += "innateCards" -> innateCards
 	val perks = Field.fromValue(Sentinel.perks).createField[CharacterInfo]("perks",f => f.perks, (f,perks) => f.perks = perks, CharacterInfo) 
 	fields += "perks" -> perks
+	val pendingPerkPicks = Field.fromValue(Sentinel.pendingPerkPicks).createField[CharacterInfo]("pendingPerkPicks",f => f.pendingPerkPicks, (f,pendingPerkPicks) => f.pendingPerkPicks = pendingPerkPicks, CharacterInfo) 
+	fields += "pendingPerkPicks" -> pendingPerkPicks
 
 	def apply(f : CharacterInfo => Unit) : CharacterInfo = { val v = new CharacterInfo; f(v); v }
 					 
@@ -417,6 +419,7 @@ object CharacterInfo extends Clazz[CharacterInfo]("CharacterInfo", classOf[Chara
 		to.cunning = from.cunning
 		to.innateCards = from.innateCards
 		to.perks = from.perks
+		to.pendingPerkPicks = from.pendingPerkPicks
 	}
 }
 import arx.ax4.game.entities.FactionData
@@ -610,6 +613,22 @@ object VegetationLayer extends Clazz[VegetationLayer]("VegetationLayer", classOf
 		to.cover = from.cover
 		to.moveCost = from.moveCost
 		to.kind = from.kind
+	}
+}
+import arx.ax4.game.entities.Skill
+object Skill extends Clazz[Skill]("Skill", classOf[Skill]){
+	val Sentinel = new Skill
+	override def instantiate = new Skill
+	val displayName = Field.fromValue(Sentinel.displayName).createField[Skill]("displayName",f => f.displayName, (f,displayName) => f.displayName = displayName, Skill) 
+	fields += "displayName" -> displayName
+	val levelUpPerks = Field.fromValue(Sentinel.levelUpPerks).createField[Skill]("levelUpPerks",f => f.levelUpPerks, (f,levelUpPerks) => f.levelUpPerks = levelUpPerks, Skill) 
+	fields += "levelUpPerks" -> levelUpPerks
+
+	def apply(f : Skill => Unit) : Skill = { val v = new Skill; f(v); v }
+					 
+	def copyInto(from : Skill, to : Skill) {
+		to.displayName = from.displayName
+		to.levelUpPerks = from.levelUpPerks
 	}
 }
 }

@@ -10,6 +10,7 @@ import arx.Prelude._
 import arx.ax4.game.entities.Conditionals.{BaseGatherConditional, EntityConditional}
 import arx.ax4.game.logic.InventoryLogic
 import arx.engine.world.WorldView
+import arx.graphics.helpers.{RichText, RichTextRenderSettings}
 
 import scala.collection.SortedMap
 
@@ -103,5 +104,7 @@ case class GatherProspect(gatherer : Entity, target : Entity, key : ResourceKey,
 object GatherConditionals {
 	case class gatherer(cond : EntityConditional) extends BaseGatherConditional {
 		override def isTrueFor(implicit view: WorldView, value: BaseGatherProspect): Boolean = cond.isTrueFor(view, value.gatherer)
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = RichText("Gatherer is ").append(cond.toRichText(settings))
 	}
 }

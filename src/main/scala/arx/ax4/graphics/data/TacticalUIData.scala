@@ -2,7 +2,6 @@ package arx.ax4.graphics.data
 
 import arx.application.Noto
 import arx.ax4.control.components.widgets.InventoryWidget
-import arx.ax4.graphics.data.TacticalUIMode.Neutral
 import arx.core.vec.coordinates.{AxialVec3, BiasedAxialVec3, HexDirection}
 import arx.engine.control.components.windowing.Widget
 import arx.engine.control.data.TControlData
@@ -14,6 +13,8 @@ class TacticalUIData extends TControlData with TMutableAuxData with TWorldAuxDat
 	var selectedCharacterInfoWidget : Widget = _
 	var inventoryWidget : InventoryWidget = _
 	var mainSectionWidget : Widget = _
+
+	var perkSelectionWidget : Widget = _
 
 	var selectedCharacter : Option[Entity] = None
 	var consideringCharacterSwitch : Option[Entity] = None
@@ -27,7 +28,7 @@ class TacticalUIData extends TControlData with TMutableAuxData with TWorldAuxDat
 
 	def toggleUIMode(target : TacticalUIMode): Unit = {
 		if (activeUIMode == target) {
-			activeUIMode = Neutral
+			activeUIMode = TacticalUIMode.Neutral
 		} else {
 			activeUIMode = target
 		}

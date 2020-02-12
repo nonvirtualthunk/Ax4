@@ -3,6 +3,7 @@ package arx.ax4.game.entities
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicBoolean
 
+import arx.application.Noto
 import arx.ax4.game.entities.Companions.Terrain
 import arx.ax4.game.event.EntityCreated
 import arx.core.async.Executor
@@ -11,7 +12,7 @@ import arx.core.macros.GenerateCompanion
 import arx.core.math.Sext
 import arx.core.metrics.Metrics
 import arx.core.representation.ConfigValue
-import arx.engine.data.TAuxData
+import arx.engine.data.{ConfigLoadable, TAuxData}
 import arx.engine.entity.Companions.IdentityData
 import arx.engine.entity.{Entity, IdentityData, Taxon, Taxonomy}
 import arx.engine.world.World
@@ -29,7 +30,7 @@ class Terrain extends AxAuxData {
 	var kind : Taxon = Taxonomy.UnknownThing
 }
 
-object TerrainLibrary extends AuxDataLibrary(Terrain) {
+object TerrainLibrary extends ConfigLoadableLibrary(Terrain) {
 	override protected def topLevelField: String = "Terrain"
 	override protected def createBlank(): Terrain = new Terrain
 
@@ -42,12 +43,18 @@ object TerrainLibrary extends AuxDataLibrary(Terrain) {
 
 
 trait Library[T] extends TEagerSingleton {
+	protected val initialLoadStarted = new AtomicBoolean(false)
 	protected val initialLoadComplete = new CountDownLatch(1)
 
 	protected var byKind = Map[Taxon, T]()
 
 	protected def topLevelField : String
 	protected def createBlank() : T
+
+	def getWithKind(kind : Taxon) = {
+		initialLoadComplete.await()
+		byKind.get(kind)
+	}
 
 	def withKind(kind : Taxon) = {
 		initialLoadComplete.await()
@@ -61,14 +68,16 @@ trait Library[T] extends TEagerSingleton {
 	def initialLoad()
 
 	Executor.submitAsync(() => {
+		Noto.info(s"Starting initial load of ${this.getClass.getSimpleName.replaceAll("$","")}")
 		initialLoad()
 		initialLoadComplete.countDown()
 		Metrics.checkpoint(s"${this.getClass.getSimpleName} initial load complete")
+		println(s"Finishing initial load of ${this.getClass.getSimpleName.replaceAll("$","")}")
 	})
 }
 
 
-abstract class AuxDataLibrary[T <: TAuxData](clazz : Clazz[T]) extends Library[T] {
+abstract class ConfigLoadableLibrary[T <: ConfigLoadable](clazz : Clazz[T]) extends Library[T] {
 
 	def defaultNamespace : String
 
