@@ -5,7 +5,7 @@ import arx.ax4.game.entities.Companions.{CharacterInfo, CombatData, Equipment, P
 import arx.ax4.game.entities.{AttackData, AttackModifier, AttackProspect, CharacterInfo, CombatData, DamageResult, DamageType, DefenseData, DefenseModifier, Physical, SpecialAttack, Tiles, UntargetedAttackProspect, Weapon}
 import arx.ax4.game.event.{AttackEvent, AttackEventInfo, DamageEvent, DeflectEvent, DodgeEvent, StrikeEvent, SubStrike}
 import arx.core.vec.coordinates.{AxialVec3, BiasedAxialVec3}
-import arx.engine.entity.{Entity, Taxon}
+import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.world.{World, WorldView}
 import arx.game.logic.Randomizer
 import arx.core.introspection.FieldOperations._
@@ -24,8 +24,8 @@ object CombatLogic {
 		val (untargetedAttackData, _) = resolveConditionalAttackData(view, attacker, Entity.Sentinel, targets, baseAttackData, new DefenseData)
 
 		world.startEvent(AttackEvent(AttackEventInfo(attacker, weapon, targets, untargetedAttackData)))
-		world.modify(attacker, CharacterInfo.actionPoints reduceBy untargetedAttackData.actionCost)
-		world.modify(attacker, CharacterInfo.stamina reduceBy untargetedAttackData.staminaCost)
+//		world.modify(attacker, CharacterInfo.actionPoints reduceBy untargetedAttackData.actionCost)
+//		world.modify(attacker, CharacterInfo.stamina reduceBy untargetedAttackData.staminaCost)
 
 		for (strikeN <- 0 until untargetedAttackData.strikeCount) {
 			world.startEvent(StrikeEvent(AttackEventInfo(attacker, weapon, targets, untargetedAttackData)))
@@ -37,8 +37,10 @@ object CombatLogic {
 				val (effDefense, _) = resolveConditionalDefenseData(view, attacker, target, targets, effAttack, rawDefenseData)
 				world.startEvent(SubStrike(target, AttackEventInfo(attacker, weapon, targets, effAttack), effDefense))
 
+				val parry = TagLogic.flagValue(target, "parry")
+
 				val accuracyRoll = randomizer.stdRoll().total - 10
-				val toHitScore = accuracyRoll + effAttack.accuracyBonus - effDefense.dodgeBonus
+				val toHitScore = accuracyRoll + effAttack.accuracyBonus - effDefense.dodgeBonus - parry
 
 				if (toHitScore > 0) {
 					for (dmg <- effAttack.damage) {
@@ -96,7 +98,7 @@ object CombatLogic {
 			world.modify(target, CharacterInfo.health reduceBy effDamage)
 			world.endEvent(DamageEvent(target, effDamage, damageType))
 		} else {
-			world.addEvent(DeflectEvent(target, damage))
+			world.addEvent(DeflectEvent(target, damage, damageType))
 		}
 	}
 
@@ -216,6 +218,13 @@ object CombatLogic {
 			case Left(value) => value
 			case Right(value) => value.flatMap(h => Tiles.entitiesOnTile(h))
 		}
+	}
+
+	def availableWeaponAttacks(attacker : Entity)(implicit view : WorldView) : Vector[(Entity, AttackData)] = {
+		InventoryLogic.equippedItems(attacker)
+			.filter(item => item.hasData[Weapon])
+   		.flatMap(weapon => weapon[Weapon].attacks.values.map(weapon -> _))
+   		.toVector
 	}
 }
 

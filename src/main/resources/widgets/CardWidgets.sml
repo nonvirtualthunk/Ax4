@@ -6,7 +6,7 @@ CardWidget {
   dimensions : [450, 800]
   background.image : "graphics/ui/card_border.png"
   backgroundPixelScale : 2
-  consumeMouseButtonEvents: true
+//  consumeMouseButtonEvents: true
 
   children {
     CardName {

@@ -3,7 +3,7 @@ package arx.ax4.game.entities
 import arx.ax4.game.action.{CompoundSelectable, CompoundSelectableInstance, EntityPredicate, EntitySelector, Selectable, SelectableInstance, SelectionResult, Selector}
 import arx.ax4.game.entities.Companions.CardData
 import arx.ax4.game.entities.Conditionals.{CardInDeckConditional, EntityConditional}
-import arx.ax4.game.entities.cardeffects.{AttackGameEffect, GameEffect, GameEffectConfigLoader, GameEffectInstance, PayActionPoints, PayStamina}
+import arx.ax4.game.entities.cardeffects.{AttackGameEffect, GameEffect, GameEffectConfigLoader, GameEffectInstance, PayActionPoints, PayStamina, SpecialAttackGameEffect}
 import arx.ax4.game.logic.{CardLogic, SpecialAttackLogic}
 import arx.core.NoAutoLoad
 import arx.core.macros.GenerateCompanion
@@ -12,6 +12,7 @@ import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.world.WorldView
 import arx.graphics.helpers.{RichText, RichTextRenderSettings, THasRichTextRepresentation}
 import arx.Prelude._
+import arx.application.Noto
 
 @GenerateCompanion
 class DeckData extends AxAuxData {
@@ -71,7 +72,7 @@ case class ApCostDeltaModifier(apDelta : Int, min : Option[Int]) extends GameEff
 
 	override def toRichText(settings: RichTextRenderSettings): RichText = {
 		val minStr = min.map(i => s" (min $i)").getOrElse("")
-		RichText.parse(s"${apDelta.toSignedString} [ActionPoint]$minStr")
+		RichText.parse(s"${apDelta.toSignedString} [ActionPoint]$minStr", settings)
 	}
 }
 case class StaminaCostDeltaModifier(staminaDelta : Int, min : Option[Int]) extends GameEffectModifier {
@@ -81,7 +82,7 @@ case class StaminaCostDeltaModifier(staminaDelta : Int, min : Option[Int]) exten
 
 	override def toRichText(settings: RichTextRenderSettings): RichText = {
 		val minStr = min.map(i => s" (min $i)").getOrElse("")
-		RichText.parse(s"${staminaDelta.toSignedString} [StaminaPoint]$minStr")
+		RichText.parse(s"${staminaDelta.toSignedString} [StaminaPoint]$minStr", settings)
 	}
 }
 case class AttackGameEffectModifier(modifier : AttackModifier) extends GameEffectModifier {
@@ -134,6 +135,8 @@ class CardData extends AxAuxData {
 	var source : Entity = Entity.Sentinel
 	var exhausted : Boolean = false
 
+	@NoAutoLoad var xp : Map[Taxon, Int] = Map()
+
 	override def customLoadFromConfig(config: ConfigValue): Unit = {
 		if (config.hasField("apCost")) {
 			costs :+= PayActionPoints(config.apCost.int)
@@ -152,12 +155,28 @@ class CardData extends AxAuxData {
 			// a special attack card is set up such that it automatically attaches a single other attack card to itself automatically
 			// when played it plays the base attack card, modified according to the terms of the special attack in addition to any other effects the card has
 			val specialAttack = SpecialAttack.withName(specialAttackConf.str)
-			val attachStyle = AttachmentStyle.PlayModified(SpecialAttackLogic.specialAttackToEffectModifiers(specialAttack))
-			attachments += specialAttack -> CardAttachment(Vector(CardConditionals.CardMatchesSpecialAttack(specialAttack)), 1, automaticAttachment = true, requiredForPlay = true, removesFromDeck = false, attachStyle)
-			effects ++= specialAttack.additionalEffects
-			costs ++= specialAttack.additionalCosts
+			effects :+= SpecialAttackGameEffect(specialAttack)
+//			val attachStyle = AttachmentStyle.PlayModified(SpecialAttackLogic.specialAttackToEffectModifiers(specialAttack))
+//			attachments += specialAttack -> CardAttachment(Vector(CardConditionals.CardMatchesSpecialAttack(specialAttack)), 1, automaticAttachment = true, requiredForPlay = true, removesFromDeck = false, attachStyle)
+		}
+
+		for (xpConf <- config.fieldOpt("xp")) {
+			xp = if (xpConf.isObj) {
+				xpConf.fields.map { case (k,v) => Taxonomy(k) -> v.int }
+			} else {
+				xpConf.str match {
+					case CardDataRegex.xpRegex(skill, amount) => Map(Taxonomy(skill, "Skills") -> amount.toInt)
+					case _ =>
+						Noto.warn(s"unrecognized xp expression in card : $xpConf")
+						Map()
+				}
+			}
 		}
 	}
+}
+
+object CardDataRegex {
+	val xpRegex = "([a-zA-Z]+)\\s*->\\s*([0-9]+)".r
 }
 
 object CardTypes {

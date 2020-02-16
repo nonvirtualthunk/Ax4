@@ -55,21 +55,21 @@ SelectedCharacterInfo {
       y : "0 below Actions"
       text : "Move: %(selectedCharacter.move.cur)"
     }
-    Speed : ${StatDisplay} {
-      y : "0 below Move"
-      text : "Speed: %(selectedCharacter.speed)"
-    }
+//    Speed : ${StatDisplay} {
+//      y : "0 below Move"
+//      text : "Speed: %(selectedCharacter.speed)"
+//    }
 
 
     InfoTabs : {
       type : TabWidget
 
       tabs : [
-        { heading : Attacks , tab : AttackDisplay }
+        { heading : Status , tab : StatusDisplay }
         { heading : Skills , tab : SkillDisplay}
       ]
 
-      y : "0 below Speed"
+      y : "0 below Move"
       dimensions : [100%, 600]
 
       drawBackground : false
@@ -77,14 +77,14 @@ SelectedCharacterInfo {
       tabHeight : 75
 
       children : {
-        AttackDisplay : {
+        StatusDisplay : {
           type : ListWidget
 
-          listItemArchetype : AttackInfoWidgets.BasicAttackInfo
-          listItemBinding : "attacks -> attack"
+          listItemArchetype : StatusWidgets.BasicStatusDisplay
+          listItemBinding : "statuses -> status"
 
           backgroundPixelScale : 1
-          background.image : "ui/greenWoodBorder.png"
+          background.image : "ui/fancyBackground_ns.png"
           drawBackground : true
         },
 

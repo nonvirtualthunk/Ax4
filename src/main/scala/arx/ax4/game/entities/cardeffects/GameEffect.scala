@@ -2,11 +2,11 @@ package arx.ax4.game.entities.cardeffects
 
 import arx.application.Noto
 import arx.ax4.game.action.{EntityPredicate, EntitySelector, HexSelector, OptionSelector, ResourceGatherSelector, Selectable, SelectableInstance, SelectionResult, Selector, SelfEntityPredicate}
-import arx.ax4.game.entities.Companions.{CharacterInfo, CombatData, Equipment, Physical}
+import arx.ax4.game.entities.Companions.{CharacterInfo, CombatData, Equipment, Physical, TagData}
 import arx.ax4.game.entities.Conditionals.BaseAttackConditional
-import arx.ax4.game.entities.{AttackConditionals, AttackModifier, CardLibrary, CardSelector, CardTypes, CharacterInfo, DeckData, EntityArchetype, Equipment, SpecialAttack, TargetPattern, Tiles}
+import arx.ax4.game.entities.{AttackConditionals, AttackData, AttackKey, AttackModifier, CardLibrary, CardSelector, CardTypes, CharacterInfo, DeckData, EntityArchetype, Equipment, SpecialAttack, TargetPattern, Tiles}
 import arx.ax4.game.logic.CardAdditionStyle.{DrawDiscardSplit, DrawPile}
-import arx.ax4.game.logic.{CardAdditionStyle, CardLogic, CharacterLogic, CombatLogic, GatherLogic, InventoryLogic}
+import arx.ax4.game.logic.{CardAdditionStyle, CardLogic, CharacterLogic, CombatLogic, GatherLogic, InventoryLogic, TagLogic}
 import arx.core.introspection.Field
 import arx.core.introspection.FieldOperations.{Add, Sub}
 import arx.core.math.Sext
@@ -22,10 +22,17 @@ import arx.core.introspection.FieldOperations._
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe
 import scala.reflect.runtime.universe._
+import arx.Prelude._
 
 trait GameEffect extends Selectable with THasRichTextRepresentation {
 	override def instantiate(world: WorldView, entity: Entity, source: Entity): Either[GameEffectInstance, String]
 
+	final def toRichText(view: WorldView, entity: Option[Entity], settings: RichTextRenderSettings): RichText = {
+		entity match {
+			case Some(value) => toRichText(view, value, settings)
+			case None => toRichText(settings)
+		}
+	}
 	def toRichText(view: WorldView, entity: Entity, settings: RichTextRenderSettings): RichText = toRichText(settings)
 }
 
@@ -37,7 +44,7 @@ object GameEffect {
 	}
 }
 
-abstract class SimpleCardEffect extends GameEffect {
+abstract class SimpleGameEffect extends GameEffect {
 	private val outer = this
 
 	override def instantiate(world: WorldView, entity: Entity, effectSource: Entity): Either[GameEffectInstance, String] = {
@@ -98,7 +105,7 @@ case class GatherCardEffect(range : Int) extends GameEffect {
 	override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"Gather $range")
 }
 
-case class GainMovePoints(bonusMP : Sext) extends SimpleCardEffect {
+case class GainMovePoints(bonusMP : Sext) extends SimpleGameEffect {
 	override def applyEffect(world: World, entity: Entity): Unit = {
 		CharacterLogic.gainMovePoints(entity, entity(CharacterInfo)(world.view).moveSpeed + bonusMP)(world)
 	}
@@ -199,7 +206,12 @@ case class AddCardToDeck(cardArchetypes : Seq[Taxon], cardAdditionStyle: CardAdd
 			entity.dataOpt[DeckData] match {
 				case Some(_) => Left(new GameEffectInstance {
 					override def applyEffect(world: World, selectionResult: SelectionResult): Unit = {
-						val cardArch = CardLibrary.withKind(selectionResult.single(cardSelector))
+						val chosenKind = if(cardArchetypes.size == 1) {
+							cardArchetypes.head
+						} else {
+							selectionResult.single(cardSelector)
+						}
+						val cardArch = CardLibrary.withKind(chosenKind)
 
 						val card = CardLogic.createCard(entity, cardArch)(world)
 						CardLogic.addCard(entity, card, cardAdditionStyle)(world)
@@ -221,6 +233,16 @@ case class AddCardToDeck(cardArchetypes : Seq[Taxon], cardAdditionStyle: CardAdd
 	}
 
 	override def toRichText(settings: RichTextRenderSettings): RichText = RichText("Add Card")
+}
+
+case class ChangeMaxHP(delta : Int) extends SimpleGameEffect {
+	override def applyEffect(world: World, entity: Entity): Unit = {
+		world.modify(entity, CharacterInfo.health changeMaxBy(delta, true))
+	}
+
+	override def toRichText(settings: RichTextRenderSettings): RichText = {
+		RichText(s"Max HP ${delta.toSignedString}")
+	}
 }
 
 case class EquipItemEffect(item : Entity) extends GameEffect {
@@ -254,28 +276,51 @@ case class AddAttackModifierEffect(condition : BaseAttackConditional, modifier :
 	override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"Attack Modifier : $modifier")
 }
 
+case class ChangeFlag(flag : Taxon, delta : Int, limitToZero : Boolean) extends SimpleGameEffect {
+	override def applyEffect(world: World, entity: Entity): Unit = {
+		TagLogic.changeFlagBy(entity, flag, delta, limitToZero)(world)
+	}
+
+	override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"${flag.displayName} $delta")
+}
+
 object GameEffectConfigLoader extends CustomConfigDataLoader[GameEffect] {
-	val APPattern = "(?i)AP\\(([0-9]*)\\)".r
-	val MovePattern = "(?i)Move\\(([0-9]*)\\)".r
-	val StaminaPattern = "(?i)Stamina\\(([0-9]*)\\)".r
+	val APPattern = "(?i)AP\\(([+-]?[0-9]+)\\)".r
+	val MovePattern = "(?i)Move\\(([+-]?[0-9]*)\\)".r
+	val StaminaPattern = "(?i)Stamina\\(([+-]?[0-9]*)\\)".r
 	val GatherPattern = "(?i)Gather\\(([0-9]*)\\)".r
 	val AddCardPattern = "(?i)AddCard\\(([a-zA-Z0-9]+)\\)".r
 //	val SpecialAttackPattern = "SpecialAttackCard\\((.+?)\\)".r
 //	val SpecialAttackPattern = "(?i)SpecialAttack\\(([a-zA-Z0-9]+)\\)".r
-	val PaySpecialAttackAPCostPattern = "(?i)SpecialAttackAPCost\\(([a-zA-Z0-9])\\)".r
+	val MaxHPPattern = "(?i)MaxHP\\(([+-]?[0-9]+)\\)".r
+	val KeyNumberPattern = "([a-zA-Z]+)\\s*\\(([+-]?[0-9]+)\\s*\\)".r
+
+	val allFlags = {
+		Taxonomy.descendantsOf("Flag").map(f => f.name.toLowerCase -> f).toMap
+	}
 
 	override def loadedType = typeOf[GameEffect]
 
 	override def loadFrom(config: ConfigValue): GameEffect = {
 		if (config.isStr) {
-			config.str match {
+			config.str.trim match {
 				case APPattern(ap) => PayActionPoints(ap.toInt)
 				case StaminaPattern(stam) => PayStamina(stam.toInt)
 				case GatherPattern(range) => GatherCardEffect(range.toInt)
 				case MovePattern(mp) => GainMovePoints(mp.toInt)
 				//				case SpecialAttackPattern(attName) if SpecialAttack.withNameExists(attName) => AddSpecialAttackCardEffect(attName, SpecialAttack.withName(attName))
 				case AddCardPattern(cardName) => AddCardToDeck(List(Taxonomy(cardName, "CardTypes")), DrawPile)
+				case MaxHPPattern(maxHP) => ChangeMaxHP(maxHP.toInt)
 				//				case SpecialAttackPattern(attackName) => SpecialAttackCardEffect(SpecialAttack.withName(attackName))
+				case KeyNumberPattern(key, numberStr) =>
+					val number = numberStr.toInt
+					key.toLowerCase match {
+						case "draw" | "drawCards" => DrawCards(number)
+						case f if allFlags.contains(f) => ChangeFlag(allFlags(f), number, limitToZero = true)
+						case _ =>
+							Noto.warn(s"Unparseable card effect : ${config.str}")
+							GameEffect.Sentinel
+					}
 				case _ =>
 					Noto.warn(s"Unparseable card effect : ${config.str}")
 					GameEffect.Sentinel
@@ -287,8 +332,11 @@ object GameEffectConfigLoader extends CustomConfigDataLoader[GameEffect] {
 						case "conditionalattackmodifier" =>
 							val modifier = AttackModifier.loadFromConfig(config.modifier)
 							AddAttackModifierEffect(AttackConditionals.loadFrom(config.condition), modifier)
+						case "attack" =>
+							val attack = AttackData(Entity.Sentinel).loadFromConfig(config)
+							AttackGameEffect(AttackKey.Technique, attack)
 						case _ =>
-							Noto.warn(s"Game effect config with unsupported type $effectType")
+							Noto.warn(s"Game effect config with unsupported type ${effectType.render}")
 							GameEffect.Sentinel
 					}
 				case None =>
@@ -302,5 +350,5 @@ object GameEffectConfigLoader extends CustomConfigDataLoader[GameEffect] {
 	}
 }
 
-//case class IncreaseFlag(flag : Taxon, n : Int) extends CardEffect
+
 //case class DecreaseFlag(flag : Taxon, n : Int) extends CardEffect

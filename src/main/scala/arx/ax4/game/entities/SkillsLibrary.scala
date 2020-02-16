@@ -10,6 +10,7 @@ import arx.engine.data.{ConfigLoadable, TAuxData}
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.world.{Modifier, World}
 import arx.graphics.TToImage
+import arx.resource.ResourceManager
 
 import scala.reflect.ClassTag
 
@@ -99,6 +100,13 @@ object PerksLibrary extends Library[Perk] {
 	override def initialLoad(): Unit = {
 		load("game/data/skills/Skills.sml")
 	}
+
+
+//	override def loadTaxons(): Unit = {
+//		ResourceManager.sml("game/data/skills/Skills.sml").Perks.fields.keys.foreach {
+//			k => Taxonomy.createTaxon(k, "Perks", )
+//		}
+//	}
 }
 
 

@@ -73,14 +73,14 @@ class Weapon extends AxAuxData {
 	@NoAutoLoad var attacks: Map[AttackKey, AttackData] = Map()
 	var primaryAttack: AttackKey = AttackKey.Primary
 	var weaponSkills: List[Taxon] = Nil
-	var naturalWeapon: Boolean = false
+var naturalWeapon: Boolean = false
 
 	@NoAutoLoad var attackCards: Vector[Entity] = Vector()
 
 	override def customLoadFromConfig(config: ConfigValue): Unit = {
 		for (attField <- config.fieldOpt("attacks")) {
 			for ((attName, attDataConfig) <- attField.fields) {
-				val attData = new AttackData(Entity.Sentinel).loadFromConfig(attDataConfig)
+				val attData = AttackData(Entity.Sentinel).loadFromConfig(attDataConfig)
 				attacks += AttackKey.parse(attName) -> attData
 			}
 		}
@@ -100,6 +100,8 @@ object AttackKey {
 	case object Secondary extends AttackKey
 
 	case object Tertiary extends AttackKey
+
+	case object Technique extends AttackKey
 
 	case object Unknown extends AttackKey
 

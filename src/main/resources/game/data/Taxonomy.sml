@@ -61,16 +61,18 @@ Taxonomy {
     Axe : [Item, SturdyCuttingTool]
 
     Weapons {
-      BattleAxe: [Weapon, Axe]
-      Sword: Weapon
+      MeleeWeapon : Weapon
+
+      BattleAxe: [MeleeWeapon, Axe]
+      Sword: MeleeWeapon
       Longsword: Sword
       Shortsword: Sword
 
-      Spear : Weapon
+      Spear : MeleeWeapon
       Longspear : Spear
       Shortspear : Spear
 
-      Scythe : [Weapon, Tool, SturdyCuttingTool]
+      Scythe : [MeleeWeapon, Tool, SturdyCuttingTool]
     }
   }
 
@@ -79,6 +81,7 @@ Taxonomy {
     PhysicalAttack : AttackType
     SlashingAttack : PhysicalAttack
     StabbingAttack : PhysicalAttack
+    BludgeoningAttack : PhysicalAttack
 
     NaturalAttack : AttackType
 
@@ -129,23 +132,6 @@ Taxonomy {
     Female : Sex
   }
 
-
-  Skill : []
-  Skills {
-    WeaponSkill : Skill
-    ArmorSkill : Skill
-
-    MeleeSkill : Skill
-
-    SpearSkill : [WeaponSkill, MeleeSkill]
-    SwordSkill : [WeaponSkill, MeleeSkill]
-    AxeSkill : [WeaponSkill, MeleeSkill]
-    ShieldSkill : [ArmorSkill, MeleeSkill]
-
-    UnarmedSkill : [WeaponSkill, MeleeSkill]
-  }
-
-
   Reaction : []
   Reactions {
     Parry : Reaction
@@ -169,6 +155,7 @@ Taxonomy {
     Range : GameConcept
     Damage : GameConcept
     Attach : GameConcept
+    SpecialAttack : GameConcept
   }
 
   DamageType : []
@@ -204,6 +191,8 @@ Taxonomy {
     ActionCard : CardType
     MoveCard : CardType
     GatherCard : CardType
+    DefenseCard : CardType
+
 
     Harvest : GatherCard
     Gather : GatherCard
@@ -212,16 +201,31 @@ Taxonomy {
 
     SwiftStab : AttackCard
     PiercingStab : AttackCard
+    FlurryOfBlows : AttackCard
+
+    Parry : DefenseCard
+    Block : DefenseCard
   }
 
-  Flag : []
-  Flags {
-    Harvester : Flag
-  }
+  Skill : []
+  Skills {
+    AttackSkill : Skill
+    DefenseSkill : Skill
 
-  Tag : []
-  Tags {
-    Tool : Tag
+    WeaponSkill : AttackSkill
+    ArmorSkill : DefenseSkill
+
+    MeleeSkill : AttackSkill
+
+    SpearSkill : [WeaponSkill, MeleeSkill]
+    SwordSkill : [WeaponSkill, MeleeSkill]
+    AxeSkill : [WeaponSkill, MeleeSkill]
+    ShieldSkill : [ArmorSkill, MeleeSkill]
+
+    UnarmedSkill : [WeaponSkill, MeleeSkill]
+
+    Parry : DefenseSkill
+    Block : DefenseSkill
   }
 
   Perk : []
@@ -232,5 +236,24 @@ Taxonomy {
     SpearProficiency : Perk
     SpearMastery : Perk
     CloseRangeSpearFighter : Perk
+    MeleeFighter : Perk
+    Parry : Perk
+  }
+
+
+  Flag : []
+  Flags {
+    PositiveFlag : Flag
+    NegativeFlag : Flag
+
+    Harvester : Flag
+
+    Block : PositiveFlag
+    Parry : PositiveFlag
+  }
+
+  Tag : []
+  Tags {
+    Tool : Tag
   }
 }

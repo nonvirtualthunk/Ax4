@@ -24,6 +24,7 @@ import com.typesafe.config.Config
 
 case class AttackData(var weapon : Entity,
 							 var name: String = "Strike",
+							 var attackType : Taxon = Taxonomy("melee attack"),
 							 var accuracyBonus: Int = 0,
 							 var strikeCount: Int = 1,
 							 var staminaCost: Int = 1,
@@ -124,7 +125,7 @@ case class AttackModifier(var nameOverride: Option[String] = None,
 			if (amount != 0) {
 				sections :+= TextSection(amount.toSignedString)
 				sections :+= HorizontalPaddingSection(5)
-				sections ++= TaxonSections(Taxonomy(concept))
+				sections ++= TaxonSections(Taxonomy(concept), settings)
 				sections :+= LineBreakSection(0)
 			}
 		}
@@ -165,8 +166,6 @@ case class DefenseModifier(var dodgeBonus: Int = 0,
 class SpecialAttack {
 	var condition: BaseAttackConditional = AnyAttack
 	var attackModifier: AttackModifier = AttackModifier()
-	var additionalEffects : Seq[GameEffect] = Nil
-	var additionalCosts : Seq[GameEffect] = Nil
 }
 
 object SpecialAttack {
@@ -174,7 +173,7 @@ object SpecialAttack {
 	case object PiercingStabCondition extends BaseAttackConditional {
 		val wrapped = (AttackConditionals.HasTargetPattern(Point) or AttackConditionals.HasTargetPattern(TargetPattern.SingleEnemy)) and AttackConditionals.HasDamageType(Piercing) and AttackConditionals.HasAtLeastMaxRange(2)
 		override def isTrueFor(implicit view: WorldView, value: BaseAttackProspect): Boolean = wrapped.isTrueFor(view, value)
-		override def toRichText(settings: RichTextRenderSettings): RichText = RichText.parse("piercing reach attack")
+		override def toRichText(settings: RichTextRenderSettings): RichText = RichText.parse("piercing reach attack", settings)
 	}
 
 	case object PiercingStab extends SpecialAttack {
@@ -205,9 +204,6 @@ object SpecialAttack {
 			damageBonuses = Vector(DamageModifier(DamagePredicate.Primary, DamageDelta.DamageBonus(-1))),
 			actionCostDelta = -1,
 			actionCostMinimum = Some(1)
-		)
-		additionalEffects = Seq(
-			DrawCards(1)
 		)
 	}
 
@@ -245,7 +241,7 @@ case class DamageElement(key : DamageKey, damageDice: DicePool, damageBonus: Int
 			sections :+= TextSection("x" + damageMultiplier)
 		}
 
-		sections ++= TaxonSections(damageType, hasFollowing = false)
+		sections ++= TaxonSections(damageType, settings)
 		RichText(sections)
 	}
 }
@@ -285,12 +281,12 @@ object DamageDelta {
 
 	case class DamageBonus(amount : Int) extends DamageDelta {
 		override def modify(elem: DamageElement): DamageElement = elem.copy(damageBonus = elem.damageBonus + amount)
-		override def toRichText(settings: RichTextRenderSettings): RichText = RichText(TextSection(amount.toSignedString) :: TaxonSections("Damage"))
+		override def toRichText(settings: RichTextRenderSettings): RichText = RichText(TextSection(amount.toSignedString) :: TaxonSections("Damage", settings))
 	}
 
 	case class DamageMultiplier(mult: Float) extends DamageDelta {
 		override def modify(elem: DamageElement): DamageElement = elem.copy(damageMultiplier = elem.damageMultiplier * mult)
-		override def toRichText(settings: RichTextRenderSettings): RichText = RichText(TextSection(s"x$mult") :: TaxonSections("Damage"))
+		override def toRichText(settings: RichTextRenderSettings): RichText = RichText(TextSection(s"x$mult") :: TaxonSections("Damage", settings))
 	}
 
 }

@@ -251,13 +251,13 @@ object CardInfo {
 		}
 
 		val mainCost =  if (apCosts.nonEmpty) {
-			RichText(TextSection(apCosts.sum.toString) :: HorizontalPaddingSection(10) :: ImageSection(ResourceManager.image("graphics/ui/action_point.png"), 2.0f, Color.White) :: Nil)
+			RichText(TextSection(apCosts.sum.toString) :: TaxonSections("GameConcepts.ActionPoint", settings))
 		} else {
 			RichText.Empty
 		}
 
 		val secondaryCost = if (staminaCosts.nonEmpty) {
-			RichText(TextSection(staminaCosts.sum.toString) :: HorizontalPaddingSection(10) :: ImageSection(ResourceManager.image("graphics/ui/stamina_point_large.png"), 2.0f, Color.White) :: Nil)
+			RichText(TextSection(staminaCosts.sum.toString) :: TaxonSections("GameConcepts.StaminaPoint", settings))
 		} else {
 			RichText.Empty
 		}
@@ -277,7 +277,7 @@ object CardInfo {
 					case AttachmentStyle.Contained =>
 					case AttachmentStyle.PlayModified(effectModifiers) =>
 						val conditionSections : Vector[RichTextSection] = attachment.condition.flatMap(_.toRichText(settings).sections)
-						attachmentSections ++= TaxonSections("Attach")
+						attachmentSections ++= TaxonSections("Attach", settings)
 						attachmentSections ++= conditionSections
 						attachmentSections :+= LineBreakSection(0)
 

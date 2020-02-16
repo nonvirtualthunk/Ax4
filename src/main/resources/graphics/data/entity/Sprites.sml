@@ -67,4 +67,20 @@ Sprites {
   SkillLevelUp : {
     icon : "graphics/icons/up.png"
   }
+
+  "Flags.Parry" : {
+    icon : "graphics/icons/parry.png"
+  }
+
+  "Flags.Block" : {
+    icon : "graphics/icons/block.png"
+  }
+
+  "GameConcepts.ActionPoint" : {
+    icon : "graphics/ui/action_point.png"
+  }
+
+  "GameConcepts.StaminaPoint" : {
+    icon : "graphics/ui/stamina_point.png"
+  }
 }

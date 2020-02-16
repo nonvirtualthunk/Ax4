@@ -2,90 +2,46 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="739b2d61-3cec-48a9-b219-b6a12786d863" name="Default Changelist" comment="ski">
-      <change afterPath="$PROJECT_DIR$/src/main/resources/widgets/PerkSelectionWidgets.sml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/PerkPickControl.scala" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/widgets/CardWidget.scala" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/PerkLogic.scala" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/data/CardImageLibrary.scala" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../ledgine/src/main/resources/fonts/pf_ronda_seven_bold.sml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../ledgine/src/main/resources/fonts/pf_ronda_seven_bold.ttf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../ledgine/src/main/resources/graphics/data/entity/Sprites.sml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/geometry/Orientation.scala" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/graphics/data/SpriteLibrary.scala" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/widgets/GameEffectWidgets.sml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/widgets/StatusWidgets.sml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/AIComponent.scala" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/FlagComponent.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/game/data/Taxonomy.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/game/data/Taxonomy.sml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/game/data/cards/Cards.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/game/data/cards/Cards.sml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/game/data/skills/Skills.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/game/data/skills/Skills.sml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/graphics/data/entity/CardImages.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/graphics/data/entity/CardImages.sml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/graphics/data/entity/Sprites.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/graphics/data/entity/Sprites.sml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/widgets/CardWidgets.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/widgets/CardWidgets.sml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/widgets/CharacterInfoWidgets.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/widgets/CharacterInfoWidgets.sml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/application/scenarios/SimpleMapScenario.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/application/scenarios/SimpleMapScenario.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/CardControl.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/CardControl.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/PerkPickControl.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/PerkPickControl.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/TacticalUIControl.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/TacticalUIControl.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/widgets/InventoryWidget.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/widgets/InventoryWidget.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/AttackData.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/AttackData.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/CharacterInfo.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/CharacterInfo.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Companions.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Companions.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Conditional.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Conditional.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/DeckData.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/DeckData.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Equipment.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Equipment.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/SkillsLibrary.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/SkillsLibrary.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Terrain.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Terrain.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Vegetation.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Vegetation.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/AttackGameEffect.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/AttackGameEffect.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/GameEffect.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/GameEffect.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/event/AttackEvent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/event/AttackEvent.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CardLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CardLogic.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/AllegianceLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/AllegianceLogic.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CharacterLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CharacterLogic.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CombatLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CombatLogic.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/SkillsLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/SkillsLogic.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/components/AnimationGraphicsComponent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/components/AnimationGraphicsComponent.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/components/subcomponents/TacticalActionPreviewRenderer.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/components/subcomponents/TacticalActionPreviewRenderer.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/data/SpriteLibrary.scala" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/data/TacticalUIData.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/data/TacticalUIData.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/scala/arx/ax4/game/logic/CombatLogicTest.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/scala/arx/ax4/game/logic/CombatLogicTest.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/resources/fonts/pf_ronda_seven.sml" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/resources/fonts/pf_ronda_seven.sml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/resources/shaders/Line.vertex" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/resources/shaders/Line.vertex" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/resources/ui/fancyBackground.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/resources/ui/fullGreenMinorStyledBorder.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/resources/ui/geologicalIslandImage.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/resources/ui/greenMinorStyledBorder.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/resources/ui/greenMinorStyledBorderGrey.png" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/resources/ui/greenMinorStyledBorderGrey.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/resources/ui/islandImage.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/resources/ui/islandImage_backup.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/resources/ui/islandsky.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/resources/ui/islandsky_tmp.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/resources/ui/lightMinorStyledBorder.png" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/resources/ui/lightMinorStyledBorder.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/resources/ui/minimalistBorder.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/resources/ui/minimalistBorderBlack.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/resources/ui/minimalistBorderWhite.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/resources/ui/minorStyledBorder.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/resources/ui/vegetationIslandImage.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/resources/ui/waterIslandImage.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/resources/ui/windowBackground.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/application/Noto.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/application/Noto.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/introspection/Field.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/introspection/Field.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/representation/HoconAdapter.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/representation/HoconAdapter.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/richer/ArxVector.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/richer/ArxVector.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/vec/Vec2T.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/vec/Vec2T.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/Widget.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/Widget.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/WidgetPrototype.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/WidgetPrototype.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/helpers/ConfigLoadingHelper.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/helpers/ConfigLoadingHelper.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/subcomponents/DynamicWidgetComponent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/subcomponents/DynamicWidgetComponent.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/TagLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/TagLogic.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/introspection/ReflectionAssistant.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/introspection/ReflectionAssistant.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/introspection/Transformation.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/introspection/Transformation.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/widgets/DynamicWidgetData.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/widgets/DynamicWidgetData.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/widgets/PositionExpression.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/widgets/PositionExpression.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/widgets/data/TWidgetAuxData.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/widgets/data/TWidgetAuxData.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/data/ConfigDataLoader.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/data/ConfigDataLoader.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/widgets/TextDisplayWidget.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/widgets/TextDisplayWidget.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/data/Reduceable.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/data/Reduceable.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/entity/Taxon.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/entity/Taxon.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/event/TEventUser.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/event/TEventUser.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/graphics/components/windowing/BackgroundRenderer.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/graphics/components/windowing/BackgroundRenderer.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/graphics/components/windowing/TextRenderer.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/graphics/components/windowing/TextRenderer.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/graphics/components/windowing/WindowingGraphicsComponent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/graphics/components/windowing/WindowingGraphicsComponent.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/graphics/data/windowing/ImageDisplay.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/graphics/data/windowing/ImageDisplay.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/game/data/Die.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/game/data/Die.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/entity/Taxonomy.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/entity/Taxonomy.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/game/components/GameComponent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/game/components/GameComponent.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/game/logic/Randomizer.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/game/logic/Randomizer.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/graphics/helpers/RichText.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/graphics/helpers/RichText.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/graphics/text/TBitmappedFont.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/graphics/text/TBitmappedFont.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/graphics/text/TextLayouter.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/graphics/text/TextLayouter.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/resource/ResourceManager.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/resource/ResourceManager.scala" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -105,9 +61,6 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
-  </component>
-  <component name="HighlightingSettingsPerFile">
-    <setting file="mock:///Dummy.scala" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="ProjectCodeStyleSettingsMigration">
     <option name="version" value="1" />
@@ -181,18 +134,33 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="scala-line">
           <url>file://$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/AttackData.scala</url>
-          <line>470</line>
+          <line>466</line>
           <option name="timeStamp" value="5" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="scala-line">
-          <url>file://$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/PerkPickControl.scala</url>
-          <line>128</line>
-          <option name="timeStamp" value="17" />
+          <url>file://$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/GameEffect.scala</url>
+          <line>347</line>
+          <option name="timeStamp" value="21" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="scala-line">
+          <url>file://$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/entity/Taxonomy.scala</url>
+          <line>57</line>
+          <option name="timeStamp" value="66" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="scala-line">
+          <url>file://$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/entity/Taxonomy.scala</url>
+          <line>62</line>
+          <option name="timeStamp" value="67" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="scala-line">
           <url>file://$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/GameEffect.scala</url>
-          <line>299</line>
-          <option name="timeStamp" value="21" />
+          <line>320</line>
+          <option name="timeStamp" value="69" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="scala-line">
+          <url>file://$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/GameEffect.scala</url>
+          <line>339</line>
+          <option name="timeStamp" value="70" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

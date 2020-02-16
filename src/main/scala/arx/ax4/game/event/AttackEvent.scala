@@ -14,7 +14,7 @@ case class DamageEvent(entity : Entity, damage : Int, damageType : Taxon) extend
 
 case class DodgeEvent(entity : Entity) extends GameEvent
 
-case class DeflectEvent(entity : Entity, originalDamage : Int) extends GameEvent
+case class DeflectEvent(entity : Entity, originalDamage : Int, damageType : Taxon) extends GameEvent
 
 
 
@@ -43,3 +43,7 @@ case class ResourceGatheredEvent(entity : Entity, kind : Taxon, gained : Int) ex
 
 
 case class GainPerkEvent(entity : Entity, perk : Taxon, source : PerkSource) extends GameEvent
+
+case class ChangeFlagEvent(entity : Entity, flag : Taxon, oldValue : Int, newValue : Int) extends GameEvent {
+	def delta = newValue - oldValue
+}

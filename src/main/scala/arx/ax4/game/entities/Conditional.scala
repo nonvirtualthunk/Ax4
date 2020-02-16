@@ -126,6 +126,14 @@ object AttackConditionals extends CustomConfigDataLoader[BaseAttackConditional] 
 		override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"weapon is a ${isA.displayName}")
 	}
 
+	case class AttackTypeIs(isA : Taxon) extends BaseAttackConditional {
+		override def isTrueFor(implicit view: WorldView, value: BaseAttackProspect): Boolean = {
+			value.attackData.attackType.isA(isA)
+		}
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"attack is a ${isA.displayName}")
+	}
+
 	case object AnyAttack extends BaseAttackConditional {
 		override def isTrueFor(implicit view: WorldView, value: BaseAttackProspect): Boolean = true
 
@@ -184,6 +192,7 @@ object AttackConditionals extends CustomConfigDataLoader[BaseAttackConditional] 
 
 
 	val weaponIsPattern = "(?i)WeaponIsA?\\((.+)\\)".r
+	val attackTypeIsPattern = "(?i)AttackIsA?\\((.+)\\)".r
 	val anyAttackPattern = "(?i)Any".r
 	val hasDamageTypePattern = "(?i)HasDamageType\\((.+)\\)".r
 	val hasTargetPattern = "(?i)HasTargetPattern\\((.+)\\)".r
@@ -192,6 +201,7 @@ object AttackConditionals extends CustomConfigDataLoader[BaseAttackConditional] 
 	override def loadFrom(config: ConfigValue): BaseAttackConditional = if (config.isStr) {
 		config.str match {
 			case weaponIsPattern(weaponType) => WeaponIs(Taxonomy(weaponType))
+			case attackTypeIsPattern(attackType) => AttackTypeIs(Taxonomy(attackType, "AttackTypes"))
 			case anyAttackPattern() => AnyAttack
 			case hasDamageTypePattern(damageType) => HasDamageType(Taxonomy(damageType))
 			case hasTargetPattern(patternStr) => HasTargetPattern(TargetPattern.loadFrom(StringConfigValue(patternStr)))

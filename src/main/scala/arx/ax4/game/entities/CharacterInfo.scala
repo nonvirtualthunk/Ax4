@@ -73,7 +73,7 @@ object PerkSource {
 
 		override def toRichText(settings: RichTextRenderSettings): RichText = {
 			RichText(
-				TextSection(skill.displayName) :: TaxonSections(Taxonomy("SkillLevelUp"))
+				TextSection(skill.displayName) :: TaxonSections(Taxonomy("SkillLevelUp"), settings)
 			)
 		}
 	}

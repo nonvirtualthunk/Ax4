@@ -3,7 +3,7 @@ package arx.ax4.application.scenarios
 import arx.Prelude
 import arx.application.Noto
 import arx.ax4.control.components.{CardControl, PerkPickControl, SelectionControl, TacticalUIControl}
-import arx.ax4.game.components.{CardCreationComponent, DeckComponent, TurnComponent}
+import arx.ax4.game.components.{AIComponent, CardCreationComponent, DeckComponent, FlagComponent, TurnComponent}
 import arx.ax4.game.entities.Companions.{CardData, CharacterInfo, DeckData, Physical, Tile, TurnData}
 import arx.ax4.game.entities.EntityConditionals._
 import arx.ax4.game.entities.GatherConditionals._
@@ -148,6 +148,10 @@ object SimpleMapScenario extends Scenario {
 //		val specialAttackCard = CardLibrary.withKind(Taxonomy("PiercingStab", "CardTypes")).createEntity(world)
 //		CardLogic.addCard(torbold, specialAttackCard, DrawPile)(world)
 
+		val parryCard = CardLibrary.withKind(Taxonomy("Parry", "CardTypes")).createEntity(world)
+		CardLogic.addCard(torbold, parryCard, DrawPile)(world)
+
+
 		val moveCard = torbold(DeckData)(world.view).allCards.find(c => c(CardData)(world.view).cardType == CardTypes.MoveCard).get
 
 		CardLogic.addLockedCardSlot(torbold, LockedCardSlot(Seq(CardPredicate.IsCard), "Any Card"))(world)
@@ -181,7 +185,7 @@ object SimpleMapScenario extends Scenario {
 
 		world.addEvent(TurnStartedEvent(player, 0))
 
-//		SkillsLogic.gainSkillXP(playerCharacter, Taxonomy("spearSkill"),20)(world)
+		SkillsLogic.gainSkillXP(playerCharacter, Taxonomy("spearSkill"),20)(world)
 //
 		Mouse.setImage(ResourceManager.image("third-party/shikashiModified/staff1.png"), Vec2i(4,4))
 	}
@@ -201,6 +205,8 @@ object SimpleMapScenario extends Scenario {
 		gameEngine.register[TurnComponent]
 		gameEngine.register[DeckComponent]
 		gameEngine.register[CardCreationComponent]
+		gameEngine.register[AIComponent]
+		gameEngine.register[FlagComponent]
 	}
 
 	override def registerGraphicsComponents(graphicsEngine: GraphicsEngine, universe: Universe): Unit = {

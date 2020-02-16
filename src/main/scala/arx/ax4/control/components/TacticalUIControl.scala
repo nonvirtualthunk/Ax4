@@ -18,7 +18,7 @@ import arx.graphics.{GL, TToImage}
 import arx.Prelude.toArxList
 import arx.ax4.control.components.widgets.InventoryWidget
 import arx.ax4.game.event.TurnEvents.{TurnEndedEvent, TurnStartedEvent}
-import arx.ax4.game.logic.{ActionLogic, CharacterLogic, CombatLogic, SkillsLogic}
+import arx.ax4.game.logic.{ActionLogic, CharacterLogic, CombatLogic, SkillsLogic, TagLogic}
 import arx.ax4.graphics.data.TacticalUIMode.ChooseSpecialAttackMode
 import arx.core.datastructures.{Watcher, Watcher2}
 import arx.core.math.Sext
@@ -27,10 +27,10 @@ import arx.engine.control.components.windowing.{SimpleWidget, WindowingControlCo
 import arx.engine.control.components.windowing.widgets.{DimensionExpression, ListItemSelected, SpriteDefinition}
 import arx.engine.control.data.WindowingControlData
 import arx.engine.data.Moddable
-import arx.engine.entity.{Entity, IdentityData}
+import arx.engine.entity.{Entity, IdentityData, Taxon}
 import arx.engine.event.Event
 import arx.graphics.data.SpriteLibrary
-import arx.graphics.helpers.{Color, ImageSection, RGBA, RichText, RichTextRenderSettings, RichTextSection, THasRichTextRepresentation, TextSection}
+import arx.graphics.helpers.{Color, ImageSection, RGBA, RichText, RichTextRenderSettings, RichTextSection, THasRichTextRepresentation, TaxonSections, TextSection}
 import arx.resource.ResourceManager
 import org.lwjgl.glfw.GLFW
 
@@ -150,6 +150,11 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 //		}
 	}
 
+	case class StatusInfo(status : Taxon, number : Int)
+	def computeStatuses(implicit view: WorldView, selC: Entity) = {
+		TagLogic.allFlags(selC).map(t => StatusInfo(t._1, t._2)).filter(_.number != 0)
+	}
+
 	def updateBindings(implicit game : WorldView, display : World, character : Option[Entity]): Unit = {
 		val tuid = display[TacticalUIData]
 		for (selC <- tuid.selectedCharacter) {
@@ -166,6 +171,7 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 			desktop.bind("selectedCharacter.move.cur", () => CharacterLogic.curMovePoints(selC))
 
 			desktop.bind("selectedCharacter.speed", () => selC[CharacterInfo].moveSpeed)
+			desktop.bind("statuses", () => computeStatuses(game, selC))
 
 			tuid.selectedCharacterInfoWidget.bind("attacks", () => Nil)
 
@@ -203,23 +209,19 @@ case class DamageExpression(damageElements : Vector[DamageElement]) extends THas
 
 	override def toRichText(settings: RichTextRenderSettings): RichText = {
 		val sections = damageElements.flatMap(de => {
-			var sections = List[RichTextSection]()
-			sections ::= TextSection(de.damageDice.toString)
+			var sections = Vector[RichTextSection]()
+			sections :+= TextSection(de.damageDice.toString)
 			if (de.damageMultiplier != 1.0f) {
-				sections ::= TextSection(s"x${de.damageMultiplier}")
+				sections :+= TextSection(s"x${de.damageMultiplier}")
 			}
 			if (de.damageBonus != 0) {
-				sections ::= TextSection(de.damageBonus.toSignedString)
+				sections :+= TextSection(de.damageBonus.toSignedString)
 			}
-			sections ::= (SpriteLibrary.getSpriteDefinitionFor(de.damageType) match {
-				case Some(SpriteDefinition(icon, icon16)) if !settings.noSymbols => ImageSection(icon, 2, Color.White)
-				case _ => TextSection(" " + de.damageType.name)
-			})
-
-			sections.reverse
+			sections ++= TaxonSections(de.damageType, settings)
+			sections
 		})
 
-		RichText(sections.toList)
+		RichText(sections)
 	}
 }
 
