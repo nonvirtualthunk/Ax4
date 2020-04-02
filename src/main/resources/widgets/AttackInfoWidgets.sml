@@ -39,9 +39,7 @@ BasicAttackInfo {
     AttackInfo : ${BasicAttackText} {
       text: [
         {text: "%(attack.accuracyBonus)"},
-        {horizontalPadding : 4}
-        {image: "graphics/ui/crosshairs.png", scale : 2}
-        {horizontalPadding : 10}
+        {taxon: "GameConcepts.Accuracy", scale : 2}
         {text: "%(attack.damage)"}
       ]
       x : "20 right of AttackName"
@@ -68,9 +66,7 @@ ConsideredAttackInfo {
         AttackInfo : ${BasicAttackText} {
           text: [
             {text: "%(attack.accuracyBonus)"},
-            {horizontalPadding : 4}
-            {image: "graphics/ui/crosshairs.png", scale : 2}
-            {horizontalPadding : 10}
+            {taxon: "GameConcepts.Accuracy", scale : 1}
             {text: "%(attack.damage)"}
           ]
         }
@@ -90,7 +86,11 @@ ConsideredAttackInfo {
 
       children {
         Defense : ${BasicAttackText} {
-          text : "%(attack.defense) %(attack.defenseConcept) %(attack.defenderHP) HP"
+          text: [
+            {text: "%(attack.defense)"},
+            {taxon: "GameConcepts.Defense"}
+            {text: "%(attack.defenderHP) HP"}
+          ]
         }
 //        Defense : ${BasicAttackText} {
 //          text : "Defense: %(attack.defense)"

@@ -1,11 +1,13 @@
 package arx.ax4.control.components
 import arx.application.Noto
 import arx.ax4.control.components.widgets.CardWidget
-import arx.ax4.game.entities.Companions.{CardData, DeckData}
+import arx.ax4.game.entities.Companions.{CardData, DeckData, TagData}
 import arx.ax4.game.entities.cardeffects.{PayActionPoints, PayStamina}
-import arx.ax4.game.entities.{AttachmentStyle, CardData, CardPlay, CardTypes}
-import arx.ax4.game.logic.CardLogic
+import arx.ax4.game.entities.{AttachmentStyle, CardData, CardPlay, CardTypes, TagData, TagLibrary}
+import arx.ax4.game.logic.{CardLogic, TagLogic}
+import arx.ax4.game.logic.CardLogic.CostsAndEffects
 import arx.ax4.graphics.data.{CardImageLibrary, TacticalUIData}
+import arx.core.datastructures.OneOrMore.fromSingle
 import arx.core.units.UnitOfTime
 import arx.core.vec.{ReadVec2i, Vec2f, Vec2i}
 import arx.engine.control.components.windowing.Widget
@@ -13,7 +15,7 @@ import arx.engine.control.components.windowing.widgets.data.{OverlayData, Widget
 import arx.engine.control.components.windowing.widgets.{PositionExpression, TopLeft}
 import arx.engine.control.event.{KeyModifiers, KeyboardMirror, Mouse, MouseButton, MousePressEvent, MouseReleaseEvent}
 import arx.engine.data.Moddable
-import arx.engine.entity.Entity
+import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.world.{HypotheticalWorldView, World, WorldView}
 import arx.graphics.helpers._
 import arx.graphics.{Image, TToImage}
@@ -232,17 +234,19 @@ object CardControl {
 	val ActiveOverlay = "Active Overlay"
 }
 
-case class CardInfo(name : String, image : Image, mainCost : RichText, secondaryCost : RichText, effects : RichText)
+case class CardInfo(name : String, tags : List[Taxon], image : Image, mainCost : RichText, secondaryCost : RichText, effects : RichText) {
+	val hasTags = tags.nonEmpty
+}
 object CardInfo {
 	import arx.Prelude._
 
 	def apply(character : Entity, card : Entity)(implicit view : WorldView) : CardInfo = {
-		CardInfo(Some(character), card(CardData))
+		CardInfo(Some(character), card(CardData), card(TagData))
 	}
-	def apply(character : Option[Entity], CD : CardData)(implicit view : WorldView) : CardInfo = {
+	def apply(character : Option[Entity], CD : CardData, TD : TagData)(implicit view : WorldView) : CardInfo = {
 		val settings = RichTextRenderSettings()
 
-		val (costs, effects) = CardLogic.effectiveCostsAndEffects(CD)
+		val CostsAndEffects(costs, effects, selfEffects) = CardLogic.effectiveCostsAndEffects(CD)
 		val apCosts = costs.collect {
 			case PayActionPoints(ap) => ap
 		}
@@ -251,23 +255,28 @@ object CardInfo {
 		}
 
 		val mainCost =  if (apCosts.nonEmpty) {
-			RichText(TextSection(apCosts.sum.toString) :: TaxonSections("GameConcepts.ActionPoint", settings))
+			val totalCost = apCosts.sum
+			RichText(TextSection(totalCost.toString) :: TaxonSections("GameConcepts.ActionPoint", settings))
 		} else {
 			RichText.Empty
 		}
 
 		val secondaryCost = if (staminaCosts.nonEmpty) {
-			RichText(TextSection(staminaCosts.sum.toString) :: TaxonSections("GameConcepts.StaminaPoint", settings))
+			val totalCost = staminaCosts.sum + TagLogic.flagValue(TD, Taxonomy("StaminaCostDelta"))
+			RichText(TextSection(totalCost.toString) :: TaxonSections("GameConcepts.StaminaPoint", settings))
 		} else {
 			RichText.Empty
 		}
 
-		val combinedEffectsSections = effects.map(e => {
+		val effectTextSections = effects.map(e => {
 			character match {
 				case Some(c) => e.toRichText(view, c, RichTextRenderSettings()).sections
 				case None => e.toRichText(settings).sections
 			}
-		}).reduceLeftOrElse((t1, t2) => t1 ++ Seq(LineBreakSection(0)) ++ t2, Vector())
+		})
+		val selfEffectTextSections = selfEffects.map(e => e.toRichText(settings).sections)
+
+		val combinedEffectsSections = (effectTextSections ++ selfEffectTextSections).reduceLeftOrElse((t1, t2) => t1 ++ Seq(LineBreakSection(0)) ++ t2, Vector())
 
 		var attachmentSections = Vector[RichTextSection]()
 
@@ -287,7 +296,15 @@ object CardInfo {
 			}
 		}
 
-		val effectText = RichText(attachmentSections ++ combinedEffectsSections)
+		var tagsSections = TD.tags.toVector.map(t => TagLibrary.withKind(t))
+			.filter(!_.hidden)
+   		.map(_.toRichText(settings))
+   		.reduceLeftOrElse((t1, t2) => t1 + TextSection(", ") ++ t2, RichText(Vector()))
+		if (!tagsSections.isEmpty) {
+			tagsSections = tagsSections + LineBreakSection(0)
+		}
+
+		val effectText = tagsSections ++ attachmentSections ++ combinedEffectsSections
 
 		val cardImage : TToImage = CardImageLibrary.cardImageOpt(CD.name) match {
 			case Some(img) => img
@@ -301,7 +318,7 @@ object CardInfo {
 				}
 		}
 
-		CardInfo(CD.name.capitalize, cardImage, mainCost, secondaryCost, effectText)
+		CardInfo(CD.name.capitalize, TD.tags.toList, cardImage, mainCost, secondaryCost, effectText)
 	}
 }
 

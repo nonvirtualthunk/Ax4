@@ -63,6 +63,22 @@ CardWidget {
       fontScale : 2
     }
 
+//    CardTags {
+//      type : TextDisplayWidget
+//
+//      drawBackground : false
+//
+//      text : "%(card.tags)"
+//
+//      x : 5
+//      y : 0 below CardImage
+//      width : rel(-10)
+//      textAlignment : centered
+//      showing : "%(card.hasTags)"
+//
+//      fontScale : 2
+//    }
+
     CardPrimaryEffect {
       type : TextDisplayWidget
 

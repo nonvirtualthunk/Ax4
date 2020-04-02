@@ -1,7 +1,7 @@
 package arx.ax4.game.logic
 
 import arx.ax4.game.entities.Companions.TagData
-import arx.ax4.game.entities.TagData
+import arx.ax4.game.entities.{FlagEquivalency, FlagLibrary, TagData}
 import arx.ax4.game.event.ChangeFlagEvent
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.world.{World, WorldView}
@@ -9,12 +9,15 @@ import arx.core.introspection.FieldOperations._
 
 object TagLogic {
 	def sumOfFlags(entity : Entity, flags : Set[Taxon])(implicit view : WorldView) : Int = {
-		val f = allFlags(entity)
-		flags.map(t => f.getOrElse(t, 0)).sum
+		val TD = entity[TagData]
+		flags.map(f => flagValue(TD, f)).sum
 	}
 
+	def flagValue(td : TagData, flag : Taxon)(implicit view : WorldView) : Int = {
+		td.flags.getOrElse(flag, 0) + FlagEquivalency.flagEquivalences.get(flag).map(f => flagValue(td, f)).sum
+	}
 	def flagValue(entity : Entity, flag : Taxon)(implicit view : WorldView) : Int = {
-		entity.dataOpt[TagData].map(td => td.flags.getOrElse(flag, 0)).getOrElse(0)
+		entity.dataOpt[TagData].map(td => flagValue(td, flag)).getOrElse(0)
 	}
 	def flagValue(entity : Entity, flag : String)(implicit view : WorldView) : Int = {
 		flagValue(entity, Taxonomy(flag, "Flags"))

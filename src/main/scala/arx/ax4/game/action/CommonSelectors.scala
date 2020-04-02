@@ -2,15 +2,17 @@ package arx.ax4.game.action
 
 import arx.ai.search.Path
 import arx.ax4.game.entities.Companions.Physical
+import arx.ax4.game.entities.Conditionals.EntityConditional
 import arx.ax4.game.entities.{HexTargetPattern, Physical, TargetPattern, Tile}
 import arx.ax4.game.logic.{AllegianceLogic, AxPathfinder}
 import arx.core.vec.coordinates.{AxialVec, AxialVec3, BiasedAxialVec3}
 import arx.engine.entity.Entity
 import arx.engine.world.WorldView
+import arx.graphics.helpers.{RichText, RichTextRenderSettings}
 
-case class EntitySelector(predicates : Seq[EntityPredicate], description: String, selectable : Selectable) extends Selector[Entity](selectable) {
+case class EntitySelector(predicates : Seq[EntityConditional], description: String, selectable : Selectable) extends Selector[Entity](selectable) {
 	override def satisfiedBy(view: WorldView, a: Any): Option[(Entity, Int)] = a match {
-		case e: Entity if predicates.forall(p => p.matches(view, e)) => Some(e -> 1)
+		case e: Entity if predicates.forall(p => p.isTrueFor(view, e)) => Some(e -> 1)
 		case _ => None
 	}
 }
@@ -24,24 +26,23 @@ case class OptionSelector[T](options : Seq[T], selectable : Selectable) extends 
 	override def description: String = "Select option"
 }
 
-trait EntityPredicate {
-	def matches(view : WorldView, entity : Entity) : Boolean
-}
-
 /**
  * Special predicate indicating that it should select the entity itself
  */
-object SelfEntityPredicate extends EntityPredicate {
-	override def matches(view: WorldView, entity: Entity): Boolean = true
+object SelfEntityPredicate extends EntityConditional {
+	override def isTrueFor(implicit view: WorldView, value: Entity): Boolean = ???
+
+	override def toRichText(settings: RichTextRenderSettings): RichText = "Self"
 }
 
 object EntityPredicate {
-	case class Enemy(source : Entity) extends EntityPredicate {
-		override def matches(view: WorldView, entity: Entity): Boolean = AllegianceLogic.areEnemies(source, entity)(view)
+	case class Enemy(source : Entity) extends EntityConditional {
+		override def isTrueFor(implicit view: WorldView, entity: Entity): Boolean = AllegianceLogic.areEnemies(source, entity)(view)
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = "Enemy"
 	}
-	case class InRange(source : Entity, minRange : Int, maxRange : Int) extends EntityPredicate {
-		override def matches(view: WorldView, entity: Entity): Boolean = {
-			implicit val v = view
+	case class InRange(source : Entity, minRange : Int, maxRange : Int) extends EntityConditional {
+		override def isTrueFor(implicit view: WorldView, entity: Entity): Boolean = {
 			(entity.dataOpt[Physical], source.dataOpt[Physical]) match {
 				case (Some(from), Some(to)) => {
 					val dist = from.position.distance(to.position)
@@ -50,10 +51,14 @@ object EntityPredicate {
 				case _ => false
 			}
 		}
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = s"In range [$minRange,$maxRange]"
 	}
 
-	case class Friend(source : Entity) extends EntityPredicate {
-		override def matches(view: WorldView, entity: Entity): Boolean = AllegianceLogic.areInSameFaction(entity, source)(view)
+	case class Friend(source : Entity) extends EntityConditional {
+		override def isTrueFor(implicit view: WorldView, entity: Entity): Boolean = AllegianceLogic.areInSameFaction(entity, source)(view)
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = "Friend"
 	}
 
 }

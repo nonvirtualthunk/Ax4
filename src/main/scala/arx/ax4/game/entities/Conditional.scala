@@ -1,10 +1,11 @@
 package arx.ax4.game.entities
 
 import arx.application.Noto
+import arx.ax4.game.entities.Companions.DeckData
 import arx.ax4.game.entities.Conditionals.{BaseAttackConditional, CardInDeckConditional, EntityConditional}
 import arx.ax4.game.entities.DamageType.{Piercing, Slashing}
 import arx.ax4.game.entities.cardeffects.AttackGameEffect
-import arx.ax4.game.logic.SpecialAttackLogic
+import arx.ax4.game.logic.{CardLocation, CardLogic, SpecialAttackLogic}
 import arx.core.representation.{ConfigValue, StringConfigValue}
 import arx.engine.data.CustomConfigDataLoader
 import arx.engine.entity.{Entity, IdentityData, Taxon, Taxonomy}
@@ -13,8 +14,6 @@ import arx.game.data.DicePoolBuilder._
 import arx.graphics.helpers.{RichText, RichTextRenderSettings, THasRichTextRepresentation, TextSection}
 
 trait Conditional[-T] extends THasRichTextRepresentation {
-	def source : String = ""
-
 	private def outer = this
 	def isTrueFor(implicit view : WorldView, value : T) : Boolean
 	def and[U <: T](other : Conditional[U]) = new Conditional[U] {
@@ -52,7 +51,49 @@ trait WorldConditional {
 	def isTrueFor(view : WorldView) : Boolean
 }
 
-object EntityConditionals {
+object CardInDeckConditionals {
+	case class CardMatchesSpecialAttack(specialAttack : SpecialAttack) extends CardInDeckConditional {
+		override def isTrueFor(implicit view: WorldView, value: CardInDeck): Boolean = value.card.dataOpt[CardData] match {
+			case Some(cardData) => cardData.effects.exists {
+				case AttackGameEffect(_, attackData) => specialAttack.condition.isTrueFor(view, UntargetedAttackProspect(value.entity, attackData))
+				case _ => false
+			}
+			case None =>
+				Noto.warn("Card in deck conditional evaluating against card with no card data")
+				false
+		}
+
+		override def toRichText(settings: RichTextRenderSettings): RichText =
+			specialAttack.condition.toRichText(settings)
+	}
+
+}
+
+object CardConditionals extends CustomConfigDataLoader[EntityConditional] {
+
+	case class CardInLocation(location : CardLocation) extends EntityConditional {
+		override def isTrueFor(implicit view: WorldView, card: Entity): Boolean =
+			card.dataOpt[CardData].toVector
+				.flatMap(cd => CardLogic.cardsInLocation(cd.inDeck, location))
+				.contains(card)
+
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = s"Card is in $location"
+	}
+
+	override def loadedType: AnyRef = scala.reflect.runtime.universe.typeOf[EntityConditional]
+
+
+	val cardInPattern = "(?i)card\\s?(is)?in\\s?\\(([a-zA-Z]+)\\)".r
+	override def loadFrom(configValue: ConfigValue): Option[EntityConditional] = {
+		configValue.str match {
+			case cardInPattern(_, location) => CardLocation.parse(location).map(CardInLocation)
+			case _ => None
+		}
+	}
+}
+
+object EntityConditionals extends CustomConfigDataLoader[EntityConditional] {
 	case class isA(taxon : Taxon) extends EntityConditional {
 		override def isTrueFor(implicit view: WorldView, value: Entity): Boolean = value.dataOpt[IdentityData].exists(id => id.isA(taxon))
 
@@ -82,40 +123,27 @@ object EntityConditionals {
 	val PerkPattern = "(?i)Perk\\((.+)\\)".r
 	val IsAPattern = "(?i)isA\\((.+)\\)".r
 	val HasFlagPattern = "(?i)hasFlag\\((.+),([0-9]+)\\)".r
-	def fromConfig(configValue : ConfigValue) : EntityConditional = {
+
+
+	override def loadedType: AnyRef = scala.reflect.runtime.universe.typeOf[EntityConditional]
+
+	override def loadFrom(configValue: ConfigValue): Option[EntityConditional] = {
 		if (configValue.isStr) {
 			configValue.str match {
-				case PerkPattern(perkName) => hasPerk(Taxonomy(perkName))
-				case IsAPattern(target) => isA(Taxonomy(target))
-				case HasFlagPattern(flag, amount) => hasFlag(Taxonomy(flag), amount.toInt)
+				case PerkPattern(perkName) => Some(hasPerk(Taxonomy(perkName)))
+				case IsAPattern(target) => Some(isA(Taxonomy(target)))
+				case HasFlagPattern(flag, amount) => Some(hasFlag(Taxonomy(flag), amount.toInt))
 				case _ =>
-					Noto.warn(s"unrecognized entity conditional string : ${configValue.str}")
-					any
+					None
 			}
 
 		} else {
 			Noto.warn("Non str config for entity conditional, cannot parse")
-			any
+			None
 		}
 	}
 }
 
-object CardConditionals {
-	case class CardMatchesSpecialAttack(specialAttack : SpecialAttack) extends CardInDeckConditional {
-		override def isTrueFor(implicit view: WorldView, value: CardInDeck): Boolean = value.card.dataOpt[CardData] match {
-			case Some(cardData) => cardData.effects.exists {
-				case AttackGameEffect(_, attackData) => specialAttack.condition.isTrueFor(view, UntargetedAttackProspect(value.entity, attackData))
-				case _ => false
-			}
-			case None =>
-				Noto.warn("Card in deck conditional evaluating against card with no card data")
-				false
-		}
-
-		override def toRichText(settings: RichTextRenderSettings): RichText =
-			specialAttack.condition.toRichText(settings)
-	}
-}
 
 object AttackConditionals extends CustomConfigDataLoader[BaseAttackConditional] {
 	case class WeaponIs(isA : Taxon) extends BaseAttackConditional {
@@ -198,24 +226,24 @@ object AttackConditionals extends CustomConfigDataLoader[BaseAttackConditional] 
 	val hasTargetPattern = "(?i)HasTargetPattern\\((.+)\\)".r
 
 	override def loadedType: AnyRef = scala.reflect.runtime.universe.typeOf[BaseAttackConditional]
-	override def loadFrom(config: ConfigValue): BaseAttackConditional = if (config.isStr) {
+	override def loadFrom(config: ConfigValue): Option[BaseAttackConditional] = if (config.isStr) {
 		config.str match {
-			case weaponIsPattern(weaponType) => WeaponIs(Taxonomy(weaponType))
-			case attackTypeIsPattern(attackType) => AttackTypeIs(Taxonomy(attackType, "AttackTypes"))
-			case anyAttackPattern() => AnyAttack
-			case hasDamageTypePattern(damageType) => HasDamageType(Taxonomy(damageType))
-			case hasTargetPattern(patternStr) => HasTargetPattern(TargetPattern.loadFrom(StringConfigValue(patternStr)))
+			case weaponIsPattern(weaponType) => Some(WeaponIs(Taxonomy(weaponType)))
+			case attackTypeIsPattern(attackType) => Some(AttackTypeIs(Taxonomy(attackType, "AttackTypes")))
+			case anyAttackPattern() => Some(AnyAttack)
+			case hasDamageTypePattern(damageType) => Some(HasDamageType(Taxonomy(damageType)))
+			case hasTargetPattern(patternStr) => Some(HasTargetPattern(TargetPattern.loadFromOrElse(StringConfigValue(patternStr), TargetPattern.SingleEnemy)))
 			case _ =>
 				Noto.warn(s"Invalid attack conditional string : ${config.str}")
-				AnyAttack
+				None
 		}
 	} else if (config.isArr) {
-		config.arr.map(c => loadFrom(c)).reduce((a,b) => a.and(b))
+		Some(config.arr.flatMap(c => loadFrom(c)).reduce((a,b) => a.and(b)))
 	} else if (config.isObj) {
 		Noto.warn(s"Attack conditional object config not yet written : $config")
-		AnyAttack
+		None
 	} else {
 		Noto.warn(s"Invalid configuration representation of attack conditional : $config")
-		AnyAttack
+		None
 	}
 }

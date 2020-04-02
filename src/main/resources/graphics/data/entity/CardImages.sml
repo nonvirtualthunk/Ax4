@@ -10,4 +10,5 @@ CardImages {
   "Hay Bushel" : ${imgPath}/bushel.png
   "Piercing Stab" : ${imgPath}/piercingStab.png
   "Equip Longspear" : ${imgPath}/spear.png
+  "Slime" : ${imgPath}/slime.png
 }

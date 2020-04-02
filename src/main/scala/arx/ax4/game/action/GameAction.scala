@@ -122,6 +122,10 @@ case class SelectionResult(results : Map[Selector[_], List[Any]] = Map(),
 	}
 
 	def single[T](sel: Selector[T]): T = apply(sel).head
+
+	def firstUnsatisfiedSelector(selectors : Selector[_] *) : Option[Selector[_]] = {
+		selectors.find(s => !fullySatisfied(s))
+	}
 }
 
 

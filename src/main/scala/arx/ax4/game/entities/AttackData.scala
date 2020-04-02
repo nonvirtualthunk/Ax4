@@ -18,13 +18,13 @@ import arx.engine.data.{ConfigLoadable, CustomConfigDataLoader, TNestedData}
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.world.{Breakdown, WorldView}
 import arx.game.data.DicePool
-import arx.graphics.helpers.{HorizontalPaddingSection, ImageSection, LineBreakSection, RGBA, RichText, RichTextRenderSettings, RichTextSection, THasRichTextRepresentation, TaxonSections, TextSection}
+import arx.graphics.helpers.{HorizontalPaddingSection, ImageSection, LineBreakSection, RGBA, RichText, RichTextRenderSettings, RichTextScale, RichTextSection, THasRichTextRepresentation, TaxonSections, TextSection}
 import com.typesafe.config.Config
 
 
-case class AttackData(var weapon : Entity,
+case class AttackData(var weapon: Entity,
 							 var name: String = "Strike",
-							 var attackType : Taxon = Taxonomy("melee attack"),
+							 var attackType: Taxon = Taxonomy("melee attack"),
 							 var accuracyBonus: Int = 0,
 							 var strikeCount: Int = 1,
 							 var staminaCost: Int = 1,
@@ -33,7 +33,8 @@ case class AttackData(var weapon : Entity,
 							 var maxRange: Int = 1,
 							 var damage: Vector[DamageElement] = Vector(),
 							 var targetPattern: TargetPattern = TargetPattern.SingleEnemy,
-							 var cardCount : Int = 3
+							 var cardCount: Int = 3,
+							 var onHitEffects: Vector[GameEffect] = Vector()
 							) extends ConfigLoadable {
 	def merge(modifiers: AttackModifier): Unit = {
 		name = modifiers.namePrefix.getOrElse("") + name
@@ -57,7 +58,7 @@ case class AttackData(var weapon : Entity,
 		}
 	}
 
-	def mergedWith(modifiers : AttackModifier) : AttackData = {
+	def mergedWith(modifiers: AttackModifier): AttackData = {
 		val ret = copy()
 		ret.merge(modifiers)
 		ret
@@ -65,22 +66,25 @@ case class AttackData(var weapon : Entity,
 
 	override def customLoadFromConfig(config: ConfigValue): Unit = {
 		// custom in order to support either singular or plural damage
-//		damage = config.fieldAsList("damage").map(DamageElement.loadFrom).toVector
+		//		damage = config.fieldAsList("damage").map(DamageElement.loadFrom).toVector
 		// TODO : target pattern
 	}
 }
 
 
 trait DamageKey extends ConfigLoadable
+
 object DamageKey extends CustomConfigDataLoader[DamageKey] {
+
 	case object Primary extends DamageKey {
 		override def toString: String = "primary"
 	}
-	case class Custom(key : String) extends DamageKey {
+
+	case class Custom(key: String) extends DamageKey {
 		override def toString: String = key
 	}
 
-	def parse(str : String) : DamageKey = {
+	def parse(str: String): DamageKey = {
 		str.toLowerCase match {
 			case "primary" => Primary
 			case other => Custom(other)
@@ -89,7 +93,7 @@ object DamageKey extends CustomConfigDataLoader[DamageKey] {
 
 	override def loadedType: AnyRef = scala.reflect.runtime.universe.typeOf[DamageKey]
 
-	override def loadFrom(config: ConfigValue): DamageKey = parse(config.str)
+	override def loadFrom(config: ConfigValue): Option[DamageKey] = Some(parse(config.str))
 }
 
 case class DefenseData(var armor: Int = 0,
@@ -106,13 +110,13 @@ case class AttackModifier(var nameOverride: Option[String] = None,
 								  var namePrefix: Option[String] = None,
 								  var accuracyBonus: Int = 0,
 								  var strikeCountBonus: Int = 0,
-								  var actionCostDelta : Int = 0,
-								  var actionCostMinimum : Option[Int] = None,
+								  var actionCostDelta: Int = 0,
+								  var actionCostMinimum: Option[Int] = None,
 								  var staminaCostDelta: Int = 0,
-								  var staminaCostMinimum : Option[Int] = None,
-								  var minRangeDelta : Option[Int] = None,
+								  var staminaCostMinimum: Option[Int] = None,
+								  var minRangeDelta: Option[Int] = None,
 								  var minRangeOverride: Option[Int] = None,
-								  var maxRangeDelta : Option[Int] = None,
+								  var maxRangeDelta: Option[Int] = None,
 								  var maxRangeOverride: Option[Int] = None,
 								  @NoAutoLoad var damageBonuses: Vector[DamageModifier] = Vector(),
 								  var targetPatternOverride: Option[TargetPattern] = None) extends TNestedData with ConfigLoadable with THasRichTextRepresentation {
@@ -121,7 +125,7 @@ case class AttackModifier(var nameOverride: Option[String] = None,
 
 		var sections = Seq[RichTextSection]()
 
-		def appendConceptSection(concept: String, amount : Int) = {
+		def appendConceptSection(concept: String, amount: Int) = {
 			if (amount != 0) {
 				sections :+= TextSection(amount.toSignedString)
 				sections :+= HorizontalPaddingSection(5)
@@ -133,8 +137,12 @@ case class AttackModifier(var nameOverride: Option[String] = None,
 		appendConceptSection("GameConcepts.Accuracy", accuracyBonus)
 		appendConceptSection("GameConcepts.ActionPoint", actionCostDelta)
 		appendConceptSection("GameConcepts.StaminaPoint", staminaCostDelta)
-		for (minR <- minRangeDelta) { appendConceptSection("GameConcepts.MinimumRange", minR) }
-		for (maxR <- maxRangeDelta) { appendConceptSection("GameConcepts.MaximumRange", maxR) }
+		for (minR <- minRangeDelta) {
+			appendConceptSection("GameConcepts.MinimumRange", minR)
+		}
+		for (maxR <- maxRangeDelta) {
+			appendConceptSection("GameConcepts.MaximumRange", maxR)
+		}
 		sections ++= damageBonuses.flatMap(_.delta.toRichText(settings).sections)
 
 		targetPatternOverride match {
@@ -148,11 +156,14 @@ case class AttackModifier(var nameOverride: Option[String] = None,
 	}
 
 	override def customLoadFromConfig(config: ConfigValue): Unit = {
-		for (db <- config.fieldOpt("damageBonus")) { damageBonuses :+= DamageModifier(DamagePredicate.Primary,DamageDelta.DamageBonus(db.int)) }
+		for (db <- config.fieldOpt("damageBonus")) {
+			damageBonuses :+= DamageModifier(DamagePredicate.Primary, DamageDelta.DamageBonus(db.int))
+		}
 	}
 }
+
 object AttackModifier {
-	def loadFromConfig(config : ConfigValue) : AttackModifier = {
+	def loadFromConfig(config: ConfigValue): AttackModifier = {
 		val mod = AttackModifier()
 		mod.loadFromConfig(config)
 		mod
@@ -172,7 +183,9 @@ object SpecialAttack {
 
 	case object PiercingStabCondition extends BaseAttackConditional {
 		val wrapped = (AttackConditionals.HasTargetPattern(Point) or AttackConditionals.HasTargetPattern(TargetPattern.SingleEnemy)) and AttackConditionals.HasDamageType(Piercing) and AttackConditionals.HasAtLeastMaxRange(2)
+
 		override def isTrueFor(implicit view: WorldView, value: BaseAttackProspect): Boolean = wrapped.isTrueFor(view, value)
+
 		override def toRichText(settings: RichTextRenderSettings): RichText = RichText.parse("piercing reach attack", settings)
 	}
 
@@ -208,9 +221,12 @@ object SpecialAttack {
 	}
 
 	import arx.Prelude._
-	private lazy val byNameMap = ReflectionAssistant.instancesOfSubtypesOf[SpecialAttack].map(inst => inst.getClass.getSimpleName.replace("$","").toLowerCase.stripWhitespace -> inst).toMap
-	def withNameExists(name : String) = byNameMap.contains(name.toLowerCase().stripWhitespace)
-	def withName(name : String) = byNameMap(name.toLowerCase().stripWhitespace)
+
+	private lazy val byNameMap = ReflectionAssistant.instancesOfSubtypesOf[SpecialAttack].map(inst => inst.getClass.getSimpleName.replace("$", "").toLowerCase.stripWhitespace -> inst).toMap
+
+	def withNameExists(name: String) = byNameMap.contains(name.toLowerCase().stripWhitespace)
+
+	def withName(name: String) = byNameMap(name.toLowerCase().stripWhitespace)
 }
 
 
@@ -226,7 +242,7 @@ object DamageType extends TEagerSingleton {
 	val Unknown = Taxonomy("DamageTypes.Unknown")
 }
 
-case class DamageElement(key : DamageKey, damageDice: DicePool, damageBonus: Int, damageMultiplier: Float, damageType: Taxon) extends THasRichTextRepresentation with ConfigLoadable {
+case class DamageElement(key: DamageKey, damageDice: DicePool, damageBonus: Int, damageMultiplier: Float, damageType: Taxon) extends THasRichTextRepresentation with ConfigLoadable {
 	override def toRichText(settings: RichTextRenderSettings): RichText = {
 		import arx.Prelude._
 		var sections = Seq[RichTextSection]()
@@ -234,7 +250,11 @@ case class DamageElement(key : DamageKey, damageDice: DicePool, damageBonus: Int
 			sections :+= TextSection(damageDice.toString())
 		}
 		if (damageBonus != 0) {
-			val str = if (sections.nonEmpty) { damageBonus.toSignedString } else { damageBonus.toString }
+			val str = if (sections.nonEmpty) {
+				damageBonus.toSignedString
+			} else {
+				damageBonus.toString
+			}
 			sections :+= TextSection(str)
 		}
 		if (damageMultiplier != 1.0f) {
@@ -246,46 +266,52 @@ case class DamageElement(key : DamageKey, damageDice: DicePool, damageBonus: Int
 	}
 }
 
-case class DamageModifier(predicate : DamagePredicate, delta : DamageDelta)
+case class DamageModifier(predicate: DamagePredicate, delta: DamageDelta)
 
 trait DamagePredicate {
-	def matches(de : DamageElement) : Boolean
+	def matches(de: DamageElement): Boolean
 }
+
 object DamagePredicate extends CustomConfigDataLoader[DamagePredicate] {
+
 	case object Primary extends DamagePredicate {
 		override def matches(de: DamageElement): Boolean = de.key == DamageKey.Primary
 	}
+
 	case object All extends DamagePredicate {
 		override def matches(de: DamageElement): Boolean = true
 	}
 
 	override def loadedType: AnyRef = scala.reflect.runtime.universe.typeOf[DamagePredicate]
 
-	override def loadFrom(config: ConfigValue): DamagePredicate = {
+	override def loadFrom(config: ConfigValue): Option[DamagePredicate] = {
 		config.str.toLowerCase match {
-			case "primary" => DamagePredicate.Primary
-			case "all" => DamagePredicate.All
+			case "primary" => Some(DamagePredicate.Primary)
+			case "all" => Some(DamagePredicate.All)
 			case other =>
 				Noto.warn(s"Unknown damage predicate : $other, defaulting to Primary")
-				DamagePredicate.Primary
+				None
 		}
 	}
 }
 
 trait DamageDelta extends THasRichTextRepresentation {
-	def modify(elem : DamageElement) : DamageElement
+	def modify(elem: DamageElement): DamageElement
 }
 
 object DamageDelta {
+
 	import arx.Prelude._
 
-	case class DamageBonus(amount : Int) extends DamageDelta {
+	case class DamageBonus(amount: Int) extends DamageDelta {
 		override def modify(elem: DamageElement): DamageElement = elem.copy(damageBonus = elem.damageBonus + amount)
+
 		override def toRichText(settings: RichTextRenderSettings): RichText = RichText(TextSection(amount.toSignedString) :: TaxonSections("Damage", settings))
 	}
 
 	case class DamageMultiplier(mult: Float) extends DamageDelta {
 		override def modify(elem: DamageElement): DamageElement = elem.copy(damageMultiplier = elem.damageMultiplier * mult)
+
 		override def toRichText(settings: RichTextRenderSettings): RichText = RichText(TextSection(s"x$mult") :: TaxonSections("Damage", settings))
 	}
 
@@ -327,21 +353,23 @@ object DamageElement extends CustomConfigDataLoader[DamageElement] {
 
 	override def loadedType: AnyRef = scala.reflect.runtime.universe.typeOf[DamageElement]
 
-	override def loadFrom(config: ConfigValue): DamageElement = {
+	override def loadFrom(config: ConfigValue): Option[DamageElement] = {
 		if (config.isStr) {
 			parse(config.str) match {
-				case Some(de) => de
+				case de@Some(_) => de
 				case None =>
 					Noto.warn(s"Invalid damage element string : ${config.str}, returning 1 damage")
-					DamageElement(Primary, DicePool.D1, 0, 1.0f, DamageType.Physical)
+					None
 			}
 		} else {
-			DamageElement(
-				config.fieldOpt("key").map(DamageKey.loadFrom).getOrElse(Primary),
-				config.fieldOpt("dice").map(DicePool.loadFrom).getOrElse(DicePool.none),
-				config.fieldOpt("bonus").map(_.int).getOrElse(0),
-				config.fieldOpt("multiplier").map(_.float).getOrElse(0.0f),
-				config.fieldOpt("damageType").map(c => Taxonomy(c.str, "DamageTypes")).getOrElse(DamageType.Physical)
+			Some(
+				DamageElement(
+					config.fieldOpt("key").flatMap(DamageKey.loadFrom).getOrElse(Primary),
+					config.fieldOpt("dice").flatMap(DicePool.loadFrom).getOrElse(DicePool.none),
+					config.fieldOpt("bonus").map(_.int).getOrElse(0),
+					config.fieldOpt("multiplier").map(_.float).getOrElse(0.0f),
+					config.fieldOpt("damageType").map(c => Taxonomy(c.str, "DamageTypes")).getOrElse(DamageType.Physical)
+				)
 			)
 		}
 	}
@@ -415,7 +443,7 @@ trait HexTargetPattern extends TargetPattern with THasRichTextRepresentation {
 
 object TargetPattern extends CustomConfigDataLoader[TargetPattern] {
 
-	val richTextHexColor = RGBA(0.8f,0.4f,0.4f,1.0f)
+	val richTextHexColor = RGBA(0.8f, 0.4f, 0.4f, 1.0f)
 
 	case class Enemies(count: Int) extends EntityTarget {
 		override def matches(view: WorldView, attacker: Entity, target: Entity): Boolean = AllegianceLogic.areEnemies(attacker, target)(view)
@@ -426,7 +454,7 @@ object TargetPattern extends CustomConfigDataLoader[TargetPattern] {
 	case object Point extends HexTargetPattern {
 		override def targetedHexes(sourcePoint: AxialVec3, targetPoint: AxialVec3): Seq[AxialVec3] = targetPoint :: Nil
 
-		override def toRichText(settings: RichTextRenderSettings): RichText = ImageSection("graphics/ui/vertical_hex.png", 2.0f, richTextHexColor)
+		override def toRichText(settings: RichTextRenderSettings): RichText = ImageSection("graphics/ui/vertical_hex.png", RichTextScale.ScaleToText(true), richTextHexColor)
 	}
 
 	case class Line(startDist: Int, length: Int) extends HexTargetPattern {
@@ -445,7 +473,7 @@ object TargetPattern extends CustomConfigDataLoader[TargetPattern] {
 				} else {
 					"graphics/ui/vertical_hex.png"
 				}
-				ImageSection(img, 2.0f, richTextHexColor)
+				ImageSection(img, RichTextScale.ScaleToText(true), richTextHexColor)
 			}
 			RichText(sections)
 		}
@@ -453,19 +481,20 @@ object TargetPattern extends CustomConfigDataLoader[TargetPattern] {
 
 	override def loadedType: AnyRef = scala.reflect.runtime.universe.typeOf[TargetPattern]
 
-	val singleEnemyPattern = "(?i)SingleEnemy".r
-	val enemiesPattern = "(?i)Enemies\\(([0-9]+)\\)".r
-	val linePattern = "(?i)Line\\(([0-9]+),([0-9]+)\\)".r
-	val pointPattern = "(?i)Point".r
-	override def loadFrom(config: ConfigValue): TargetPattern = {
+	private val singleEnemyPattern = "(?i)SingleEnemy".r
+	private val enemiesPattern = "(?i)Enemies\\(([0-9]+)\\)".r
+	private val linePattern = "(?i)Line\\(([0-9]+),([0-9]+)\\)".r
+	private val pointPattern = "(?i)Point".r
+
+	override def loadFrom(config: ConfigValue): Option[TargetPattern] = {
 		config.str match {
-			case singleEnemyPattern() => SingleEnemy
-			case enemiesPattern(enemyCount) => Enemies(enemyCount.toInt)
-			case linePattern(start, length) => Line(start.toInt, length.toInt)
-			case pointPattern() => Point
+			case singleEnemyPattern() => Some(SingleEnemy)
+			case enemiesPattern(enemyCount) => Some(Enemies(enemyCount.toInt))
+			case linePattern(start, length) => Some(Line(start.toInt, length.toInt))
+			case pointPattern() => Some(Point)
 			case _ =>
 				Noto.warn(s"Invalid target pattern config : $config")
-				SingleEnemy
+				None
 		}
 	}
 }

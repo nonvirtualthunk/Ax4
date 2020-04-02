@@ -3,7 +3,7 @@ package arx.ax4.game.entities
 import arx.Prelude.none
 import arx.application.Noto
 import arx.ax4.game.entities.Companions.{CardData, Consumable, Equipment, Inventory, Item, TagData, Weapon}
-import arx.ax4.game.logic.CardLogic
+import arx.ax4.game.logic.{CardLogic, TagLogic}
 import arx.core.NoAutoLoad
 import arx.core.introspection.Clazz
 import arx.core.macros.GenerateCompanion
@@ -59,6 +59,7 @@ class Inventory extends AxAuxData {
 
 @GenerateCompanion
 class Equipment extends AxAuxData {
+	@NoAutoLoad
 	var equipped: Set[Entity] = Set()
 }
 
@@ -169,5 +170,7 @@ object CardLibrary extends EntityArchetypeLibrary {
 
 	override def initialLoad(): Unit = {
 		load("game/data/cards/Cards.sml")
+		load("game/data/cards/MonsterCards.sml")
+		load("game/data/cards/StatusCards.sml")
 	}
 }

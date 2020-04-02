@@ -1,12 +1,17 @@
 package arx.ax4.game.components
 
+import arx.application.Noto
+import arx.ax4.game.components.FlagComponent.{ChangeFlagBy, FlagBehavior}
 import arx.ax4.game.entities.Companions.TagData
+import arx.ax4.game.entities.{ConfigLoadableLibrary, FlagLibrary, Library}
 import arx.ax4.game.event.TurnEvents.EntityTurnEndEvent
 import arx.ax4.game.event.{DamageEvent, DeflectEvent, DodgeEvent}
 import arx.ax4.game.logic.TagLogic
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.world.World
 import arx.core.introspection.FieldOperations._
+import arx.core.introspection.ReflectionAssistant
+import arx.core.representation.ConfigValue
 import arx.core.units.UnitOfTime
 import arx.engine.event.GameEvent
 import arx.engine.game.components.GameComponent
@@ -60,15 +65,5 @@ object FlagComponent {
 
 	def flag(str : String) = Taxonomy(str, "Flags")
 
-	val flagBehaviors = Vector(
-		FlagBehavior(flag("parry"), ChangeFlagBy(-1, limitToZero = true), {
-			case e @ DodgeEvent(entity) if e.state == Ended => entity
-		}),
-		resetAtEndOfTurn("parry"),
-		FlagBehavior(flag("block"), ChangeFlagBy(-1, limitToZero = true), {
-			case e @ DamageEvent(entity, _, damageType) if e.state == Ended && damageType.isA(Taxonomy("DamageTypes.Physical")) => entity
-			case e @ DeflectEvent(entity, _, damageType) if e.state == Ended && damageType.isA(Taxonomy("DamageTypes.Physical")) => entity
-		}),
-		resetAtEndOfTurn("block")
-	)
+	val flagBehaviors = FlagLibrary.all.values.flatMap(_.simpleBehaviors)
 }

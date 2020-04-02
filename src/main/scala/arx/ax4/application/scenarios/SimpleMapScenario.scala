@@ -3,11 +3,11 @@ package arx.ax4.application.scenarios
 import arx.Prelude
 import arx.application.Noto
 import arx.ax4.control.components.{CardControl, PerkPickControl, SelectionControl, TacticalUIControl}
-import arx.ax4.game.components.{AIComponent, CardCreationComponent, DeckComponent, FlagComponent, TurnComponent}
-import arx.ax4.game.entities.Companions.{CardData, CharacterInfo, DeckData, Physical, Tile, TurnData}
+import arx.ax4.game.components.{AIComponent, CardCreationComponent, DeckComponent, FlagComponent, TriggeredEffectsComponent, TurnComponent}
+import arx.ax4.game.entities.Companions.{CardData, CharacterInfo, DeckData, MonsterData, Physical, Tile, TurnData}
 import arx.ax4.game.entities.EntityConditionals._
 import arx.ax4.game.entities.GatherConditionals._
-import arx.ax4.game.entities.{AllegianceData, AttackData, AttackKey, AxAuxData, CardData, CardLibrary, CardPredicate, CardSelector, CardTypes, CharacterInfo, CombatData, DamageElement, DamageType, DeckData, EntityConditionals, Equipment, FactionData, GatherConditionals, GatherMethod, Inventory, ItemLibrary, LockedCardSlot, LockedCardType, Physical, QualitiesData, ReactionData, Resource, ResourceKey, ResourceOrigin, ResourceSourceData, TargetPattern, Terrain, TerrainLibrary, Tile, Tiles, TurnData, Vegetation, VegetationLayer, VegetationLayerType, VegetationLibrary, Weapon, WeaponLibrary}
+import arx.ax4.game.entities.{AllegianceData, AttackData, AttackKey, AxAuxData, CardData, CardLibrary, CardPredicate, CardSelector, CardTypes, CharacterInfo, CombatData, DamageElement, DamageKey, DamageType, DeckData, EntityConditionals, Equipment, FactionData, GatherConditionals, GatherMethod, Inventory, ItemLibrary, LockedCardSlot, LockedCardType, MonsterAttack, MonsterData, Physical, QualitiesData, ReactionData, Resource, ResourceKey, ResourceOrigin, ResourceSourceData, TargetPattern, Terrain, TerrainLibrary, Tile, Tiles, TurnData, Vegetation, VegetationLayer, VegetationLayerType, VegetationLibrary, Weapon, WeaponLibrary}
 import arx.ax4.game.logic.{CardLogic, CharacterLogic, InventoryLogic, MovementLogic, SkillsLogic}
 import arx.ax4.graphics.components.{AnimationGraphicsComponent, AnimationGraphicsRenderingComponent, EntityGraphics, TacticalUIGraphics, TileGraphics}
 import arx.ax4.graphics.data.{AxGraphicsData, TacticalUIData}
@@ -35,7 +35,7 @@ import arx.graphics.helpers.RGBA
 import arx.graphics.pov.{PixelCamera, TopDownCamera}
 import org.lwjgl.glfw.GLFW
 import arx.ax4.game.entities.UnitOfGameTimeFloat._
-import arx.ax4.game.entities.cardeffects.{AttackGameEffect, GainMovePoints, PayActionPoints, PayStamina}
+import arx.ax4.game.entities.cardeffects.{AddCardToDeck, AttackGameEffect, GainMovePoints, PayActionPoints, PayStamina}
 import arx.ax4.game.event.EntityCreated
 import arx.ax4.game.event.TurnEvents.TurnStartedEvent
 import arx.ax4.game.logic.CardAdditionStyle.DrawPile
@@ -138,6 +138,8 @@ object SimpleMapScenario extends Scenario {
 		})
 
 
+
+
 		val torbold = CharacterLogic.createCharacter(player)(world)
 		MovementLogic.placeCharacterAt(torbold, AxialVec3(1,-1,0))(world)
 		//		world.modify(Tiles.tileAt(0,0), Tile.entities + torbold, None)
@@ -145,11 +147,19 @@ object SimpleMapScenario extends Scenario {
 
 		playerCharacter = torbold
 
+		def addCardTorbold(cardName : String): Unit = {
+			val card = CardLibrary.withKind(Taxonomy(cardName, "CardTypes")).createEntity(world)
+			CardLogic.addCard(torbold, card, DrawPile)(world)
+		}
+
 //		val specialAttackCard = CardLibrary.withKind(Taxonomy("PiercingStab", "CardTypes")).createEntity(world)
 //		CardLogic.addCard(torbold, specialAttackCard, DrawPile)(world)
 
-		val parryCard = CardLibrary.withKind(Taxonomy("Parry", "CardTypes")).createEntity(world)
-		CardLogic.addCard(torbold, parryCard, DrawPile)(world)
+//		val parryCard = CardLibrary.withKind(Taxonomy("Parry", "CardTypes")).createEntity(world)
+//		CardLogic.addCard(torbold, parryCard, DrawPile)(world)
+
+		addCardTorbold("flurry of blows")
+		addCardTorbold("slime")
 
 
 		val moveCard = torbold(DeckData)(world.view).allCards.find(c => c(CardData)(world.view).cardType == CardTypes.MoveCard).get
@@ -179,6 +189,15 @@ object SimpleMapScenario extends Scenario {
 		world.modify(slime, Physical.position -> AxialVec3(2,0,0), None)
 		world.modify(slime, IdentityData.name -> Some("Slime"), None)
 		world.modify(Tiles.tileAt(2,0), Tile.entities + slime, None)
+//		world.modify(slime, CharacterInfo.innateCards append Vector(CardLogic.createCard(slime, CardLibrary.withKind(Taxonomy("SlimeSmash")))(world)))
+		world.attachData(slime, new MonsterData)
+		world.modify(slime, MonsterData.monsterAttacks append MonsterAttack(AttackData(
+			weapon = slime,
+			name = "Slime Smash",
+			attackType = Taxonomy("PhysicalAttack"),
+			damage = Vector(DamageElement(DamageKey.Primary, DicePool(1).d(4), 0, 1.0f, DamageType.Bludgeoning)),
+			onHitEffects = Vector(AddCardToDeck(Seq(Taxonomy("CardTypes.Slime")), DrawPile))
+		)))
 
 		world.attachWorldData(new TurnData)
 		world.modifyWorld(TurnData.activeFaction -> player, None)
@@ -207,6 +226,7 @@ object SimpleMapScenario extends Scenario {
 		gameEngine.register[CardCreationComponent]
 		gameEngine.register[AIComponent]
 		gameEngine.register[FlagComponent]
+		gameEngine.register[TriggeredEffectsComponent]
 	}
 
 	override def registerGraphicsComponents(graphicsEngine: GraphicsEngine, universe: Universe): Unit = {

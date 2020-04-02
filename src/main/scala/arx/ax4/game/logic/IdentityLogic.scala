@@ -1,6 +1,7 @@
 package arx.ax4.game.logic
 
-import arx.engine.entity.{Entity, IdentityData, Taxonomy}
+import arx.application.Noto
+import arx.engine.entity.{Entity, IdentityData, Taxon, Taxonomy}
 import arx.engine.world.WorldView
 
 object IdentityLogic {
@@ -19,6 +20,15 @@ object IdentityLogic {
 				case None => ident.kind.toString
 			}
 			case None => "Nameless"
+		}
+	}
+
+	def isA(entity : Entity, a : Taxon)(implicit view : WorldView) : Boolean = {
+		entity.dataOpt[IdentityData] match {
+			case Some(ident) => ident.kind.isA(a)
+			case None =>
+				Noto.info(s"asking for isA relationship with entity with no identity data ${entity.id}")
+				false
 		}
 	}
 }

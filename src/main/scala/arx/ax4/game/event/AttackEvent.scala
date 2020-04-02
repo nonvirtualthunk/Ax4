@@ -10,6 +10,8 @@ case class StrikeEvent(attackInfo : AttackEventInfo) extends GameEvent
 
 case class SubStrike(target : Entity, attackInfo : AttackEventInfo, defenseData : DefenseData) extends GameEvent
 
+case class ArmorUsedEvent(entity : Entity, damage : Int, reducedBy : Int, damageType : Taxon) extends GameEvent
+
 case class DamageEvent(entity : Entity, damage : Int, damageType : Taxon) extends GameEvent
 
 case class DodgeEvent(entity : Entity) extends GameEvent

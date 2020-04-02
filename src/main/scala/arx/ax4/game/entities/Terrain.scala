@@ -51,6 +51,8 @@ trait Library[T] extends TEagerSingleton {
 	protected def topLevelField : String
 	protected def createBlank() : T
 
+	def all = byKind
+
 	def getWithKind(kind : Taxon) = {
 		initialLoadComplete.await()
 		byKind.get(kind)
@@ -68,11 +70,11 @@ trait Library[T] extends TEagerSingleton {
 	def initialLoad()
 
 	Executor.submitAsync(() => {
-		Noto.info(s"Starting initial load of ${this.getClass.getSimpleName.replaceAll("$","")}")
+		Noto.info(s"Starting initial load of ${this.getClass.getSimpleName.replaceAll("\\$","")}")
 		initialLoad()
 		initialLoadComplete.countDown()
 		Metrics.checkpoint(s"${this.getClass.getSimpleName} initial load complete")
-		println(s"Finishing initial load of ${this.getClass.getSimpleName.replaceAll("$","")}")
+		println(s"Finishing initial load of ${this.getClass.getSimpleName.replaceAll("\\$","")}")
 	})
 }
 

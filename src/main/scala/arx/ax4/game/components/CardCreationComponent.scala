@@ -5,10 +5,12 @@ import arx.ax4.game.entities.Companions.{CharacterInfo, Item, Weapon}
 import arx.ax4.game.entities.cardeffects._
 import arx.ax4.game.entities.{CardTypes, CharacterInfo, Item, Weapon}
 import arx.ax4.game.event.EntityCreated
-import arx.ax4.game.logic.{CardLogic, IdentityLogic}
+import arx.ax4.game.logic.{AllegianceLogic, CardLogic, IdentityLogic}
 import arx.core.introspection.FieldOperations._
 import arx.core.math.Sext
 import arx.core.units.UnitOfTime
+import arx.engine.entity.Companions.IdentityData
+import arx.engine.entity.{Entity, Taxonomy}
 import arx.engine.game.components.GameComponent
 import arx.engine.world.World
 
@@ -32,31 +34,42 @@ class CardCreationComponent extends GameComponent {
 							CD.costs = Vector(PayActionPoints(attack.actionCost), PayStamina(attack.staminaCost))
 							CD.source = entity
 						})
+						world.modify(card, IdentityData.kind -> Taxonomy("AttackCard"))
 						if (entity.hasData[Item]) { world.modify(entity, Item.equippedCards append card) }
 						world.modify(entity, Weapon.attackCards append card)
 					}
 				}
 
 				for (charInfo <- entity.dataOpt[CharacterInfo]) {
+					var innateCards = Seq[Entity]()
 					val moveCards = for (_ <- 0 until 3) yield {
-						CardLogic.createCard(entity, cd => {
+						val moveCard = CardLogic.createCard(entity, cd => {
 							cd.costs = Vector(PayActionPoints(1))
 							cd.effects = Vector(GainMovePoints(bonusMP = Sext(0)))
 							cd.cardType = CardTypes.MoveCard
 							cd.name = "Move"
 						})
+						world.modify(moveCard, IdentityData.kind -> Taxonomy("MoveCard"))
+						moveCard
 					}
 
-					val gatherCards = for (_ <- 0 until 1) yield {
-						CardLogic.createCard(entity, cd => {
-							cd.costs = Vector(PayActionPoints(2))
-							cd.name = "Gather"
-							cd.cardType = CardTypes.GatherCard
-							cd.effects = Vector(GatherCardEffect(1))
-						})
+					innateCards ++= moveCards
+
+					if (AllegianceLogic.isPlayerCharacter(entity)) {
+						val gatherCards = for (_ <- 0 until 1) yield {
+							val gatherCard = CardLogic.createCard(entity, cd => {
+								cd.costs = Vector(PayActionPoints(2))
+								cd.name = "Gather"
+								cd.cardType = CardTypes.GatherCard
+								cd.effects = Vector(GatherCardEffect(1))
+							})
+							world.modify(gatherCard, IdentityData.kind -> Taxonomy("GatherCard"))
+							gatherCard
+						}
+						innateCards ++= gatherCards
 					}
 
-					world.modify(entity, CharacterInfo.innateCards -> (moveCards ++ gatherCards).toVector)
+					world.modify(entity, CharacterInfo.innateCards append innateCards.toVector)
 				}
 
 				// Initialize the equipped and inventory cards for items based on their data

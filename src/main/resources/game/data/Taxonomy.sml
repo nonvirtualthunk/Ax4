@@ -156,6 +156,11 @@ Taxonomy {
     Damage : GameConcept
     Attach : GameConcept
     SpecialAttack : GameConcept
+
+    DrawPile : GameConcept
+    DiscardPile : GameConcept
+    ExhaustPile : GameConcept
+    Hand : GameConcept
   }
 
   DamageType : []
@@ -205,6 +210,14 @@ Taxonomy {
 
     Parry : DefenseCard
     Block : DefenseCard
+
+
+    MonsterCard : CardType
+    StatusCard : CardType
+
+    SlimeSmash : [MonsterCard, AttackCard]
+
+    Slime : StatusCard
   }
 
   Skill : []
@@ -246,14 +259,27 @@ Taxonomy {
     PositiveFlag : Flag
     NegativeFlag : Flag
 
+    InternalFlag : Flag
+
     Harvester : Flag
 
     Block : PositiveFlag
     Parry : PositiveFlag
+
+    Tiring : NegativeFlag
+
+    ApCostDelta : InternalFlag
+    StaminaCostDelta : InternalFlag
+    DefenseDelta : InternalFlag
+    AccuracyDelta : InternalFlag
+    ArmorDelta : InternalFlag
   }
 
   Tag : []
   Tags {
     Tool : Tag
+
+    Unplayable : Tag
+    Plant : Tag
   }
 }

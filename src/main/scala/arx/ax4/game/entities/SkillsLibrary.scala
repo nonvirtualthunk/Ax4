@@ -41,7 +41,7 @@ class SkillLevelUpPerk extends ConfigLoadable {
 			}
 		}
 
-		requirements = config.fieldAsList("requires").map(c => EntityConditionals.fromConfig(c))
+		requirements = config.fieldAsList("requires").flatMap(c => EntityConditionals.loadFrom(c))
 
 	}
 }
@@ -85,7 +85,7 @@ object PerksLibrary extends Library[Perk] {
 	override def load(config: ConfigValue): Unit = {
 		for (topLevel <- config.fieldOpt("Perks"); (perkName, perkConf) <- topLevel.fields) {
 			val kind = Taxonomy(perkName, "perks")
-			val effects = (perkConf.fieldAsList("effect") ::: perkConf.fieldAsList("effects")).map(GameEffectConfigLoader.loadFrom)
+			val effects = (perkConf.fieldAsList("effect") ::: perkConf.fieldAsList("effects")).flatMap(GameEffectConfigLoader.loadFrom)
 			val perk = Perk(
 				kind,
 				perkConf.name.strOrElse("Unknown name perk"),

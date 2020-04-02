@@ -1,9 +1,10 @@
 package arx.ax4.game.logic
 
 import arx.application.Noto
+import arx.ax4.game.action.SelectionResult
 import arx.ax4.game.entities.Companions.{CharacterInfo, CombatData, Equipment, Physical, Weapon}
 import arx.ax4.game.entities.{AttackData, AttackModifier, AttackProspect, CharacterInfo, CombatData, DamageResult, DamageType, DefenseData, DefenseModifier, Physical, SpecialAttack, Tiles, UntargetedAttackProspect, Weapon}
-import arx.ax4.game.event.{AttackEvent, AttackEventInfo, DamageEvent, DeflectEvent, DodgeEvent, StrikeEvent, SubStrike}
+import arx.ax4.game.event.{ArmorUsedEvent, AttackEvent, AttackEventInfo, DamageEvent, DeflectEvent, DodgeEvent, StrikeEvent, SubStrike}
 import arx.core.vec.coordinates.{AxialVec3, BiasedAxialVec3}
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.world.{World, WorldView}
@@ -37,14 +38,26 @@ object CombatLogic {
 				val (effDefense, _) = resolveConditionalDefenseData(view, attacker, target, targets, effAttack, rawDefenseData)
 				world.startEvent(SubStrike(target, AttackEventInfo(attacker, weapon, targets, effAttack), effDefense))
 
-				val parry = TagLogic.flagValue(target, "parry")
+				val defenseDeltaFlags = TagLogic.flagValue(target, "DefenseDelta")
 
 				val accuracyRoll = randomizer.stdRoll().total - 10
-				val toHitScore = accuracyRoll + effAttack.accuracyBonus - effDefense.dodgeBonus - parry
+				val toHitScore = accuracyRoll + effAttack.accuracyBonus - effDefense.dodgeBonus - defenseDeltaFlags
 
 				if (toHitScore > 0) {
 					for (dmg <- effAttack.damage) {
 						doDamage(world, target, ((dmg.damageDice.roll().total + dmg.damageBonus) * dmg.damageMultiplier).toInt, dmg.damageType, effDefense)
+					}
+					for (effect <- effAttack.onHitEffects) {
+						effect.instantiate(view, target, attacker) match {
+							case Left(inst) => {
+								val sel = SelectionResult()
+								inst.nextSelector(sel) match {
+									case Some(value) => Noto.warn("On-hit effect not applied, requires selection implementation")
+									case None => inst.applyEffect(world, sel)
+								}
+							}
+							case Right(msg) => Noto.info(s"On-hit effect not applied: $msg")
+						}
 					}
 				} else {
 					world.addEvent(DodgeEvent(target))
@@ -56,7 +69,7 @@ object CombatLogic {
 			world.endEvent(StrikeEvent(AttackEventInfo(attacker, weapon, targets, untargetedAttackData)))
 		}
 
-		for (weaponSkill <- weapon(Weapon).weaponSkills) {
+		for (weaponSkill <- weapon.dataOpt[Weapon].map(_.weaponSkills)) {
 			SkillsLogic.gainSkillXP(attacker, weaponSkill, 10)(world)
 		}
 		world.endEvent(AttackEvent(AttackEventInfo(attacker, weapon, targets, untargetedAttackData)))
@@ -87,11 +100,13 @@ object CombatLogic {
 
 	def doDamage(world: World, target: Entity, damage: Int, damageType: Taxon, defenseData: DefenseData): Unit = {
 		val effDamage = if (damageType.isA(DamageType.Physical)) {
-			damage - defenseData.armor
+			val armorDeltaFlags = TagLogic.flagValue(target, "ArmorDelta")(world.view)
+			val totalArmor = defenseData.armor - armorDeltaFlags
+			world.addEvent(ArmorUsedEvent(target, damage, totalArmor, damageType))
+			damage - totalArmor
 		} else {
-
 			damage
-			}.min(world.view.data[CharacterInfo](target).health.currentValue)
+		}.min(world.view.data[CharacterInfo](target).health.currentValue)
 
 		if (effDamage > 0) {
 			world.startEvent(DamageEvent(target, effDamage, damageType))
@@ -102,7 +117,7 @@ object CombatLogic {
 		}
 	}
 
-	def canAttackBeMade(implicit worldView: WorldView, attacker: Entity, attackerPos: AxialVec3, target: Either[Entity, AxialVec3], attackData: AttackData): Boolean = {
+	def canAttackBeMade(attacker: Entity, attackerPos: AxialVec3, target: Either[Entity, AxialVec3], attackData: AttackData)(implicit worldView: WorldView): Boolean = {
 		if (attackData.actionCost > attacker(CharacterInfo).actionPoints.currentValue) {
 			false
 		} else if (attackData.staminaCost * attackData.strikeCount > attacker(CharacterInfo).stamina.currentValue) {
@@ -171,7 +186,7 @@ object CombatLogic {
 		for (modifyingEntity <- List(attacker, attackData.weapon).distinct; combatData <- modifyingEntity.dataOpt[CombatData]) {
 			for ((cond, mod) <- combatData.conditionalAttackModifiers; if cond.isTrueFor(view, prospect)) {
 				attackData.merge(mod)
-				modifiers :+= cond.source -> mod
+				modifiers :+= cond.toString -> mod
 			}
 		}
 
@@ -206,7 +221,7 @@ object CombatLogic {
 		for (modifyingEntity <- List(target).distinct; combatData <- modifyingEntity.dataOpt[CombatData]) {
 			for ((cond, mod) <- combatData.conditionalDefenseModifiers; if cond.isTrueFor(view, prospect)) {
 				defenseData.merge(mod)
-				modifiers :+= cond.source -> mod
+				modifiers :+= cond.toString -> mod
 			}
 		}
 

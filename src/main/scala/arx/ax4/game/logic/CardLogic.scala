@@ -7,9 +7,12 @@ import arx.ax4.game.entities.Companions.{CardData, DeckData}
 import arx.ax4.game.entities.cardeffects.{AttackGameEffect, GameEffect}
 import arx.ax4.game.entities._
 import arx.ax4.game.event.CardEvents._
-import arx.engine.entity.Entity
+import arx.core.representation.ConfigValue
+import arx.engine.data.CustomConfigDataLoader
+import arx.engine.entity.{Entity, IdentityData, Taxonomy}
 import arx.engine.world.{World, WorldView}
 import arx.game.logic.Randomizer
+import arx.graphics.helpers.{RichText, RichTextRenderSettings, THasRichTextRepresentation, TaxonSections}
 
 import scala.collection.GenTraversableOnce
 
@@ -133,7 +136,7 @@ object CardLogic {
 			// detach all attached cards before removing the card itself
 			detachedAllFromCard(entity, card)
 
-			removeCardFromCurrentPile(entity, card)
+			removeCardFromCurrentPileIntern(entity, card)
 
 			world.endEvent(CardRemoved(entity, card))
 		}
@@ -157,6 +160,7 @@ object CardLogic {
 		}
 
 		world.startEvent(CardAdded(entity, card))
+		world.modify(card, CardData.inDeck -> entity)
 		if (style == CardAdditionStyle.Hand) {
 			world.modify(entity, DeckData.hand append card)
 		} else {
@@ -168,6 +172,31 @@ object CardLogic {
 			}
 		}
 		world.endEvent(CardAdded(entity, card))
+	}
+
+	def moveCardTo(entity : Entity, card : Entity, to : CardLocation)(implicit world : World): Unit = {
+		val from = cardLocation(entity, card)(world.view)
+		if (from != to) {
+			world.eventStmt(CardMoved(entity, card, from, to)) {
+				removeCardFromCurrentPileIntern(entity, card)
+				putCardInLocationIntern(entity, card, to)
+			}
+		}
+	}
+
+	def cardLocation(entity : Entity, card : Entity)(implicit view : WorldView) : CardLocation = {
+		val deck = entity[DeckData]
+		if (deck.hand.contains(card)) {
+			CardLocation.Hand
+		} else if (deck.discardPile.contains(card)) {
+			CardLocation.DiscardPile
+		} else if (deck.exhaustPile.contains(card)) {
+			CardLocation.ExhaustPile
+		} else if (deck.drawPile.contains(card)) {
+			CardLocation.DrawPile
+		} else {
+			CardLocation.NotInDeck
+		}
 	}
 
 	def playCard(entity: Entity, card: Entity, cardPlayInstance: CardPlayInstance, selections: SelectionResult)(implicit world: World): Unit = {
@@ -197,6 +226,8 @@ object CardLogic {
 
 	def createCard(source: Entity, cardInit: CardData => Unit)(implicit world: World): Entity = {
 		val ent = world.createEntity()
+		ent.attach(new TagData).in(world)
+		ent.attach(new IdentityData).in(world)
 		val CD = new CardData
 		cardInit(CD)
 		CD.source = source
@@ -279,11 +310,11 @@ object CardLogic {
 	}
 
 	def isPlayable(card: Entity)(implicit view : WorldView): Boolean = {
-		val (costs,effects) = effectiveCostsAndEffects(card)
-		costs.nonEmpty || effects.nonEmpty
+		val CostsAndEffects(costs,effects, selfEffects) = effectiveCostsAndEffects(card)
+		costs.nonEmpty || effects.nonEmpty || selfEffects.nonEmpty
 	}
 
-	private def removeCardFromCurrentPile(entity : Entity, card : Entity)(implicit world : World) = {
+	private def removeCardFromCurrentPileIntern(entity : Entity, card : Entity)(implicit world : World) = {
 		implicit val view = world.view
 
 		val deck = entity[DeckData]
@@ -302,6 +333,16 @@ object CardLogic {
 		}
 	}
 
+	private def putCardInLocationIntern(entity : Entity, card : Entity, location : CardLocation)(implicit world : World) = {
+		location match {
+			case CardLocation.Hand => world.modify(entity, DeckData.hand append card)
+			case CardLocation.DrawPile => world.modify(entity, DeckData.drawPile append card)
+			case CardLocation.DiscardPile => world.modify(entity, DeckData.discardPile append card)
+			case CardLocation.ExhaustPile => world.modify(entity, DeckData.exhaustPile append card)
+			case CardLocation.NotInDeck => Noto.warn(s"Trying to put card in not-in-deck location, it's just going to be gone now: $entity, $card")
+		}
+	}
+
 	def attachCard(entity : Entity, attachTo : Entity, key : AnyRef, attached : Entity)(implicit world : World) : Unit = {
 		implicit val view = world.view
 		val currentAttachment = attachTo[CardData].attachedCards.getOrElse(key, Vector())
@@ -309,7 +350,7 @@ object CardLogic {
 		world.eventStmt(AttachedCardsChanged(entity, attachTo, key)) {
 			world.modify(attached, CardData.attachedTo + attachTo)
 			world.modify(attachTo, CardData.attachedCards.put(key, currentAttachment :+ attached))
-			removeCardFromCurrentPile(entity, attached)
+			removeCardFromCurrentPileIntern(entity, attached)
 			world.modify(entity, DeckData.attachedCards append attached)
 		}
 	}
@@ -338,12 +379,13 @@ object CardLogic {
 		card[CardData].attachedCards.foreach{ case (key, attachedV) => attachedV.foreach(a => detachCard(entity, card, key, a)) }
 	}
 
-	def effectiveCostsAndEffects(card : Entity)(implicit view : WorldView) : (Vector[GameEffect], Vector[GameEffect]) = {
+	def effectiveCostsAndEffects(card : Entity)(implicit view : WorldView) : CostsAndEffects = {
 		effectiveCostsAndEffects(card(CardData))
 	}
-	def effectiveCostsAndEffects(CD : CardData)(implicit view : WorldView) : (Vector[GameEffect], Vector[GameEffect]) = {
+	def effectiveCostsAndEffects(CD : CardData)(implicit view : WorldView) : CostsAndEffects = {
 		var costs = CD.costs
 		var effects = CD.effects
+		val selfEffects = CD.selfEffects
 
 		for ((key,attachment) <- CD.attachments; attachedCards = CD.attachedCards.getOrElse(key, Vector())) {
 			attachment.attachmentStyle match {
@@ -358,12 +400,26 @@ object CardLogic {
 			}
 		}
 
-		(costs, effects)
+		CostsAndEffects(costs, effects, selfEffects)
 	}
 
 	def cardAndAllAttachments(card: Entity)(implicit view : WorldView): List[Entity] = {
 		card :: card[CardData].attachedCards.values.flatten.flatMap(c => cardAndAllAttachments(c)).toList
 	}
+
+	def cardsInLocation(deck : Entity, location : CardLocation)(implicit view : WorldView) : Vector[Entity] = cardsInLocation(deck(DeckData), location)
+	def cardsInLocation(deck : DeckData, location : CardLocation) : Vector[Entity] = {
+		location match {
+			case CardLocation.Hand => deck.hand
+			case CardLocation.DrawPile => deck.drawPile
+			case CardLocation.DiscardPile => deck.discardPile
+			case CardLocation.ExhaustPile => deck.exhaustPile
+			case CardLocation.NotInDeck => Vector()
+		}
+	}
+
+
+	case class CostsAndEffects (costs : Vector[GameEffect], effects : Vector[GameEffect], selfEffects : Vector[GameEffect])
 }
 
 
@@ -379,4 +435,33 @@ object CardAdditionStyle {
 
 	case object DrawDiscardSplit extends CardAdditionStyle
 
+}
+
+sealed abstract class CardLocation(val name : String) extends THasRichTextRepresentation {
+	val taxon = Taxonomy(name, "GameConcepts")
+	override def toString: String = name
+
+	override def toRichText(settings: RichTextRenderSettings): RichText = RichText(TaxonSections(taxon, settings))
+}
+
+object CardLocation extends CustomConfigDataLoader[CardLocation] {
+	case object Hand extends CardLocation("hand")
+	case object DrawPile extends CardLocation("draw pile")
+	case object DiscardPile extends CardLocation("discard pile")
+	case object ExhaustPile extends CardLocation("exhaust pile")
+	case object NotInDeck extends CardLocation("not in deck")
+
+	override def loadedType: AnyRef = scala.reflect.runtime.universe.typeOf[CardLocation]
+
+	override def loadFrom(config: ConfigValue): Option[CardLocation] = parse(config.str)
+
+	def parse(str: String) : Option[CardLocation] = str.toLowerCase.replaceAll(" ","") match {
+		case "hand" => Some(Hand)
+		case "drawpile" => Some(DrawPile)
+		case "discardpile" => Some(DiscardPile)
+		case "exhaustpile" => Some(ExhaustPile)
+		case _ =>
+			Noto.warn(s"Could not parse card location : $str, defaulting to NotInDeck")
+			None
+	}
 }

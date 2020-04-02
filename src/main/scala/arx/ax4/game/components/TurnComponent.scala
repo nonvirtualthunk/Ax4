@@ -4,7 +4,7 @@ import arx.ax4.game.entities.{AllegianceData, CardData, DeckData}
 import arx.ax4.game.entities.Companions.{CharacterInfo, DeckData}
 import arx.ax4.game.event.AttackEvent
 import arx.ax4.game.event.TurnEvents.{EntityTurnEndEvent, EntityTurnStartEvent, TurnEndedEvent, TurnStartedEvent}
-import arx.ax4.game.logic.CardLogic
+import arx.ax4.game.logic.{AllegianceLogic, CardLogic}
 import arx.core.units.UnitOfTime
 import arx.engine.entity.Entity
 import arx.engine.game.components.GameComponent
@@ -17,7 +17,7 @@ class TurnComponent extends GameComponent {
 		implicit val view = world.view
 		onGameEventEnd {
 			case TurnStartedEvent(faction, turnNumber) =>
-				for (allegiant <- world.view.entitiesMatching[AllegianceData](ad => ad.faction == faction)) {
+				for (allegiant <- AllegianceLogic.entitiesInFaction(faction)) {
 					world.startEvent(EntityTurnStartEvent(allegiant, turnNumber))
 					world.modify(allegiant, CharacterInfo.actionPoints.recoverToFull())
 					world.modify(allegiant, CharacterInfo.stamina recoverBy allegiant(CharacterInfo).staminaRecoveryRate)

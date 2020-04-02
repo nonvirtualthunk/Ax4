@@ -1,8 +1,8 @@
 package arx.ax4.control.components.widgets
 
 import arx.ax4.control.components.{CardControl, CardInfo}
-import arx.ax4.game.entities.{CardData, CardLibrary, CardTypes, EntityArchetype}
-import arx.ax4.game.entities.Companions.CardData
+import arx.ax4.game.entities.{CardData, CardLibrary, CardTypes, EntityArchetype, TagData}
+import arx.ax4.game.entities.Companions.{CardData, TagData}
 import arx.core.vec.Vec2i
 import arx.engine.control.components.windowing.Widget
 import arx.engine.control.components.windowing.widgets.{PositionExpression, TopLeft}
@@ -21,8 +21,10 @@ object CardWidget {
 	}
 
 	def apply(parent : Widget, selC : Option[Entity], cardArch : Taxon)(implicit view : WorldView) : Widget = {
-		val CD : CardData = CardLibrary.withKind(cardArch).data(CardData)
-		CardWidget(parent, CD, () => CardInfo(selC, CD)(view))
+		val arch = CardLibrary.withKind(cardArch)
+		val CD : CardData = arch.data(CardData)
+		val TD : TagData = arch.data(TagData)
+		CardWidget(parent, CD, () => CardInfo(selC, CD, TD)(view))
 	}
 
 	def apply(parent : Widget, cardData : CardData, cardInfo : () => CardInfo) : Widget = {
@@ -30,6 +32,7 @@ object CardWidget {
 		cardWidget.drawing.backgroundImage = Some(cardData.cardType match {
 			case CardTypes.ItemCard => ResourceManager.image("graphics/ui/item_card_border.png")
 			case CardTypes.AttackCard => ResourceManager.image("graphics/ui/attack_card_border.png")
+			case CardTypes.StatusCard => ResourceManager.image("graphics/ui/status_card_border.png")
 			case _ => ResourceManager.image("graphics/ui/card_border_no_padding.png")
 		})
 

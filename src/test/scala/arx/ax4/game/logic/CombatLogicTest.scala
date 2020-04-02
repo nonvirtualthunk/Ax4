@@ -84,8 +84,6 @@ class CombatLogicTest extends FunSuite {
 object CombatLogicTest {
 
 	case object AntiMudDefense extends AttackConditional {
-		override def source: String = "anti mud defense"
-
 		override def isTrueForProspect(implicit view : WorldView, prospect: AttackProspect): Boolean = {
 			prospect.attacker.dataOpt[CharacterInfo].exists(ci => ci.species == Taxonomy("MudMonster"))
 		}
@@ -94,7 +92,6 @@ object CombatLogicTest {
 	}
 
 	case object SingleAttackBuff extends AttackConditional {
-		override def source: String = "single attack buff"
 		override def isTrueForProspect(implicit view: WorldView, prospect: AttackProspect): Boolean = prospect.allTargets.size == 1
 
 		override def toRichText(settings: RichTextRenderSettings): RichText = RichText("single attack buff")

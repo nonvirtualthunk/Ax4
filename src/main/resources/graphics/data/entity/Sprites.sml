@@ -81,6 +81,6 @@ Sprites {
   }
 
   "GameConcepts.StaminaPoint" : {
-    icon : "graphics/ui/stamina_point.png"
+    icon : "graphics/ui/stamina_point_large.png"
   }
 }

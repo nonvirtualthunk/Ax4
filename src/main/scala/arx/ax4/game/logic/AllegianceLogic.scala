@@ -1,5 +1,6 @@
 package arx.ax4.game.logic
 
+import arx.ax4.game.entities.Companions.AllegianceData
 import arx.ax4.game.entities.{AllegianceData, CharacterInfo, FactionData}
 import arx.engine.entity.Entity
 import arx.engine.world.WorldView
@@ -15,6 +16,11 @@ object AllegianceLogic {
 
 	def entitiesInFaction(faction : Entity)(implicit view: WorldView) = {
 		view.entitiesMatching[AllegianceData](ad => ad.faction == faction)
+	}
+
+	def enemiesOf(character : Entity)(implicit view : WorldView) : Iterable[Entity] = {
+		val charFaction = character(AllegianceData).faction
+		view.entitiesMatching[AllegianceData](ad => ad.faction != charFaction)
 	}
 
 	def areInSameFaction(characterA : Entity, characterB : Entity)(implicit view : WorldView) : Boolean = {

@@ -1,5 +1,8 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Ax4Application" type="Application" factoryName="Application">
+    <envs>
+      <env name="DEBUG_FONTS" value="false" />
+    </envs>
     <option name="MAIN_CLASS_NAME" value="arx.ax4.application.Ax4Application" />
     <module name="eldr" />
     <option name="VM_PARAMETERS" value="-XstartOnFirstThread -Xmx1g -DuseLocalResources=true" />
