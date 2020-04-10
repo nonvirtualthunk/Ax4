@@ -8,9 +8,11 @@
         <outputRelativeToContentRoot value="true" />
         <module name="eldr" />
         <module name="ledgine" />
+        <module name="Ax4" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="Ax4" target="8" />
       <module name="eldr" target="8" />
       <module name="ledgine" target="8" />
     </bytecodeTargetLevel>

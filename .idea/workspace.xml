@@ -1,65 +1,55 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="BranchesTreeState">
+    <expand>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="LOCAL_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+    </expand>
+    <select>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="LOCAL_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="BRANCH:card-system" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+    </select>
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="739b2d61-3cec-48a9-b219-b6a12786d863" name="Default Changelist" comment="ski">
-      <change afterPath="$PROJECT_DIR$/src/main/resources/game/data/cards/MonsterCards.sml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/game/data/cards/StatusCards.sml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/game/data/classes/Classes.sml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/game/data/flags/Flags.sml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/game/data/perks/Perks.sml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/game/data/tags/Tags.sml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/TriggeredEffectsComponent.scala" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/EnemyInfo.scala" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/FlagLibrary.scala" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/MonsterData.scala" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/CardEffectTrigger.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/Ax4Application.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/Ax4Application.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Maven__org_joml_joml_jdk8_1_9_15.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/Ax4Application.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/Field_Generator___Ax4_Test.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/Field_Generator___Ax4_Test.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/scala_compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/scala_compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/game/data/Taxonomy.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/game/data/Taxonomy.sml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/game/data/cards/Cards.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/game/data/cards/Cards.sml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/game/data/flags/Flags.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/game/data/flags/Flags.sml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/game/data/perks/Perks.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/game/data/perks/Perks.sml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/game/data/skills/Skills.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/game/data/skills/Skills.sml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/graphics/data/entity/CardImages.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/graphics/data/entity/CardImages.sml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/graphics/data/entity/Sprites.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/graphics/data/entity/Sprites.sml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/widgets/AttackInfoWidgets.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/widgets/AttackInfoWidgets.sml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/widgets/CardWidgets.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/widgets/CardWidgets.sml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/application/scenarios/SimpleMapScenario.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/application/scenarios/SimpleMapScenario.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/CardControl.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/CardControl.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/TacticalUIControl.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/TacticalUIControl.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/widgets/CardWidget.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/widgets/CardWidget.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/action/CommonSelectors.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/action/CommonSelectors.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/action/GameAction.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/action/GameAction.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/AIComponent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/AIComponent.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/CardCreationComponent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/CardCreationComponent.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/FlagComponent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/FlagComponent.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/TurnComponent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/TurnComponent.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/AttackData.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/AttackData.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Companions.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Companions.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Conditional.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Conditional.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/DeckData.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/DeckData.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Equipment.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Equipment.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/SkillsLibrary.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/SkillsLibrary.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Terrain.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Terrain.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/GameEffect.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/GameEffect.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/event/AttackEvent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/event/AttackEvent.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/event/CardEvents.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/event/CardEvents.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/AllegianceLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/AllegianceLogic.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CardLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CardLogic.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CombatLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CombatLogic.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/IdentityLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/IdentityLogic.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/TagLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/TagLogic.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CharacterLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CharacterLogic.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/SkillsLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/SkillsLogic.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/scala/arx/ax4/game/logic/CombatLogicTest.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/scala/arx/ax4/game/logic/CombatLogicTest.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/application/Noto.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/application/Noto.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ledgine/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/introspection/Transformation.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/introspection/Transformation.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/representation/HoconAdapter.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/representation/HoconAdapter.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/widgets/TextDisplayWidget.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/widgets/TextDisplayWidget.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/data/ConfigDataLoader.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/data/ConfigDataLoader.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/entity/Taxonomy.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/entity/Taxonomy.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/game/data/Die.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/game/data/Die.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/graphics/helpers/RichText.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/graphics/helpers/RichText.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/graphics/text/AdaptiveBitmappedFont.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/graphics/text/AdaptiveBitmappedFont.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/graphics/text/TextLayouter.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/graphics/text/TextLayouter.scala" afterDir="false" />
     </list>
-    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -76,18 +66,33 @@
     </option>
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../ledgine" />
+  </component>
+  <component name="GithubPullRequestsUISettings">
+    <option name="hiddenUrls">
+      <set>
+        <option value="git@github.com:nonvirtualthunk/Ax4.git" />
+        <option value="git@github.com:nonvirtualthunk/ledgine.git" />
+      </set>
+    </option>
   </component>
   <component name="ProjectCodeStyleSettingsMigration">
     <option name="version" value="1" />
   </component>
   <component name="ProjectId" id="1VRHvEAdZ0BTg0gszhDMN60oJJe" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
   <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="last_directory_selection" value="$PROJECT_DIR$/../ledgine/src/main/scala/arx/ax4/graphics/components" />
     <property name="project.structure.last.edited" value="Modules" />
     <property name="project.structure.proportion" value="0.15" />
-    <property name="project.structure.side.proportion" value="0.47586206" />
-    <property name="settings.editor.selected.configurable" value="org.jetbrains.plugins.scala.settings.ScalaProjectSettingsConfigurable" />
+    <property name="project.structure.side.proportion" value="0.2" />
+    <property name="scala_project_settings_configurable.last_selected_tab_index" value="0" />
+    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
   </component>
   <component name="RecentsManager">
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
@@ -98,25 +103,27 @@
       <recent name="$PROJECT_DIR$/../ledgine/src/main/resources/fonts" />
     </key>
   </component>
-  <component name="RunDashboard">
-    <option name="ruleStates">
-      <list>
-        <RuleState>
-          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
-        </RuleState>
-        <RuleState>
-          <option name="name" value="StatusDashboardGroupingRule" />
-        </RuleState>
-      </list>
-    </option>
-  </component>
   <component name="RunManager" selected="Application.Ax4Application">
+    <configuration name="Ax4Application" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="arx.ax4.application.Ax4Application" />
+      <module name="Ax4" />
+      <option name="VM_PARAMETERS" value="-XstartOnFirstThread -Xmx1g -DuseLocalResources=true" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="arx.ax4.application.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <list>
-      <item itemvalue="Application.Ax4Application" />
       <item itemvalue="Application.FieldGenerator - Ax4" />
       <item itemvalue="Application.FieldGenerator - Ax4 Test" />
       <item itemvalue="Application.FieldGenerator - ledgine" />
       <item itemvalue="Application.WindowingSystemEngine" />
+      <item itemvalue="Application.Ax4Application" />
       <item itemvalue="ScalaTest.Field Generator - Ax4 Test" />
       <item itemvalue="ScalaTest.Field Generator - ledgine test" />
     </list>
@@ -129,9 +136,6 @@
     </option>
     <option name="showNotFoundImplicitArguments" value="false" />
     <option name="typeMismatchHints" value="false" />
-  </component>
-  <component name="ServiceViewManager">
-    <option name="showServicesTree" value="false" />
   </component>
   <component name="SvnConfiguration">
     <configuration />
@@ -152,24 +156,97 @@
         <entry key="MAIN">
           <value>
             <State>
-              <option name="COLUMN_ORDER" />
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="card-system" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
             </State>
           </value>
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="546" y="191" key="#Ax4Application" timestamp="1586446882150">
+      <screen x="0" y="23" width="1792" height="1097" />
+    </state>
+    <state x="546" y="191" key="#Ax4Application/0.23.1792.1097@0.23.1792.1097" timestamp="1586446882150" />
+    <state x="360" y="233" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1586446922496">
+      <screen x="0" y="23" width="1792" height="1097" />
+    </state>
+    <state x="360" y="233" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.23.1792.1097@0.23.1792.1097" timestamp="1586446922496" />
+    <state x="614" y="380" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1586529870592">
+      <screen x="0" y="23" width="1792" height="1097" />
+    </state>
+    <state x="614" y="380" key="#com.intellij.fileTypes.FileTypeChooser/0.23.1792.1097@0.23.1792.1097" timestamp="1586529870592" />
+    <state x="709" y="285" key="#com.intellij.ide.util.MemberChooser" timestamp="1586533466943">
+      <screen x="0" y="23" width="1792" height="1097" />
+    </state>
+    <state x="709" y="285" key="#com.intellij.ide.util.MemberChooser/0.23.1792.1097@0.23.1792.1097" timestamp="1586533466943" />
+    <state width="1750" height="374" key="GridCell.Tab.0.bottom" timestamp="1586477140355">
+      <screen x="0" y="23" width="1792" height="1097" />
+    </state>
+    <state width="1750" height="374" key="GridCell.Tab.0.bottom/0.23.1792.1097@0.23.1792.1097" timestamp="1586477140355" />
+    <state width="1750" height="374" key="GridCell.Tab.0.center" timestamp="1586477140355">
+      <screen x="0" y="23" width="1792" height="1097" />
+    </state>
+    <state width="1750" height="374" key="GridCell.Tab.0.center/0.23.1792.1097@0.23.1792.1097" timestamp="1586477140355" />
+    <state width="1750" height="374" key="GridCell.Tab.0.left" timestamp="1586477140354">
+      <screen x="0" y="23" width="1792" height="1097" />
+    </state>
+    <state width="1750" height="374" key="GridCell.Tab.0.left/0.23.1792.1097@0.23.1792.1097" timestamp="1586477140354" />
+    <state width="1750" height="374" key="GridCell.Tab.0.right" timestamp="1586477140355">
+      <screen x="0" y="23" width="1792" height="1097" />
+    </state>
+    <state width="1750" height="374" key="GridCell.Tab.0.right/0.23.1792.1097@0.23.1792.1097" timestamp="1586477140355" />
+    <state width="1750" height="374" key="GridCell.Tab.1.bottom" timestamp="1586477140356">
+      <screen x="0" y="23" width="1792" height="1097" />
+    </state>
+    <state width="1750" height="374" key="GridCell.Tab.1.bottom/0.23.1792.1097@0.23.1792.1097" timestamp="1586477140356" />
+    <state width="1750" height="374" key="GridCell.Tab.1.center" timestamp="1586477140355">
+      <screen x="0" y="23" width="1792" height="1097" />
+    </state>
+    <state width="1750" height="374" key="GridCell.Tab.1.center/0.23.1792.1097@0.23.1792.1097" timestamp="1586477140355" />
+    <state width="1750" height="374" key="GridCell.Tab.1.left" timestamp="1586477140355">
+      <screen x="0" y="23" width="1792" height="1097" />
+    </state>
+    <state width="1750" height="374" key="GridCell.Tab.1.left/0.23.1792.1097@0.23.1792.1097" timestamp="1586477140355" />
+    <state width="1750" height="374" key="GridCell.Tab.1.right" timestamp="1586477140356">
+      <screen x="0" y="23" width="1792" height="1097" />
+    </state>
+    <state width="1750" height="374" key="GridCell.Tab.1.right/0.23.1792.1097@0.23.1792.1097" timestamp="1586477140356" />
+    <state x="384" y="153" key="SettingsEditor" timestamp="1586529855710">
+      <screen x="0" y="23" width="1792" height="1097" />
+    </state>
+    <state x="384" y="153" key="SettingsEditor/0.23.1792.1097@0.23.1792.1097" timestamp="1586529855710" />
+    <state x="596" y="328" width="663" height="486" key="find.popup" timestamp="1586536155493">
+      <screen x="0" y="23" width="1792" height="1097" />
+    </state>
+    <state x="596" y="328" width="663" height="486" key="find.popup/0.23.1792.1097@0.23.1792.1097" timestamp="1586536155493" />
+    <state x="561" y="222" width="670" height="676" key="search.everywhere.popup" timestamp="1586536251365">
+      <screen x="0" y="23" width="1792" height="1097" />
+    </state>
+    <state x="561" y="222" width="670" height="676" key="search.everywhere.popup/0.23.1792.1097@0.23.1792.1097" timestamp="1586536251365" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="scala-line">
           <url>file://$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/AttackData.scala</url>
-          <line>495</line>
+          <line>524</line>
           <option name="timeStamp" value="5" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="scala-line">
           <url>file://$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/GameEffect.scala</url>
-          <line>379</line>
+          <line>389</line>
           <option name="timeStamp" value="21" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="scala-line">
@@ -184,12 +261,12 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="scala-line">
           <url>file://$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/GameEffect.scala</url>
-          <line>351</line>
+          <line>352</line>
           <option name="timeStamp" value="69" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="scala-line">
           <url>file://$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/GameEffect.scala</url>
-          <line>371</line>
+          <line>381</line>
           <option name="timeStamp" value="70" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="scala-line">
@@ -201,6 +278,11 @@
           <url>file://$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/TriggeredEffectsComponent.scala</url>
           <line>36</line>
           <option name="timeStamp" value="82" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="scala-line">
+          <url>file://$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/GameEffect.scala</url>
+          <line>375</line>
+          <option name="timeStamp" value="83" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

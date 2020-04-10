@@ -1,7 +1,7 @@
 package arx.ax4.game.logic
 
 import arx.application.Noto
-import arx.ax4.game.entities.{CharacterInfo, PendingPerkPicks, PerkSource, SkillLevelUpPerk, SkillsLibrary}
+import arx.ax4.game.entities.{CharacterInfo, PendingPerkPicks, PerkSource, ClassLevelUpPerk, SkillsLibrary}
 import arx.ax4.game.entities.Companions.CharacterInfo
 import arx.ax4.game.event.{GainSkillLevelEvent, GainSkillXPEvent, NewPerkPicksAvailable}
 import arx.engine.entity.{Entity, Taxon}
@@ -65,7 +65,7 @@ object SkillsLogic {
 		}
 	}
 
-	def possiblePerksForSkill(character : Entity, skill : Taxon, markLevel : Int)(implicit view : WorldView): Vector[SkillLevelUpPerk] = {
+	def possiblePerksForSkill(character : Entity, skill : Taxon, markLevel : Int)(implicit view : WorldView): Vector[ClassLevelUpPerk] = {
 		val perks = SkillsLibrary.getWithKind(skill) match {
 			case Some(skillInfo) =>
 				skillInfo.levelUpPerks.filter(perk => {

@@ -80,7 +80,7 @@ Taxonomy {
   AttackTypes {
     PhysicalAttack : AttackType
     SlashingAttack : PhysicalAttack
-    StabbingAttack : PhysicalAttack
+    PiercingAttack : PhysicalAttack
     BludgeoningAttack : PhysicalAttack
 
     NaturalAttack : AttackType
@@ -204,9 +204,10 @@ Taxonomy {
     Move : MoveCard
     Slash : AttackCard
 
-    SwiftStab : AttackCard
+    SwiftStrike : AttackCard
     PiercingStab : AttackCard
     FlurryOfBlows : AttackCard
+    SweepingLegStrike : AttackCard
 
     Parry : DefenseCard
     Block : DefenseCard
@@ -245,7 +246,7 @@ Taxonomy {
   Perks {
     UnknownPerk : Perk
     PiercingStab : Perk
-    SwiftStab : Perk
+    SwiftStrike : Perk
     SpearProficiency : Perk
     SpearMastery : Perk
     CloseRangeSpearFighter : Perk
@@ -267,12 +268,14 @@ Taxonomy {
     Parry : PositiveFlag
 
     Tiring : NegativeFlag
+    Slow : NegativeFlag
 
     ApCostDelta : InternalFlag
     StaminaCostDelta : InternalFlag
     DefenseDelta : InternalFlag
     AccuracyDelta : InternalFlag
     ArmorDelta : InternalFlag
+    MovementGainDelta : InternalFlag
   }
 
   Tag : []
@@ -280,6 +283,16 @@ Taxonomy {
     Tool : Tag
 
     Unplayable : Tag
+    Expend : Tag
+    Exhaust : Tag
     Plant : Tag
+  }
+
+  Rarity : []
+  Rarities {
+    Common : Rarity
+    Uncommon : Rarity
+    Rare : Rarity
+    Epic : Rarity
   }
 }

@@ -23,6 +23,7 @@ import scala.reflect.ClassTag
 import scala.reflect.runtime.universe
 import scala.reflect.runtime.universe._
 import arx.Prelude._
+import arx.ax4.game.entities.AttackConditionals.AnyAttack
 
 
 
@@ -367,6 +368,15 @@ object GameEffectConfigLoader extends CustomConfigDataLoader[GameEffect] {
 						case "attack" =>
 							val attack = AttackData(Entity.Sentinel).loadFromConfig(config)
 							Some(AttackGameEffect(AttackKey.Technique, attack))
+						case "specialattack" =>
+							val attackModifier = AttackModifier().loadFromConfig(config)
+							val condition = AttackConditionals.loadFrom(config) match {
+								case Some(cond) => cond
+								case None =>
+									Noto.error(s"could not load attack conditional from : $config")
+									AnyAttack
+							}
+							Some(SpecialAttackGameEffect(SpecialAttack(condition, attackModifier)))
 						case _ =>
 							Noto.warn(s"Game effect config with unsupported type ${effectType.render}")
 							None

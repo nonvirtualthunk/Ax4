@@ -24,7 +24,7 @@ object Perk {
 	val Sentinel = Perk(Taxonomy("UnknownPerk"), "Sentinel", "sentinel", Nil, None)
 }
 
-class SkillLevelUpPerk extends ConfigLoadable {
+class ClassLevelUpPerk extends ConfigLoadable {
 	var perk : Taxon = Taxonomy.UnknownThing
 	var minLevel : Int = 0
 	var maxLevel : Int = 100
@@ -34,7 +34,7 @@ class SkillLevelUpPerk extends ConfigLoadable {
 	override def customLoadFromConfig(config: ConfigValue): Unit = {
 		for (levelRange <- config.fieldOpt("levelRange")) {
 			levelRange.str match {
-				case SkillLevelUpPerk.levelRangePattern(lower, upper) =>
+				case ClassLevelUpPerk.levelRangePattern(lower, upper) =>
 					minLevel = lower.toInt
 					maxLevel = upper.toInt
 				case s => Noto.warn(s"Invalid level range : $s")
@@ -45,11 +45,11 @@ class SkillLevelUpPerk extends ConfigLoadable {
 
 	}
 }
-object SkillLevelUpPerk {
+object ClassLevelUpPerk {
 	val levelRangePattern = "([0-9]+)-([0-9]+)".r
 
-	def apply(perk : Perk, minLevel : Int, maxLevel : Int, requirements : List[Conditional[Entity]]) : SkillLevelUpPerk = {
-		val skill = new SkillLevelUpPerk
+	def apply(perk : Perk, minLevel : Int, maxLevel : Int, requirements : List[Conditional[Entity]]) : ClassLevelUpPerk = {
+		val skill = new ClassLevelUpPerk
 		skill.perk = perk.kind
 		skill.minLevel = minLevel
 		skill.maxLevel = maxLevel
@@ -58,15 +58,42 @@ object SkillLevelUpPerk {
 	}
 }
 
+
+class SkillCardReward extends ConfigLoadable {
+	var card : Taxon = Taxonomy.UnknownThing
+	var targetLevel : Int  = 1
+	@NoAutoLoad
+	var rarity : Taxon = Taxonomy("rarities.common")
+
+	override def customLoadFromConfig(config: ConfigValue): Unit = {
+		rarity = config.fieldOpt("rarity").map(s => Taxonomy(s.str, "rarities")).getOrElse(Taxonomy("rarities.common"))
+	}
+}
+
 @GenerateCompanion
 class Skill extends ConfigLoadable {
 	var displayName : String = "Unnamed Skill"
 	@NoAutoLoad
-	var levelUpPerks: Vector[SkillLevelUpPerk] = Vector()
+	var cardRewards: Vector[SkillCardReward] = Vector()
+
+	override def customLoadFromConfig(config: ConfigValue): Unit = {
+		for (perksConf <- config.fieldOpt("cardRewards"); (k,v) <- perksConf.fields) {
+			val cardReward = new SkillCardReward
+			cardReward.card = Taxonomy(k, "cards")
+			cardReward.loadFromConfig(v)
+			cardRewards :+= cardReward
+		}
+	}
+}
+
+class CharacterClass extends ConfigLoadable {
+	var displayName : String = "Unnamed Class"
+	@NoAutoLoad
+	var levelUpPerks: Vector[ClassLevelUpPerk] = Vector()
 
 	override def customLoadFromConfig(config: ConfigValue): Unit = {
 		for (perksConf <- config.fieldOpt("levelUpPerks"); (k,v) <- perksConf.fields) {
-			val perk = new SkillLevelUpPerk
+			val perk = new ClassLevelUpPerk
 			perk.perk = Taxonomy(k, "perks")
 			perk.loadFromConfig(v)
 			levelUpPerks :+= perk

@@ -23,8 +23,19 @@ Flags {
     countsAs : StaminaCostDelta
   }
 
+  Slow {
+    description : "Slowed down, each point reduces the amount of move gained by move cards by one"
+    resetAtEndOfTurn : true
+    hidden : false
+    countAs : MovementGainDelta
+  }
 
 
+  MovementGainDelta {
+    description : "Movement Gain Delta"
+    resetAtEndOfTurn : false
+    hidden : true
+  }
 
   ApCostDelta {
     description : "AP Cost delta"

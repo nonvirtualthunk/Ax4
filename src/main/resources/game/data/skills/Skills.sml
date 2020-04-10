@@ -3,31 +3,30 @@ Skills {
   SpearSkill: {
     displayName: "Spear"
 
-
-
     cardRewards {
       PiercingStab {
-        levelRange : 1-3
+        targetLevel : 1
+        rarity : common
       }
-
     }
   }
 
   UnarmedSkill: {
     displayName: "Unarmed"
 
-    levelUpPerks: {
-
+    cardRewards {
+      FlurryOfBlows {
+        targetLevel : 1
+        rarity : common
+      }
     }
   }
 
   MeleeSkill : {
     displayName: "Melee Skill"
 
-    levelUpPerks {
-      MeleeFighter {
-        levelRange: 1-3
-      }
+    cardRewards {
+
     }
   }
 
@@ -36,7 +35,8 @@ Skills {
 
     cardRewards {
       Parry {
-        levelRange: 1-3
+        targetLevel : 1
+        rarity : common
       }
     }
   }

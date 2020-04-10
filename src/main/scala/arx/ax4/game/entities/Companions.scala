@@ -529,8 +529,8 @@ object AttackModifier extends Clazz[AttackModifier]("AttackModifier", classOf[At
 	fields += "maxRangeDelta" -> maxRangeDelta
 	val maxRangeOverride = Field.fromValue(Sentinel.maxRangeOverride).createField[AttackModifier]("maxRangeOverride",f => f.maxRangeOverride, (f,maxRangeOverride) => f.maxRangeOverride = maxRangeOverride, AttackModifier) 
 	fields += "maxRangeOverride" -> maxRangeOverride
-	val damageBonuses = Field.fromValue(Sentinel.damageBonuses).createField[AttackModifier]("damageBonuses",f => f.damageBonuses, (f,damageBonuses) => f.damageBonuses = damageBonuses, AttackModifier) 
-	fields += "damageBonuses" -> damageBonuses
+	val damageModifiers = Field.fromValue(Sentinel.damageModifiers).createField[AttackModifier]("damageModifiers",f => f.damageModifiers, (f,damageModifiers) => f.damageModifiers = damageModifiers, AttackModifier)
+	fields += "damageModifiers" -> damageModifiers
 	val targetPatternOverride = Field.fromValue(Sentinel.targetPatternOverride).createField[AttackModifier]("targetPatternOverride",f => f.targetPatternOverride, (f,targetPatternOverride) => f.targetPatternOverride = targetPatternOverride, AttackModifier) 
 	fields += "targetPatternOverride" -> targetPatternOverride
 
@@ -549,7 +549,7 @@ object AttackModifier extends Clazz[AttackModifier]("AttackModifier", classOf[At
 		to.minRangeOverride = from.minRangeOverride
 		to.maxRangeDelta = from.maxRangeDelta
 		to.maxRangeOverride = from.maxRangeOverride
-		to.damageBonuses = from.damageBonuses
+		to.damageModifiers = from.damageModifiers
 		to.targetPatternOverride = from.targetPatternOverride
 	}
 }

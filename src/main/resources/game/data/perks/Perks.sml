@@ -5,11 +5,11 @@ Perks {
 //    icon: "graphics/icons/card_back_large.png"
 //    effect: AddCard(PiercingStab)
 //  }
-//  SwiftStab {
+//  SwiftStrike {
 //    name: "Swift Stab"
 //    description: "Stab swiftly at an enemy"
 //    icon: "graphics/icons/card_back_large.png"
-//    effect: AddCard(SwiftStab)
+//    effect: AddCard(SwiftStrike)
 //  }
 //  Parry {
 //    name: "Parry"

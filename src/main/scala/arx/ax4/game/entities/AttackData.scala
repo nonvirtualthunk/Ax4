@@ -48,7 +48,7 @@ case class AttackData(var weapon: Entity,
 		maxRange = modifiers.maxRangeOverride.getOrElse(maxRange)
 		maxRange = maxRange + modifiers.maxRangeDelta.getOrElse(0)
 		targetPattern = modifiers.targetPatternOverride.getOrElse(targetPattern)
-		modifiers.damageBonuses.foreach {
+		modifiers.damageModifiers.foreach {
 			case DamageModifier(predicate, delta) =>
 				damage = damage.map(de => if (predicate.matches(de)) {
 					delta.modify(de)
@@ -118,8 +118,9 @@ case class AttackModifier(var nameOverride: Option[String] = None,
 								  var minRangeOverride: Option[Int] = None,
 								  var maxRangeDelta: Option[Int] = None,
 								  var maxRangeOverride: Option[Int] = None,
-								  @NoAutoLoad var damageBonuses: Vector[DamageModifier] = Vector(),
-								  var targetPatternOverride: Option[TargetPattern] = None) extends TNestedData with ConfigLoadable with THasRichTextRepresentation {
+								  @NoAutoLoad var damageModifiers: Vector[DamageModifier] = Vector(),
+								  var targetPatternOverride: Option[TargetPattern] = None,
+									var onHitEffects : Vector[GameEffect] = Vector()) extends TNestedData with ConfigLoadable with THasRichTextRepresentation {
 	override def toRichText(settings: RichTextRenderSettings): RichText = {
 		import arx.Prelude._
 
@@ -143,7 +144,7 @@ case class AttackModifier(var nameOverride: Option[String] = None,
 		for (maxR <- maxRangeDelta) {
 			appendConceptSection("GameConcepts.MaximumRange", maxR)
 		}
-		sections ++= damageBonuses.flatMap(_.delta.toRichText(settings).sections)
+		sections ++= damageModifiers.flatMap(_.delta.toRichText(settings).sections)
 
 		targetPatternOverride match {
 			case Some(pattern: HexTargetPattern) => sections ++= TextSection("Target") +: HorizontalPaddingSection(4) +: pattern.toRichText(settings).sections
@@ -157,7 +158,13 @@ case class AttackModifier(var nameOverride: Option[String] = None,
 
 	override def customLoadFromConfig(config: ConfigValue): Unit = {
 		for (db <- config.fieldOpt("damageBonus")) {
-			damageBonuses :+= DamageModifier(DamagePredicate.Primary, DamageDelta.DamageBonus(db.int))
+			damageModifiers :+= DamageModifier(DamagePredicate.Primary, DamageDelta.DamageBonus(db.int))
+		}
+		for (db <- config.fieldOpt("damageMalus")) {
+			damageModifiers :+= DamageModifier(DamagePredicate.Primary, DamageDelta.DamageBonus(-db.int))
+		}
+		for (no <- config.fieldOpt("name")) {
+			nameOverride = Some(no.str)
 		}
 	}
 }
@@ -180,6 +187,13 @@ class SpecialAttack {
 }
 
 object SpecialAttack {
+
+	def apply(condition : BaseAttackConditional, attackModifier : AttackModifier) : SpecialAttack = {
+		val sa = new SpecialAttack
+		sa.condition = condition
+		sa.attackModifier = attackModifier
+		sa
+	}
 
 	case object PiercingStabCondition extends BaseAttackConditional {
 		val wrapped = (AttackConditionals.HasTargetPattern(Point) or AttackConditionals.HasTargetPattern(TargetPattern.SingleEnemy)) and AttackConditionals.HasDamageType(Piercing) and AttackConditionals.HasAtLeastMaxRange(2)
@@ -205,16 +219,16 @@ object SpecialAttack {
 		attackModifier = AttackModifier(
 			namePrefix = Some("power attack : "),
 			accuracyBonus = -2,
-			damageBonuses = Vector(DamageModifier(DamagePredicate.Primary, DamageDelta.DamageMultiplier(2.0f)))
+			damageModifiers = Vector(DamageModifier(DamagePredicate.Primary, DamageDelta.DamageMultiplier(2.0f)))
 		)
 	}
 
-	case object SwiftStab extends SpecialAttack {
+	case object SwiftStrike extends SpecialAttack {
 		condition = AttackConditionals.HasDamageType(Piercing)
 		attackModifier = AttackModifier(
-			nameOverride = Some("swift stab"),
+			nameOverride = Some("swift strike"),
 			accuracyBonus = -1,
-			damageBonuses = Vector(DamageModifier(DamagePredicate.Primary, DamageDelta.DamageBonus(-1))),
+			damageModifiers = Vector(DamageModifier(DamagePredicate.Primary, DamageDelta.DamageBonus(-1))),
 			actionCostDelta = -1,
 			actionCostMinimum = Some(1)
 		)
@@ -299,7 +313,7 @@ trait DamageDelta extends THasRichTextRepresentation {
 	def modify(elem: DamageElement): DamageElement
 }
 
-object DamageDelta {
+object DamageDelta extends CustomConfigDataLoader[DamageDelta] {
 
 	import arx.Prelude._
 
@@ -315,6 +329,21 @@ object DamageDelta {
 		override def toRichText(settings: RichTextRenderSettings): RichText = RichText(TextSection(s"x$mult") :: TaxonSections("Damage", settings))
 	}
 
+	override def loadedType: AnyRef = scala.reflect.runtime.universe.typeOf[DamageDelta]
+
+	val bonusPattern = "([+-]\\d+)".r
+	val multPattern = "([x*]\\d+)".r
+	override def loadFrom(config: ConfigValue): Option[DamageDelta] = {
+		if (config.isStr) {
+			config.str match {
+				case bonusPattern(number) => Some(DamageBonus(number.toInt))
+				case multPattern(multBy) => Some(DamageMultiplier(multBy.toInt))
+				case _ => None
+			}
+		} else {
+			None
+		}
+	}
 }
 
 

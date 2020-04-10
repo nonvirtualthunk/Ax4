@@ -74,7 +74,7 @@ class Weapon extends AxAuxData {
 	@NoAutoLoad var attacks: Map[AttackKey, AttackData] = Map()
 	var primaryAttack: AttackKey = AttackKey.Primary
 	var weaponSkills: List[Taxon] = Nil
-var naturalWeapon: Boolean = false
+	var naturalWeapon: Boolean = false
 
 	@NoAutoLoad var attackCards: Vector[Entity] = Vector()
 

@@ -224,6 +224,7 @@ object AttackConditionals extends CustomConfigDataLoader[BaseAttackConditional] 
 	val anyAttackPattern = "(?i)Any".r
 	val hasDamageTypePattern = "(?i)HasDamageType\\((.+)\\)".r
 	val hasTargetPattern = "(?i)HasTargetPattern\\((.+)\\)".r
+	val hasAtLeastMaxRange = "(?i)HasAtLeastMaxRange\\((\\d+)\\)".r
 
 	override def loadedType: AnyRef = scala.reflect.runtime.universe.typeOf[BaseAttackConditional]
 	override def loadFrom(config: ConfigValue): Option[BaseAttackConditional] = if (config.isStr) {
@@ -233,6 +234,7 @@ object AttackConditionals extends CustomConfigDataLoader[BaseAttackConditional] 
 			case anyAttackPattern() => Some(AnyAttack)
 			case hasDamageTypePattern(damageType) => Some(HasDamageType(Taxonomy(damageType)))
 			case hasTargetPattern(patternStr) => Some(HasTargetPattern(TargetPattern.loadFromOrElse(StringConfigValue(patternStr), TargetPattern.SingleEnemy)))
+			case hasAtLeastMaxRange(range) => Some(HasAtLeastMaxRange(range.toInt))
 			case _ =>
 				Noto.warn(s"Invalid attack conditional string : ${config.str}")
 				None

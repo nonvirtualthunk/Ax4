@@ -10,15 +10,50 @@ Cards {
   PiercingStab {
     name: Piercing Stab
 
-    specialAttack: piercingStab
+    effects : [
+      {
+        type : SpecialAttack
+
+        nameOverride: PiercingStab
+        accuracyBonus : -1
+        targetPatternOverride : "line(1,2)"
+        minRangeOverride: 1
+        maxRangeOverride: 1
+
+        condition : [HasDamageType(Piercing), HasAtLeastMaxRange(2)]
+      }
+    ]
+
+    tags: [Expend]
   }
 
-  SwiftStab {
-    name: Swift Stab
+  SwiftStrike {
+    name: Swift Strike
 
-    specialAttack: swiftStab
+    effects: [
+      {
+        type: SpecialAttack
 
-    effects: [Draw(1)]
+        nameOverride: Swift Strike
+        accuracyBonus: -1
+        damageBonus : -1
+        staminaCostDelta : 1
+      },
+      Draw(1)
+    ]
+  }
+
+  SweepingLegStrike {
+    name : Sweeping Leg Strike
+
+    effects: [
+      {
+        type: SpecialAttack
+        name: Sweeping Leg Strike
+        damageBonus : -1
+        onHitEffects : [Slow(1)]
+      }
+    ]
   }
 
   Parry {

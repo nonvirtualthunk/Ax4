@@ -102,7 +102,7 @@ object CombatLogicTest {
 		attackModifier = AttackModifier(
 			namePrefix = Some("power attack : "),
 			accuracyBonus = -10,
-			damageBonuses = Vector(DamageModifier(DamagePredicate.All, DamageDelta.DamageMultiplier(2.0f)))
+			damageModifiers = Vector(DamageModifier(DamagePredicate.All, DamageDelta.DamageMultiplier(2.0f)))
 		)
 	}
 
