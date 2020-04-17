@@ -8,6 +8,11 @@ Skills {
         targetLevel : 1
         rarity : common
       }
+
+      FlashingPoints {
+        targetLevel : 1
+        rarity : common
+      }
     }
   }
 
@@ -26,7 +31,35 @@ Skills {
     displayName: "Melee Skill"
 
     cardRewards {
+      Parry {
+        targetLevel : 1
+        rarity : common
+      }
 
+      SwiftStrike {
+        targetLevel : 1
+        rarity : common
+      }
+
+      SweepingLegStrike {
+        targetLevel : 1
+        rarity : common
+      }
+
+      RingingBlow {
+        targetLevel : 1
+        rarity : common
+      }
+
+      ChargingStrike {
+        targetLevel : 1
+        rarity : common
+      }
+
+      DoubleStrike {
+        targetLevel : 1
+        rarity : common
+      }
     }
   }
 
@@ -34,10 +67,7 @@ Skills {
     displayName: "Weapon Skill"
 
     cardRewards {
-      Parry {
-        targetLevel : 1
-        rarity : common
-      }
+
     }
   }
 }

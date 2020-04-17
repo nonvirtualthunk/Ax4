@@ -22,6 +22,7 @@ class DeckData extends AxAuxData {
 	var discardPile : Vector[Entity] = Vector()
 	var hand : Vector[Entity] = Vector()
 	var exhaustPile : Vector[Entity] = Vector()
+	var expendedPile : Vector[Entity] = Vector()
 	var attachedCards : Vector[Entity] = Vector() // cards that are attached to other cards and so cannot be drawn normally
 
 	var lockedCards : Vector[LockedCard] = Vector()
@@ -31,8 +32,8 @@ class DeckData extends AxAuxData {
 
 	def allNonExhaustedCards = drawPile ++ discardPile ++ hand ++ attachedCards
 	def allAvailableCards = drawPile ++ discardPile ++ hand
-	def allCards = drawPile ++ discardPile ++ hand ++ exhaustPile
-	def containsCard(card : Entity) = drawPile.contains(card) || discardPile.contains(card) || hand.contains(card) || exhaustPile.contains(card)
+	def allCards = drawPile ++ discardPile ++ hand ++ exhaustPile ++ expendedPile
+	def containsCard(card : Entity) = drawPile.contains(card) || discardPile.contains(card) || hand.contains(card) || exhaustPile.contains(card) || expendedPile.contains(card)
 }
 
 
@@ -119,13 +120,16 @@ object AttachmentStyle {
 //		Lose HP
 //		etc
 
-case class TriggeredGameEffect(trigger : CardEffectTrigger, effect : GameEffect)
+case class TriggeredGameEffect(trigger : CardEffectTrigger, effect : GameEffect, description : Option[String]) extends THasRichTextRepresentation {
+	override def toRichText(settings: RichTextRenderSettings): RichText = RichText(description.getOrElse("No Description of Triggered Game Effect"))
+}
+
 object TriggeredGameEffect extends CustomConfigDataLoader[TriggeredGameEffect] {
 	override def loadedType: AnyRef = scala.reflect.runtime.universe.typeOf[TriggeredGameEffect]
 
 	override def loadFrom(config: ConfigValue): Option[TriggeredGameEffect] = {
 		(CardEffectTrigger.loadFrom(config.trigger), GameEffectConfigLoader.loadFrom(config.effect)) match {
-			case (Some(trigger), Some(effect)) => Some(TriggeredGameEffect(trigger, effect))
+			case (Some(trigger), Some(effect)) => Some(TriggeredGameEffect(trigger, effect, config.description.strOpt))
 			case _ => None
 		}
 	}
@@ -145,6 +149,7 @@ class CardData extends AxAuxData {
 	var attachedCards : Map[AnyRef, Vector[Entity]] = Map()
 	@NoAutoLoad
 	var attachedTo : Set[Entity] = Set()
+	var effectsDescription : Option[String] = None
 
 	var cardType : Taxon = CardTypes.GenericCardType
 	var name : String = "Card"
@@ -238,9 +243,9 @@ object CardTrigger {
 	case object OnDiscard extends CardTrigger
 }
 
-case class CardPlay(card : Entity) extends CompoundSelectable {
+case class CardPlay(character : Entity, card : Entity) extends CompoundSelectable {
 	override def subSelectables(view : WorldView): Traversable[Selectable] = {
-		val CostsAndEffects(effCosts, effEffects, selfEffects)  = CardLogic.effectiveCostsAndEffects(card)(view)
+		val CostsAndEffects(effCosts, effEffects, selfEffects)  = CardLogic.effectiveCostsAndEffects(Some(character), card)(view)
 		effCosts ++ effEffects ++ selfEffects
 	}
 
@@ -248,7 +253,7 @@ case class CardPlay(card : Entity) extends CompoundSelectable {
 		implicit val view = world
 		val CD = view.data[CardData](card)
 
-		val CostsAndEffects(effCosts, effEffects, selfEffects)  = CardLogic.effectiveCostsAndEffects(card)
+		val CostsAndEffects(effCosts, effEffects, selfEffects)  = CardLogic.effectiveCostsAndEffects(Some(entity), card)
 
 		// TODO: should the effect source be different for the ones that derive from attached cards?
 		val costsRaw = effCosts.map(c => c -> c.instantiate(view, entity, effectSource))

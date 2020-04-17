@@ -156,10 +156,13 @@ Taxonomy {
     Damage : GameConcept
     Attach : GameConcept
     SpecialAttack : GameConcept
+    Attack : GameConcept
+    Strike : GameConcept
 
     DrawPile : GameConcept
     DiscardPile : GameConcept
     ExhaustPile : GameConcept
+    ExpendedPile : GameConcept
     Hand : GameConcept
   }
 
@@ -196,7 +199,9 @@ Taxonomy {
     ActionCard : CardType
     MoveCard : CardType
     GatherCard : CardType
-    DefenseCard : CardType
+    DefenseCard : SkillCard
+
+    UnarmedAttackCard : AttackCard
 
 
     Harvest : GatherCard
@@ -208,6 +213,10 @@ Taxonomy {
     PiercingStab : AttackCard
     FlurryOfBlows : AttackCard
     SweepingLegStrike : AttackCard
+    RingingBlow : AttackCard
+    DoubleStrike : AttackCard
+    ChargingStrike : AttackCard
+    FlashingPoints : SkillCard
 
     Parry : DefenseCard
     Block : DefenseCard
@@ -226,10 +235,10 @@ Taxonomy {
     AttackSkill : Skill
     DefenseSkill : Skill
 
+    MeleeSkill : AttackSkill
+
     WeaponSkill : AttackSkill
     ArmorSkill : DefenseSkill
-
-    MeleeSkill : AttackSkill
 
     SpearSkill : [WeaponSkill, MeleeSkill]
     SwordSkill : [WeaponSkill, MeleeSkill]
@@ -240,18 +249,18 @@ Taxonomy {
 
     Parry : DefenseSkill
     Block : DefenseSkill
+
+    Gather : Skill
   }
 
   Perk : []
   Perks {
     UnknownPerk : Perk
-    PiercingStab : Perk
-    SwiftStrike : Perk
+    AddCard : Perk
     SpearProficiency : Perk
     SpearMastery : Perk
     CloseRangeSpearFighter : Perk
     MeleeFighter : Perk
-    Parry : Perk
   }
 
 
@@ -263,6 +272,7 @@ Taxonomy {
     InternalFlag : Flag
 
     Harvester : Flag
+    Miner : Flag
 
     Block : PositiveFlag
     Parry : PositiveFlag
@@ -270,12 +280,20 @@ Taxonomy {
     Tiring : NegativeFlag
     Slow : NegativeFlag
 
+    Stunned : NegativeFlag
+    Dazzled : NegativeFlag
+
+    FlashingPoints : PositiveFlag
+
+
     ApCostDelta : InternalFlag
+    ApGainDelta : InternalFlag
     StaminaCostDelta : InternalFlag
     DefenseDelta : InternalFlag
     AccuracyDelta : InternalFlag
     ArmorDelta : InternalFlag
     MovementGainDelta : InternalFlag
+
   }
 
   Tag : []

@@ -1,6 +1,6 @@
 package arx.ax4.game.event
 
-import arx.ax4.game.entities.{AttackData, DamageType, DefenseData, GatherProspect, PerkSource, ReactionType, Resource}
+import arx.ax4.game.entities.{AttackData, DamageType, DefenseData, GatherProspect, Perk, PerkSource, ReactionType, Resource}
 import arx.engine.entity.{Entity, Taxon}
 import arx.engine.event.GameEvent
 
@@ -35,7 +35,7 @@ case class GainSkillXPEvent(entity : Entity, skill : Taxon, amount : Int) extend
 
 case class GainSkillLevelEvent(entity : Entity, skill : Taxon, newLevel : Int) extends GameEvent
 
-case class NewPerkPicksAvailable(entity : Entity, perks : Seq[Taxon]) extends GameEvent
+case class NewPerkPicksAvailable(entity : Entity, perks : Seq[Perk]) extends GameEvent
 
 case class SwitchReactionEvent(entity : Entity, from : ReactionType, to : ReactionType) extends GameEvent
 
@@ -44,7 +44,9 @@ case class GatherEvent(prospect : GatherProspect) extends GameEvent
 case class ResourceGatheredEvent(entity : Entity, kind : Taxon, gained : Int) extends GameEvent
 
 
-case class GainPerkEvent(entity : Entity, perk : Taxon, source : PerkSource) extends GameEvent
+case class GainPerkEvent(entity : Entity, perk : Perk, source : PerkSource) extends GameEvent
+
+case class SkipPerkEvent(entity : Entity) extends GameEvent
 
 case class ChangeFlagEvent(entity : Entity, flag : Taxon, oldValue : Int, newValue : Int) extends GameEvent {
 	def delta = newValue - oldValue

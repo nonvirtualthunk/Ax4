@@ -2,8 +2,9 @@ package arx.ax4.game.logic
 
 import arx.application.Noto
 import arx.ax4.game.action.SelectionResult
+import arx.ax4.game.entities.AttackEffectTrigger.Hit
 import arx.ax4.game.entities.Companions.{CharacterInfo, CombatData, Equipment, Physical, Weapon}
-import arx.ax4.game.entities.{AttackData, AttackModifier, AttackProspect, CharacterInfo, CombatData, DamageResult, DamageType, DefenseData, DefenseModifier, Physical, SpecialAttack, Tiles, UntargetedAttackProspect, Weapon}
+import arx.ax4.game.entities.{AffectsSelector, AttackData, AttackEffectTrigger, AttackModifier, AttackProspect, CharacterInfo, CombatData, DamageResult, DamageType, DefenseData, DefenseModifier, Physical, SpecialAttack, Tiles, TriggeredAttackEffect, UntargetedAttackProspect, Weapon}
 import arx.ax4.game.event.{ArmorUsedEvent, AttackEvent, AttackEventInfo, DamageEvent, DeflectEvent, DodgeEvent, StrikeEvent, SubStrike}
 import arx.core.vec.coordinates.{AxialVec3, BiasedAxialVec3}
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
@@ -25,8 +26,6 @@ object CombatLogic {
 		val (untargetedAttackData, _) = resolveConditionalAttackData(view, attacker, Entity.Sentinel, targets, baseAttackData, new DefenseData)
 
 		world.startEvent(AttackEvent(AttackEventInfo(attacker, weapon, targets, untargetedAttackData)))
-//		world.modify(attacker, CharacterInfo.actionPoints reduceBy untargetedAttackData.actionCost)
-//		world.modify(attacker, CharacterInfo.stamina reduceBy untargetedAttackData.staminaCost)
 
 		for (strikeN <- 0 until untargetedAttackData.strikeCount) {
 			world.startEvent(StrikeEvent(AttackEventInfo(attacker, weapon, targets, untargetedAttackData)))
@@ -47,20 +46,10 @@ object CombatLogic {
 					for (dmg <- effAttack.damage) {
 						doDamage(world, target, ((dmg.damageDice.roll().total + dmg.damageBonus) * dmg.damageMultiplier).toInt, dmg.damageType, effDefense)
 					}
-					for (effect <- effAttack.onHitEffects) {
-						effect.instantiate(view, target, attacker) match {
-							case Left(inst) => {
-								val sel = SelectionResult()
-								inst.nextSelector(sel) match {
-									case Some(value) => Noto.warn("On-hit effect not applied, requires selection implementation")
-									case None => inst.applyEffect(world, sel)
-								}
-							}
-							case Right(msg) => Noto.info(s"On-hit effect not applied: $msg")
-						}
-					}
+					applyTriggeredEffects(attacker, target, effAttack.triggeredEffects, AttackEffectTrigger.Hit)(world)
 				} else {
 					world.addEvent(DodgeEvent(target))
+					applyTriggeredEffects(attacker, target, effAttack.triggeredEffects, AttackEffectTrigger.Miss)(world)
 				}
 
 				world.endEvent(SubStrike(target, AttackEventInfo(attacker, weapon, targets, effAttack), effDefense))
@@ -73,6 +62,27 @@ object CombatLogic {
 			SkillsLogic.gainSkillXP(attacker, weaponSkill, 10)(world)
 		}
 		world.endEvent(AttackEvent(AttackEventInfo(attacker, weapon, targets, untargetedAttackData)))
+	}
+
+	private def applyTriggeredEffects(attacker : Entity, target : Entity, triggeredEffects : Seq[TriggeredAttackEffect], targetTrigger : AttackEffectTrigger)(implicit world : World): Unit = {
+		implicit val view = world.view
+
+		for (TriggeredAttackEffect(trigger, affects, effect) <- triggeredEffects if trigger == targetTrigger) {
+			val affectedEntity = affects match {
+				case AffectsSelector.Self => attacker
+				case AffectsSelector.Target => target
+			}
+			effect.instantiate(view, affectedEntity, attacker) match {
+				case Left(inst) => {
+					val sel = SelectionResult()
+					inst.nextSelector(sel) match {
+						case Some(value) => Noto.warn(s"Attack triggered effect not applied, requires selection implementation : $trigger, $affects, $effect")
+						case None => inst.applyEffect(world, sel)
+					}
+				}
+				case Right(msg) => Noto.info(s"Attack triggered effect not applied: $msg")
+			}
+		}
 	}
 
 	def effectiveAttackData(attacker : Entity, from : AxialVec3, targets : Seq[Entity], weaponAttackData: AttackData)(implicit view : WorldView) = {
@@ -168,6 +178,11 @@ object CombatLogic {
 			} else {
 				Noto.error("unlisted unconditional attack source")
 			}
+
+			for ((flag, flagModifiers) <- TagLogic.allFlagAttackModifiers(attacker); modifier <- flagModifiers) {
+				attackData.merge(modifier)
+				modifiers :+= flag.displayName -> modifier
+			}
 		}
 
 
@@ -238,8 +253,30 @@ object CombatLogic {
 	def availableWeaponAttacks(attacker : Entity)(implicit view : WorldView) : Vector[(Entity, AttackData)] = {
 		InventoryLogic.equippedItems(attacker)
 			.filter(item => item.hasData[Weapon])
-   		.flatMap(weapon => weapon[Weapon].attacks.values.map(weapon -> _))
+   		.flatMap(weapon => weapon[Weapon].attacks.toVector.sortBy(_._1).map(weapon -> _._2))
    		.toVector
+	}
+
+	def availableAttacks(attacker : Entity)(implicit view : WorldView) : Vector[(Entity, AttackData)] = {
+		val weaponAttacks = availableWeaponAttacks(attacker)
+		if (weaponAttacks.isEmpty) {
+			attacker.dataOpt[Weapon] match {
+				case Some(weapon) => weapon.attacks.values.map(attacker -> _).toVector
+				case None => Vector()
+			}
+		} else {
+			weaponAttacks
+		}
+	}
+
+	def resolveSpecialAttack(attacker: Entity, specialAttack: SpecialAttack)(implicit view : WorldView) : Option[AttackData] = {
+		val allAttacks = CombatLogic.availableAttacks(attacker)
+		allAttacks.find(attack => specialAttack.condition.isTrueFor(view, UntargetedAttackProspect(attacker, attack._2)))
+  		.map { case ((weapon, attack)) =>
+				val effAttack = attack.mergedWith(specialAttack.attackModifier)
+				effAttack.weapon = weapon
+				effAttack
+			}
 	}
 }
 

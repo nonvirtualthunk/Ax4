@@ -10,6 +10,7 @@ import arx.engine.entity.{Entity, Taxonomy}
 import arx.engine.world.{World, WorldView}
 import arx.graphics.helpers.{Color, HorizontalPaddingSection, ImageSection, LineBreakSection, RGBA, RichText, RichTextRenderSettings, RichTextSection, TaxonSections, TextSection}
 import arx.Prelude._
+import arx.ax4.game.entities.AttackConditionals.AnyAttack
 import arx.ax4.game.entities.TargetPattern.Line
 import arx.engine.data.Moddable
 
@@ -37,13 +38,13 @@ object AttackGameEffect {
 	def toRichText(attackData: AttackData, effAttackData: AttackData, settings: RichTextRenderSettings): RichText = {
 		val accuracyColor = attackDataPartToColor(attackData, effAttackData, _.accuracyBonus)
 
-		val mainLine = Seq(
+		val mainLine = RichText(Vector(
 			TextSection(s"Attack "),
 			TextSection(s"${effAttackData.accuracyBonus.toSignedString}", Moddable(accuracyColor)),
 			HorizontalPaddingSection(4)) ++
 			TaxonSections("Accuracy", settings) ++
-			DamageExpression(effAttackData.damage).toRichText(settings).sections
-		var rangeShapeLine = Seq[RichTextSection]()
+			DamageExpression(effAttackData.damage).toRichText(settings).sections)
+		var rangeShapeLine = RichText.Empty
 		if (effAttackData.minRange > 1 || effAttackData.maxRange > 1) {
 			val rangeExpr = s"${effAttackData.maxRange}"
 			//			rangeShapeLine ++= Seq(LineBreakSection(10), TextSection(s"$rangeExpr"), HorizontalPaddingSection(4), ImageSection(s"graphics/ui/range.png", 1.0f, Color.White))
@@ -55,9 +56,17 @@ object AttackGameEffect {
 		}
 		var effLine = mainLine
 		if (rangeShapeLine.nonEmpty) {
-			effLine ++= LineBreakSection(10) +: rangeShapeLine
+			effLine += LineBreakSection(10)
+			effLine ++= rangeShapeLine
 		}
-		RichText(effLine)
+
+		val triggeredLine = AttackData.renderTriggeredAttackEffects(attackData.triggeredEffects, settings)
+		if (triggeredLine.nonEmpty) {
+			effLine += LineBreakSection(10)
+			effLine ++= triggeredLine
+		}
+
+		effLine
 	}
 
 	def attackDataPartToColor[T: Numeric](prev: AttackData, cur: AttackData, component: (AttackData) => T): Color = {
@@ -72,17 +81,11 @@ object AttackGameEffect {
 }
 
 case class SpecialAttackGameEffect(specialAttack: SpecialAttack) extends GameEffect {
-	def findAttack(attacker: Entity)(implicit view: WorldView) = {
-		val allAttacks = CombatLogic.availableWeaponAttacks(attacker)
-		allAttacks.find(attack => specialAttack.condition.isTrueFor(view, UntargetedAttackProspect(attacker, attack._2)))
-	}
 
 	override def instantiate(world: WorldView, entity: Entity, source: Entity): Either[GameEffectInstance, String] = {
 		implicit val view = world
-		findAttack(entity) match {
-			case Some((weapon, attack)) =>
-				val effAttack = attack.mergedWith(specialAttack.attackModifier)
-				effAttack.weapon = weapon
+		CombatLogic.resolveSpecialAttack(entity, specialAttack) match {
+			case Some(effAttack) =>
 				Left(AttackGameEffectInstance(entity, effAttack, this))
 			case None =>
 				Right("No matching attack")
@@ -94,22 +97,24 @@ case class SpecialAttackGameEffect(specialAttack: SpecialAttack) extends GameEff
 	}
 
 	override def toRichText(view: WorldView, attacker: Entity, settings: RichTextRenderSettings): RichText = {
-		val conditionSections = specialAttack.condition.toRichText(settings).sections
-		val preamble = RichText(TaxonSections("GameConcepts.SpecialAttack", settings) ++ conditionSections :+ LineBreakSection(0))
+		val preamble = if (specialAttack.condition != AnyAttack) {
+			val conditionSections = specialAttack.condition.toRichText(settings).sections
+			RichText(TaxonSections("GameConcepts.Attack", settings) ++ Seq(LineBreakSection(0), TextSection("Requires ")) ++ conditionSections :+ LineBreakSection(0))
+		} else {
+			RichText.parse("[GameConcepts.Attack]\n", settings)
+		}
 
 		val modifierSections = specialAttack.attackModifier.toRichText(settings)
 		if (view == null) {
 			preamble ++ modifierSections
 		} else {
-			findAttack(attacker)(view) match {
-				case Some((weapon, matchingAttack)) =>
-					val baseAttack = matchingAttack.mergedWith(specialAttack.attackModifier)
-					baseAttack.weapon = weapon
+			CombatLogic.resolveSpecialAttack(attacker, specialAttack)(view) match {
+				case Some(baseAttack) =>
 					val (effAttack, _) = CombatLogic.resolveUntargetedConditionalAttackData(view, attacker, baseAttack)
-
 					AttackGameEffect.toRichText(baseAttack, effAttack, settings)
 				case None =>
-					preamble + TextSection("(No Matching Attack)\nModifiers\n") ++ modifierSections
+					//  + TextSection("(No Matching Attack)\nModifiers\n")
+					preamble ++ modifierSections
 			}
 		}
 	}

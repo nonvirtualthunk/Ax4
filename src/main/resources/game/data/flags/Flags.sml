@@ -27,9 +27,38 @@ Flags {
     description : "Slowed down, each point reduces the amount of move gained by move cards by one"
     resetAtEndOfTurn : true
     hidden : false
-    countAs : MovementGainDelta
+    countAsNegative : MovementGainDelta
   }
 
+  Stunned {
+    description : "Stunned and disoriented, reduces the number of action points each turn by one"
+    resetAtEndOfTurn : false
+    hidden : false
+    countAsNegative : ApGainDelta
+    tickDownOn : EndOfTurn
+  }
+
+  FlashingPoints {
+    description : "Your swift disorienting attacks dazzle your enemies, aggravating them and applying 2 [dazzled]"
+    resetAtEndOfTurn : false
+    hidden : false
+    tickDownOn : EndOfTurn
+
+    attackModifiers : {
+      triggeredEffects : {
+        trigger : Hit
+        affects : target
+        effect : Dazzled(2)
+      }
+    }
+  }
+
+  Dazzled {
+    description : "Dazzled by light or distraction, each point reduces accuracy by one until end of turn"
+    resetAtEndOfTurn : true
+    hidden : false
+    countAsNegative : AccuracyDelta
+  }
 
   MovementGainDelta {
     description : "Movement Gain Delta"
@@ -63,6 +92,12 @@ Flags {
 
   ArmorDelta {
     description : "Armor delta"
+    resetAtEndOfTurn : false
+    hidden : true
+  }
+
+  ApGainDelta {
+    description : "AP Gain Delta"
     resetAtEndOfTurn : false
     hidden : true
   }

@@ -9,7 +9,7 @@ import arx.engine.control.components.windowing.widgets.{PositionExpression, TopL
 import arx.engine.control.components.windowing.widgets.data.{OverlayData, WidgetOverlay}
 import arx.engine.control.event.{MousePressEvent, MouseReleaseEvent}
 import arx.engine.data.Moddable
-import arx.engine.entity.{Entity, Taxon}
+import arx.engine.entity.{Entity, IdentityData, Taxon}
 import arx.engine.world.WorldView
 import arx.graphics.TToImage
 import arx.graphics.helpers.RGBA
@@ -17,24 +17,30 @@ import arx.resource.ResourceManager
 
 object CardWidget {
 	def apply(parent : Widget, selC : Entity, card : Entity)(implicit view : WorldView) : Widget = {
-		CardWidget(parent, card.data[CardData], () => CardInfo(selC, card))
+		CardWidget(parent, card.data[IdentityData].kind, card.data[CardData], () => CardInfo(selC, card))
 	}
 
 	def apply(parent : Widget, selC : Option[Entity], cardArch : Taxon)(implicit view : WorldView) : Widget = {
 		val arch = CardLibrary.withKind(cardArch)
 		val CD : CardData = arch.data(CardData)
 		val TD : TagData = arch.data(TagData)
-		CardWidget(parent, CD, () => CardInfo(selC, CD, TD)(view))
+		CardWidget(parent, cardArch, CD, () => CardInfo(selC, cardArch, CD, TD)(view))
 	}
 
-	def apply(parent : Widget, cardData : CardData, cardInfo : () => CardInfo) : Widget = {
+	def apply(parent : Widget, card : Taxon, cardData : CardData, cardInfo : () => CardInfo) : Widget = {
 		val cardWidget = parent.createChild("CardWidgets.CardWidget")
-		cardWidget.drawing.backgroundImage = Some(cardData.cardType match {
-			case CardTypes.ItemCard => ResourceManager.image("graphics/ui/item_card_border.png")
-			case CardTypes.AttackCard => ResourceManager.image("graphics/ui/attack_card_border.png")
-			case CardTypes.StatusCard => ResourceManager.image("graphics/ui/status_card_border.png")
-			case _ => ResourceManager.image("graphics/ui/card_border_no_padding.png")
-		})
+		cardWidget.drawing.backgroundImage = Some(
+			if (card.isA(CardTypes.ItemCard)) {
+				"graphics/ui/item_card_border.png"
+			} else if (card.isA(CardTypes.AttackCard)) {
+				"graphics/ui/attack_card_border.png"
+			} else if (card.isA(CardTypes.SkillCard)) {
+				"graphics/ui/skill_card_border.png"
+			} else if (card.isA(CardTypes.StatusCard)) {
+				"graphics/ui/status_card_border.png"
+			} else {
+				"graphics/ui/card_border_no_padding.png"
+			})
 
 		cardWidget.bind("card", cardInfo)
 
@@ -42,13 +48,13 @@ object CardWidget {
 		val od = cardWidget[OverlayData]
 		od.overlays += CardControl.LockedOverlay -> WidgetOverlay(
 			drawOverlay = Moddable(false),
-			overlayImage = Moddable(ResourceManager.image("graphics/ui/locked_overlay.png") : TToImage),
+			overlayImage = Moddable("graphics/ui/locked_overlay.png" : TToImage),
 			overlayEdgeColor = Moddable(RGBA(0.3f,0.3f,0.3f,1.0f)),
 			pixelScale = 2
 		)
 		od.overlays += CardControl.ActiveOverlay -> WidgetOverlay(
 			drawOverlay = Moddable(false),
-			overlayImage = Moddable(ResourceManager.image("graphics/ui/active_card_overlay.png") : TToImage),
+			overlayImage = Moddable("graphics/ui/active_card_overlay.png" : TToImage),
 			overlayEdgeColor = Moddable(RGBA(1.0f,1.0f,1.0f,1.0f)),
 			pixelScale = 2,
 			pixelSizeDelta = Vec2i(3,3)

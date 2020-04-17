@@ -1,7 +1,7 @@
 package arx.ax4.game.logic
 
 import arx.ax4.game.entities.Companions.TagData
-import arx.ax4.game.entities.{FlagEquivalency, FlagLibrary, TagData}
+import arx.ax4.game.entities.{AttackModifier, FlagEquivalency, FlagLibrary, TagData}
 import arx.ax4.game.event.ChangeFlagEvent
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.world.{World, WorldView}
@@ -14,7 +14,10 @@ object TagLogic {
 	}
 
 	def flagValue(td : TagData, flag : Taxon)(implicit view : WorldView) : Int = {
-		td.flags.getOrElse(flag, 0) + FlagEquivalency.flagEquivalences.get(flag).map(f => flagValue(td, f)).sum
+		val equivalentFlagsSum = FlagEquivalency.flagEquivalences.get(flag)
+			.map(eq => flagValue(td, eq.taxon) * eq.multiplier)
+			.sum
+		td.flags.getOrElse(flag, 0) + equivalentFlagsSum
 	}
 	def flagValue(entity : Entity, flag : Taxon)(implicit view : WorldView) : Int = {
 		entity.dataOpt[TagData].map(td => flagValue(td, flag)).getOrElse(0)
@@ -43,15 +46,23 @@ object TagLogic {
 
 	def changeFlagTo(entity : Entity, flag : Taxon, value : Int)(implicit world : World) : Int = {
 		val curValue = flagValue(entity, flag)(world.view)
-		world.startEvent(ChangeFlagEvent(entity, flag, curValue, 0))
-		world.modify(entity, TagData.flags.incrementKey(flag, -curValue))
-		world.endEvent(ChangeFlagEvent(entity, flag, curValue, 0))
+		if (curValue != value) {
+			world.startEvent(ChangeFlagEvent(entity, flag, curValue, value))
+			world.modify(entity, TagData.flags.incrementKey(flag, value - curValue))
+			world.endEvent(ChangeFlagEvent(entity, flag, curValue, value))
+		}
 		curValue
 	}
 
 	def hasTag(entity : Entity, tag : Taxon)(implicit view : WorldView) : Boolean = allTags(entity).contains(tag)
 
 	def allFlags(entity : Entity)(implicit view : WorldView) : Map[Taxon, Int] = entity.dataOpt[TagData].map(_.flags).getOrElse(Map())
+
+	def allFlagAttackModifiers(entity : Entity)(implicit view : WorldView) : Map[Taxon, Vector[AttackModifier]] = {
+		for ((flag,count) <- allFlags(entity); flagInfo <- FlagLibrary.getWithKind(flag)) yield {
+			flag -> flagInfo.attackModifiers
+		}
+	}
 
 	def allTags(entity : Entity)(implicit view : WorldView) : Set[Taxon] = entity.dataOpt[TagData].map(_.tags).getOrElse(Set())
 }

@@ -3,7 +3,7 @@ PerkSelectionWidget {
   x : centered
   y : 20
   width : 90%
-  height : 90%
+  height : 95%
   z : 50
 
   children : {
@@ -14,6 +14,7 @@ PerkSelectionWidget {
       backgroundPixelScale : 2
       fontScale : 2
       x : centered
+      width : intrinsic
     }
     PerkOptions : {
       type : DynamicWidget
@@ -24,6 +25,20 @@ PerkSelectionWidget {
       y : 10 below Heading
       width : 100%
       height : rel(-120)
+
+      children {
+        SkipButton {
+          type : TextDisplayWidget
+          drawBackground : true
+          background.image : "ui/fancyBackground_ns.png"
+          backgroundPixelScale : 2
+          fontScale : 2
+          x : centered
+          y : 5 from bottom
+
+          text : " Skip "
+        }
+      }
     }
   }
 }
@@ -31,7 +46,7 @@ PerkSelectionWidget {
 PerkInfoWidget {
   type : Div
   width : 25%
-  height : 100%
+  height : rel(-120)
   drawBackground : true
   background.image: "ui/fancyBackgroundWhite_ns.png"
   backgroundColor: [100,100,100,255]
@@ -62,6 +77,7 @@ PerkInfoWidget {
       type : TextDisplayWidget
       drawBackground : false
       text : "%(perkInfo.perk.name)"
+      showing : "%(perkInfo.perk.hasName)"
       fontScale : 2
 
       y : 10 below PerkIcon
@@ -75,7 +91,7 @@ PerkInfoWidget {
       fontScale : 1.5
       width : 100%
 
-      y : 10 below PerkName
+      y : 25 below PerkIcon
       x : centered
       textAlignment : center
     }

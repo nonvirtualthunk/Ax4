@@ -1,10 +1,13 @@
 package arx.ax4.game.logic
 
 import arx.application.Noto
-import arx.ax4.game.entities.{CharacterInfo, PendingPerkPicks, PerkSource, ClassLevelUpPerk, SkillsLibrary}
+import arx.ax4.game.entities.{CardData, CardLibrary, CharacterInfo, LevelUpPerk, PendingPerkPicks, Perk, PerkSource, SkillsLibrary}
 import arx.ax4.game.entities.Companions.CharacterInfo
+import arx.ax4.game.entities.cardeffects.AddCardToDeck
 import arx.ax4.game.event.{GainSkillLevelEvent, GainSkillXPEvent, NewPerkPicksAvailable}
-import arx.engine.entity.{Entity, Taxon}
+import arx.ax4.game.logic.CardAdditionStyle.DrawPile
+import arx.engine.entity.Companions.IdentityData
+import arx.engine.entity.{Entity, IdentityData, Taxon, Taxonomy}
 import arx.engine.world.{NestedKeyedModifier, NestedModifier, World, WorldView}
 import arx.game.logic.Randomizer
 
@@ -65,12 +68,22 @@ object SkillsLogic {
 		}
 	}
 
-	def possiblePerksForSkill(character : Entity, skill : Taxon, markLevel : Int)(implicit view : WorldView): Vector[ClassLevelUpPerk] = {
+	def possiblePerksForSkill(character : Entity, skill : Taxon, markLevel : Int)(implicit view : WorldView): Vector[Perk] = {
 		val perks = SkillsLibrary.getWithKind(skill) match {
 			case Some(skillInfo) =>
-				skillInfo.levelUpPerks.filter(perk => {
-					markLevel >= perk.minLevel && markLevel <= perk.maxLevel &&
-						perk.requirements.forall(req => req.isTrueFor(view, character))
+				skillInfo.cardRewards.filter(cw => {
+					cw.targetLevel <= markLevel
+				}).flatMap(cw => {
+					CardLibrary.getWithKind(cw.card).map(cardInfo => {
+						Perk(
+							cw.card,
+							"Add Card",
+							"",
+							Seq(AddCardToDeck(Seq(cw.card), DrawPile)),
+							cw.rarity,
+							Some("graphics/icons/card_back_large.png")
+						)
+					})
 				})
 			case None => Vector()
 		}
@@ -100,10 +113,10 @@ object SkillsLogic {
 			world.startEvent(GainSkillLevelEvent(character, skill, markLevel))
 			world.modify(character, CharacterInfo.skillLevels.put(skill, markLevel))
 
-			val possiblePerks = possiblePerksForSkill(character, skill, markLevel).map(_.perk).distinct
+			val possiblePerks = possiblePerksForSkill(character, skill, markLevel).distinct
 
 			val randomizer = Randomizer(world)
-			val newPicks = randomizer.takeRandom(possiblePerks, 4).toVector
+			val newPicks = randomizer.takeRandom(possiblePerks, 3).toVector
 
 			world.startEvent(NewPerkPicksAvailable(character, newPicks))
 			world.modify(character, CharacterInfo.pendingPerkPicks append PendingPerkPicks(newPicks, PerkSource.SkillLevelUp(skill, markLevel)))

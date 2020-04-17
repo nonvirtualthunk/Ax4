@@ -4,7 +4,7 @@ import arx.Prelude.toArxVector
 import arx.application.Noto
 import arx.ax4.game.action.SelectionResult
 import arx.ax4.game.entities.Companions.{CardData, DeckData}
-import arx.ax4.game.entities.cardeffects.{AttackGameEffect, GameEffect}
+import arx.ax4.game.entities.cardeffects.{AttackGameEffect, GameEffect, PayActionPoints, PayStamina, SpecialAttackGameEffect}
 import arx.ax4.game.entities._
 import arx.ax4.game.event.CardEvents._
 import arx.core.representation.ConfigValue
@@ -204,8 +204,13 @@ object CardLogic {
 
 		world.startEvent(CardPlayed(entity, card))
 
-		world.modify(entity, DeckData.hand remove card)
-		world.modify(entity, DeckData.discardPile append card)
+		if (TagLogic.hasTag(card, Taxonomy("tags.expend"))) {
+			CardLogic.moveCardTo(entity, card, CardLocation.ExpendedPile)
+		} else if (TagLogic.hasTag(card, Taxonomy("tags.exhaust"))) {
+			CardLogic.moveCardTo(entity, card, CardLocation.ExhaustPile)
+		} else {
+			CardLogic.moveCardTo(entity, card, CardLocation.DiscardPile)
+		}
 
 		val CD = card[CardData]
 		for ((_, cost) <- cardPlayInstance.costs) {
@@ -217,6 +222,12 @@ object CardLogic {
 		}
 
 		world.endEvent(CardPlayed(entity, card))
+	}
+
+	def recoverCardsFrom(entity : Entity, cardLocation: CardLocation)(implicit world : World): Unit = {
+		implicit val view = world.view
+		CardLogic.cardsInLocation(entity, cardLocation).foreach(card => CardLogic.moveCardTo(entity, card, CardLocation.DrawPile))
+		CardLogic.shuffleDrawPile(entity)
 	}
 
 	def createCard(source: Entity, arch : EntityArchetype)(implicit world: World): Entity = {
@@ -309,8 +320,8 @@ object CardLogic {
 			})
 	}
 
-	def isPlayable(card: Entity)(implicit view : WorldView): Boolean = {
-		val CostsAndEffects(costs,effects, selfEffects) = effectiveCostsAndEffects(card)
+	def isPlayable(entity : Entity, card: Entity)(implicit view : WorldView): Boolean = {
+		val CostsAndEffects(costs,effects, selfEffects) = effectiveCostsAndEffects(Some(entity), card)
 		costs.nonEmpty || effects.nonEmpty || selfEffects.nonEmpty
 	}
 
@@ -326,6 +337,8 @@ object CardLogic {
 			world.modify(entity, DeckData.hand remove card)
 		} else if (deck.exhaustPile.contains(card)) {
 			world.modify(entity, DeckData.exhaustPile remove card)
+		} else if (deck.expendedPile.contains(card)) {
+			world.modify(entity, DeckData.expendedPile remove card)
 		} else if (deck.attachedCards.contains(card)) {
 			world.modify(entity, DeckData.attachedCards remove card)
 		} else {
@@ -339,6 +352,7 @@ object CardLogic {
 			case CardLocation.DrawPile => world.modify(entity, DeckData.drawPile append card)
 			case CardLocation.DiscardPile => world.modify(entity, DeckData.discardPile append card)
 			case CardLocation.ExhaustPile => world.modify(entity, DeckData.exhaustPile append card)
+			case CardLocation.ExpendedPile => world.modify(entity, DeckData.expendedPile append card)
 			case CardLocation.NotInDeck => Noto.warn(s"Trying to put card in not-in-deck location, it's just going to be gone now: $entity, $card")
 		}
 	}
@@ -379,13 +393,26 @@ object CardLogic {
 		card[CardData].attachedCards.foreach{ case (key, attachedV) => attachedV.foreach(a => detachCard(entity, card, key, a)) }
 	}
 
-	def effectiveCostsAndEffects(card : Entity)(implicit view : WorldView) : CostsAndEffects = {
-		effectiveCostsAndEffects(card(CardData))
+	def effectiveCostsAndEffects(entity : Option[Entity], card : Entity)(implicit view : WorldView) : CostsAndEffects = {
+		effectiveCostsAndEffects(entity, card(CardData))
 	}
-	def effectiveCostsAndEffects(CD : CardData)(implicit view : WorldView) : CostsAndEffects = {
+	def effectiveCostsAndEffects(entity : Option[Entity], CD : CardData)(implicit view : WorldView) : CostsAndEffects = {
 		var costs = CD.costs
 		var effects = CD.effects
 		val selfEffects = CD.selfEffects
+
+		for (ent <- entity) {
+			// TODO: Generify
+			effects.ofType[SpecialAttackGameEffect].foreach (eff => {
+				CombatLogic.resolveSpecialAttack(ent, eff.specialAttack) match {
+					case Some(effAttack) =>
+						costs :+= PayActionPoints(effAttack.actionCost)
+						costs :+= PayStamina(effAttack.staminaCost)
+					case None => // do nothing
+				}
+				eff.specialAttack.attackModifier
+			})
+		}
 
 		for ((key,attachment) <- CD.attachments; attachedCards = CD.attachedCards.getOrElse(key, Vector())) {
 			attachment.attachmentStyle match {
@@ -414,6 +441,7 @@ object CardLogic {
 			case CardLocation.DrawPile => deck.drawPile
 			case CardLocation.DiscardPile => deck.discardPile
 			case CardLocation.ExhaustPile => deck.exhaustPile
+			case CardLocation.ExpendedPile => deck.expendedPile
 			case CardLocation.NotInDeck => Vector()
 		}
 	}
@@ -449,6 +477,7 @@ object CardLocation extends CustomConfigDataLoader[CardLocation] {
 	case object DrawPile extends CardLocation("draw pile")
 	case object DiscardPile extends CardLocation("discard pile")
 	case object ExhaustPile extends CardLocation("exhaust pile")
+	case object ExpendedPile extends CardLocation("expended pile")
 	case object NotInDeck extends CardLocation("not in deck")
 
 	override def loadedType: AnyRef = scala.reflect.runtime.universe.typeOf[CardLocation]

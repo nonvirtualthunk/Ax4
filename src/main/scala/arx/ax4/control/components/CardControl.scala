@@ -15,6 +15,7 @@ import arx.engine.control.components.windowing.widgets.data.{OverlayData, Widget
 import arx.engine.control.components.windowing.widgets.{PositionExpression, TopLeft}
 import arx.engine.control.event.{KeyModifiers, KeyboardMirror, Mouse, MouseButton, MousePressEvent, MouseReleaseEvent}
 import arx.engine.data.Moddable
+import arx.engine.entity.Companions.IdentityData
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.world.{HypotheticalWorldView, World, WorldView}
 import arx.graphics.helpers._
@@ -25,6 +26,7 @@ class CardControl(selectionControl : SelectionControl) extends AxControlComponen
 
 	var cardWidgets : Map[Entity, Widget] = Map()
 	var heldCard : Option[Entity] = None
+	var selectedCard : Option[Entity] = None
 	var grabOffset : ReadVec2i = Vec2i.Zero
 	var useCardOnDrop = false
 
@@ -43,7 +45,8 @@ class CardControl(selectionControl : SelectionControl) extends AxControlComponen
 
 		for (selC <- tuid.selectedCharacter) {
 			val DD = selC(DeckData)(gameView)
-			val handAndAttachments = DD.hand.flatMap(c => CardLogic.cardAndAllAttachments(c)(gameView))
+			val effHand = DD.hand.filterNot(selectedCard.contains)
+			val handAndAttachments = effHand.flatMap(c => CardLogic.cardAndAllAttachments(c)(gameView)).filterNot(selectedCard.contains)
 			for (card <- handAndAttachments) {
 				if (!cardWidgets.contains(card)) {
 					val cardWidget = CardWidget(tuid.mainSectionWidget, selC, card)
@@ -69,7 +72,7 @@ class CardControl(selectionControl : SelectionControl) extends AxControlComponen
 			}
 
 			for ((card, widget) <- cardWidgets) {
-				val index = DD.hand.indexOf(card)
+				val index = effHand.indexOf(card)
 
 				val activeDisplay = card[CardData].attachedTo.headOption.flatMap(cardWidgets.get) match {
 					case Some(attachedWidget) => attachedWidget.isUnderCursor && Mouse.isInWindow && KeyboardMirror.activeModifiers.shift
@@ -180,7 +183,7 @@ class CardControl(selectionControl : SelectionControl) extends AxControlComponen
 
 				val od = widget[OverlayData]
 
-				od.overlays(CardControl.ActiveOverlay).drawOverlay = Moddable(if (heldCard.contains(card) && widget.drawing.absolutePosition.y < (widget.parent.drawing.effectiveDimensions.y - 1000) && CardLogic.isPlayable(card)(game.view)) {
+				od.overlays(CardControl.ActiveOverlay).drawOverlay = Moddable(if (heldCard.contains(card) && widget.drawing.absolutePosition.y < (widget.parent.drawing.effectiveDimensions.y - 1000) && CardLogic.isPlayable(selC, card)(game.view)) {
 					useCardOnDrop = true
 					true
 				} else {
@@ -216,11 +219,17 @@ class CardControl(selectionControl : SelectionControl) extends AxControlComponen
 
 		if (useCardOnDrop) {
 			for (card <- heldCard ; selC <- tuid.selectedCharacter) {
-				if (CardLogic.isPlayable(card)) {
-					val cardPlay = CardPlay(card)
+				if (CardLogic.isPlayable(selC, card)) {
+					val cardPlay = CardPlay(selC, card)
 					cardPlay.instantiate(game.view, selC, card) match {
 						case Left(cardPlayInst) =>
-							selectionControl.changeSelectionTarget(game, display, cardPlay, cardPlayInst, (sc) => CardLogic.playCard(selC, card, cardPlayInst, sc.selectionResults)(game))
+							selectedCard = Some(card)
+							selectionControl.changeSelectionTarget(game, display, cardPlay, cardPlayInst,
+								(sc) => {
+									CardLogic.playCard(selC, card, cardPlayInst, sc.selectionResults)(game)
+									selectedCard = None
+								},
+								() => selectedCard = None)
 						case Right(msg) => Noto.error(s"Could not play card: $msg")
 					}
 				}
@@ -241,12 +250,12 @@ object CardInfo {
 	import arx.Prelude._
 
 	def apply(character : Entity, card : Entity)(implicit view : WorldView) : CardInfo = {
-		CardInfo(Some(character), card(CardData), card(TagData))
+		CardInfo(Some(character), card(IdentityData).kind, card(CardData), card(TagData))
 	}
-	def apply(character : Option[Entity], CD : CardData, TD : TagData)(implicit view : WorldView) : CardInfo = {
+	def apply(character : Option[Entity], cardKind : Taxon, CD : CardData, TD : TagData)(implicit view : WorldView) : CardInfo = {
 		val settings = RichTextRenderSettings()
 
-		val CostsAndEffects(costs, effects, selfEffects) = CardLogic.effectiveCostsAndEffects(CD)
+		val CostsAndEffects(costs, effects, selfEffects) = CardLogic.effectiveCostsAndEffects(character, CD)
 		val apCosts = costs.collect {
 			case PayActionPoints(ap) => ap
 		}
@@ -276,7 +285,10 @@ object CardInfo {
 		})
 		val selfEffectTextSections = selfEffects.map(e => e.toRichText(settings).sections)
 
-		val combinedEffectsSections = (effectTextSections ++ selfEffectTextSections).reduceLeftOrElse((t1, t2) => t1 ++ Seq(LineBreakSection(0)) ++ t2, Vector())
+		val combinedEffectsSections = CD.effectsDescription match {
+			case Some(desc) => RichText.parse(desc, settings).sections
+			case None => (effectTextSections ++ selfEffectTextSections).reduceLeftOrElse((t1, t2) => t1 ++ Seq(LineBreakSection(0)) ++ t2, Vector())
+		}
 
 		var attachmentSections = Vector[RichTextSection]()
 
@@ -301,20 +313,27 @@ object CardInfo {
    		.map(_.toRichText(settings))
    		.reduceLeftOrElse((t1, t2) => t1 + TextSection(", ") ++ t2, RichText(Vector()))
 		if (!tagsSections.isEmpty) {
-			tagsSections = tagsSections + LineBreakSection(0)
+			tagsSections = tagsSections + LineBreakSection(20)
 		}
 
-		val effectText = tagsSections ++ attachmentSections ++ combinedEffectsSections
+		val triggeredEffectSection = CD.triggeredEffects.map(LineBreakSection(0) + _.toRichText(settings)).foldLeft(RichText.Empty)(_ ++ _)
+
+
+		val effectText = tagsSections ++ attachmentSections ++ combinedEffectsSections ++ triggeredEffectSection
 
 		val cardImage : TToImage = CardImageLibrary.cardImageOpt(CD.name) match {
 			case Some(img) => img
 			case _ =>
-				CD.cardType match {
-					//			case CardTypes.GatherCard => "third-party/shikashiModified/pickaxe.png"
-					case CardTypes.GatherCard => "graphics/card_images/gather.png"
-					case CardTypes.AttackCard => "graphics/card_images/punch.png"
-					case CardTypes.MoveCard => "graphics/card_images/move.png"
-					case _ => "default/blank_transparent.png"
+				if (cardKind.isA(CardTypes.ItemCard)) {
+					"graphics/card_images/item_background.png"
+				} else if (cardKind.isA(CardTypes.AttackCard)) {
+					"graphics/card_images/punch.png"
+				} else if (cardKind.isA(CardTypes.MoveCard)) {
+					"graphics/card_images/move.png"
+				} else if (cardKind.isA(CardTypes.StatusCard)) {
+					"graphics/card_images/status_background.png"
+				} else {
+					"default/blank_transparent.png"
 				}
 		}
 

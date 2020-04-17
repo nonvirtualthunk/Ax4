@@ -194,7 +194,13 @@ case class DrawCards(numCards : Int) extends GameEffect {
 		}
 	}
 
-	override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"Draw $numCards Cards")
+	override def toRichText(settings: RichTextRenderSettings): RichText = {
+		if (numCards == 1) {
+			RichText(s"Draw $numCards Card")
+		} else {
+			RichText(s"Draw $numCards Cards")
+		}
+	}
 }
 
 case class AddCardToDeck(cardArchetypes : Seq[Taxon], cardAdditionStyle: CardAdditionStyle) extends GameEffect {
@@ -311,7 +317,7 @@ case class ChangeFlag(flag : Taxon, delta : Int, limitToZero : Boolean) extends 
 		TagLogic.changeFlagBy(entity, flag, delta, limitToZero)(world)
 	}
 
-	override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"${flag.displayName} $delta")
+	override def toRichText(settings: RichTextRenderSettings): RichText = RichText.parse(s"$delta [${flag}]", settings)
 }
 
 object GameEffectConfigLoader extends CustomConfigDataLoader[GameEffect] {
@@ -346,8 +352,8 @@ object GameEffectConfigLoader extends CustomConfigDataLoader[GameEffect] {
 				//				case SpecialAttackPattern(attackName) => SpecialAttackCardEffect(SpecialAttack.withName(attackName))
 				case KeyNumberPattern(key, numberStr) =>
 					val number = numberStr.toInt
-					key.toLowerCase match {
-						case "draw" | "drawCards" => Some(DrawCards(number))
+					Taxonomy.standardizeTaxonString(key) match {
+						case "draw" | "drawcards" => Some(DrawCards(number))
 						case f if allFlags.contains(f) => Some(ChangeFlag(allFlags(f), number, limitToZero = true))
 						case _ =>
 							Noto.warn(s"Unparseable card effect : ${config.str}")
@@ -370,13 +376,9 @@ object GameEffectConfigLoader extends CustomConfigDataLoader[GameEffect] {
 							Some(AttackGameEffect(AttackKey.Technique, attack))
 						case "specialattack" =>
 							val attackModifier = AttackModifier().loadFromConfig(config)
-							val condition = AttackConditionals.loadFrom(config) match {
-								case Some(cond) => cond
-								case None =>
-									Noto.error(s"could not load attack conditional from : $config")
-									AnyAttack
-							}
-							Some(SpecialAttackGameEffect(SpecialAttack(condition, attackModifier)))
+							val condition = config.fieldOpt("condition").flatMap(condConf => AttackConditionals.loadFrom(condConf))
+
+							Some(SpecialAttackGameEffect(SpecialAttack(condition.getOrElse(AnyAttack), attackModifier)))
 						case _ =>
 							Noto.warn(s"Game effect config with unsupported type ${effectType.render}")
 							None

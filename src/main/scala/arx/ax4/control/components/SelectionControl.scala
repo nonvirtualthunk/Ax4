@@ -26,7 +26,7 @@ class SelectionControl(mainControl : TacticalUIControl) extends AxControlCompone
 		for (selC <- display[TacticalUIData].selectedCharacter) {
 			if (SD.activeContext.isEmpty || SD.activeContext.get.entity != selC) {
 				val inst = MoveCharacter.forceInstantiate(game.view, selC)
-				SD.activeContext = Some(SelectionContext(selC, MoveCharacter, inst, SelectionResult(), sc => inst.applyEffect(game, sc.selectionResults)))
+				SD.activeContext = Some(SelectionContext(selC, MoveCharacter, inst, SelectionResult(), sc => inst.applyEffect(game, sc.selectionResults), () => {}))
 			}
 		}
 
@@ -98,12 +98,12 @@ class SelectionControl(mainControl : TacticalUIControl) extends AxControlCompone
 		SD.selectionWidgets = Map()
 	}
 
-	def changeSelectionTarget(game : World, display : World, selectable : Selectable, selectableInst : SelectableInstance, onFinish : SelectionContext => Unit): Unit = {
+	def changeSelectionTarget(game : World, display : World, selectable : Selectable, selectableInst : SelectableInstance, onFinish : SelectionContext => Unit, onCancel : () => Unit): Unit = {
 		val SD = display[SelectionData]
 
 		for (selC <- display[TacticalUIData].selectedCharacter) {
 			resetSelectionContext(display)
-			updateSelectionContext(game.view, display, Some(SelectionContext(selC, selectable, selectableInst, SelectionResult(), onFinish)))
+			updateSelectionContext(game.view, display, Some(SelectionContext(selC, selectable, selectableInst, SelectionResult(), onFinish, onCancel)))
 		}
 	}
 
@@ -112,6 +112,7 @@ class SelectionControl(mainControl : TacticalUIControl) extends AxControlCompone
 		val tuid = display[TacticalUIData]
 
 		if (SD.activeContext != newContext) {
+			SD.activeContext.foreach(ctx => ctx.onCancel())
 			SD.activeContext = newContext
 			for (selC <- tuid.selectedCharacter) {
 				// if we have a selected character, a selection context, and the selection context is fully satisfied, then we're finished
@@ -133,6 +134,6 @@ class SelectionData extends TControlData with TMutableAuxData with TWorldAuxData
 	var selectionWidgets : Map[Selector[_], Widget] = Map()
 }
 
-case class SelectionContext(val entity : Entity, val selectable : Selectable, val selectableInst : SelectableInstance, val selectionResults : SelectionResult, val onFinish : SelectionContext => Unit) {
+case class SelectionContext(val entity : Entity, val selectable : Selectable, val selectableInst : SelectableInstance, val selectionResults : SelectionResult, val onFinish : SelectionContext => Unit, val onCancel : () => Unit) {
 	def nextSelector() = selectableInst.nextSelector(selectionResults)
 }

@@ -11,8 +11,9 @@ import arx.engine.data.{ConfigDataLoader, CustomConfigDataLoader}
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.event.GameEvent
 import arx.engine.world.WorldView
+import arx.graphics.helpers.{RichText, RichTextRenderSettings, THasRichTextRepresentation}
 
-trait CardEffectTrigger {
+trait CardEffectTrigger extends THasRichTextRepresentation {
 	def matches (entity : Entity, sourceCard : Entity, event : GameEvent)(implicit view : WorldView) : Boolean
 }
 
@@ -26,11 +27,13 @@ object CardEffectTrigger extends CustomConfigDataLoader[CardEffectTrigger] {
 			}
 		}
 
-
+		override def toRichText(settings: RichTextRenderSettings): RichText = ???
 	}
 
 	case object Sentinel extends CardEffectTrigger {
 		override def matches(entity: Entity, sourceCard : Entity, event: GameEvent)(implicit view: WorldView): Boolean = false
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = "Sentinel Card Effect Trigger"
 	}
 
 	override def loadedType: AnyRef = scala.reflect.runtime.universe.typeOf[CardEffectTrigger]

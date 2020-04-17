@@ -92,19 +92,21 @@ class Weapon extends AxAuxData {
 }
 
 
-trait AttackKey
+abstract class AttackKey(val precedence : Int) extends Ordered[AttackKey] {
+	override def compare(that: AttackKey): Int = precedence.compare(that.precedence)
+}
 
 object AttackKey {
 
-	case object Primary extends AttackKey
+	case object Primary extends AttackKey(1)
 
-	case object Secondary extends AttackKey
+	case object Secondary extends AttackKey(2)
 
-	case object Tertiary extends AttackKey
+	case object Tertiary extends AttackKey(3)
 
-	case object Technique extends AttackKey
+	case object Technique extends AttackKey(4)
 
-	case object Unknown extends AttackKey
+	case object Unknown extends AttackKey(5)
 
 	def parse(str: String) = str.toLowerCase() match {
 		case "primary" => Primary

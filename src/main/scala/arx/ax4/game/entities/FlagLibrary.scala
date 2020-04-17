@@ -13,13 +13,21 @@ import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.event.GameEvent
 import arx.engine.world.EventState.Ended
 import arx.graphics.helpers.{RichText, RichTextRenderSettings, THasRichTextRepresentation, TaxonSections}
+import arx.Prelude._
+import arx.ax4.game.event.TurnEvents.EntityTurnEndEvent
 
-case class FlagInfo(descriptions : String, limitToZero : Boolean = true, hidden : Boolean = false, simpleBehaviors : Seq[FlagBehavior] = Nil)
+case class FlagInfo(descriptions : String,
+										limitToZero : Boolean = true,
+										hidden : Boolean = false,
+										simpleBehaviors : Seq[FlagBehavior] = Nil,
+										attackModifiers : Vector[AttackModifier] = Vector())
 
 object FlagLibrary extends Library[FlagInfo] {
 	lazy val eventClassesByName : Map[String, Class[_]] = ReflectionAssistant.allSubTypesOf(classOf[GameEvent])
 		.map(c => c.getSimpleName.replace("$","") -> c)
 		.toMap
+
+	val endOfTurnPattern = "(?i)end\\s?(Of)?\\s?Turn".r
 
 	override protected def topLevelField: String = "Flags"
 
@@ -32,22 +40,34 @@ object FlagLibrary extends Library[FlagInfo] {
 			var behaviors = Vector[FlagBehavior]()
 			// "custom" here is just a marker to note that we define its tick down behavior in code
 			for (tickDownEvent <- flagConf.fieldAsList("tickDownOn") ; if tickDownEvent.str.toLowerCase != "custom" ) {
-				eventClassesByName.get(tickDownEvent.str) match {
-					case Some(eventClass) =>
+				tickDownEvent.str match {
+					case endOfTurnPattern(_) =>
 						behaviors :+= FlagBehavior(flag, ChangeFlagBy(-1, limitToZero), {
-							case e : GameEvent if e.getClass == eventClass && e.state == Ended =>
-								ReflectionAssistant.getFieldValue(e, "entity").asInstanceOf[Entity]
+							case e: EntityTurnEndEvent if e.state == Ended => e.entity
 						})
-					case None => Noto.warn(s"Flag $flag config to tick down on $tickDownEvent, but no event class of that type found")
+					case _ =>
+						eventClassesByName.get(tickDownEvent.str) match {
+							case Some(eventClass) =>
+								behaviors :+= FlagBehavior(flag, ChangeFlagBy(-1, limitToZero), {
+									case e : GameEvent if e.getClass == eventClass && e.state == Ended =>
+										ReflectionAssistant.getFieldValue(e, "entity").asInstanceOf[Entity]
+								})
+							case None => Noto.warn(s"Flag $flag config to tick down on $tickDownEvent, but no event class of that type found")
+						}
 				}
 			}
 			if (flagConf.resetAtEndOfTurn.boolOrElse(false)) {
 				behaviors :+= FlagComponent.resetAtEndOfTurn(k)
 			}
 			for (equivConf <- flagConf.fieldAsList("countsAs")) {
-				FlagEquivalency.flagEquivalences.add(Taxonomy(equivConf.str, "Flags"), flag)
+				FlagEquivalency.flagEquivalences.add(Taxonomy(equivConf.str, "Flags"), FlagEquivalence(flag,1))
 			}
-			val info = FlagInfo(flagConf.description.str, limitToZero, flagConf.hidden.boolOrElse(false), behaviors)
+			for (equivConf <- flagConf.fieldAsList("countsAsNegative")) {
+				FlagEquivalency.flagEquivalences.add(Taxonomy(equivConf.str, "Flags"), FlagEquivalence(flag,-1))
+			}
+			val attackModifiers = flagConf.fieldAsList("attackModifiers").map(modConf => AttackModifier.loadFromConfig(modConf))
+
+			val info = FlagInfo(flagConf.description.str, limitToZero, flagConf.hidden.boolOrElse(false), behaviors, attackModifiers.toVector)
 			byKind += flag -> info
 		}
 	}
@@ -57,8 +77,10 @@ object FlagLibrary extends Library[FlagInfo] {
 	}
 }
 
+case class FlagEquivalence(taxon: Taxon, multiplier : Int)
+
 object FlagEquivalency {
-	val flagEquivalences = MultiMap.empty[Taxon,Taxon]
+	val flagEquivalences = MultiMap.empty[Taxon,FlagEquivalence]
 }
 
 

@@ -62,7 +62,7 @@ class CombatData extends AxAuxData {
 }
 
 
-case class PendingPerkPicks(possiblePerks : Vector[Taxon], source : PerkSource)
+case class PendingPerkPicks(possiblePerks : Vector[Perk], source : PerkSource)
 
 sealed trait PerkSource extends THasRichTextRepresentation
 object PerkSource {

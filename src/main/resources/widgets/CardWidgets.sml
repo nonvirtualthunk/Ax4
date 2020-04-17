@@ -3,7 +3,7 @@
 CardWidget {
   type : Window
 
-  dimensions : [450, 800]
+  dimensions : [500, 900]
   background.image : "graphics/ui/card_border.png"
   backgroundPixelScale : 2
 //  consumeMouseButtonEvents: true
@@ -16,7 +16,8 @@ CardWidget {
       drawBackground : false
       fontScale : 2
       textAlignment : center
-      width : 100%
+      width : 80%
+      x : centered
     }
 
     CardImage {
@@ -47,7 +48,7 @@ CardWidget {
       x : 0 from right
       y : 0
 
-      fontScale : 2
+      fontScale : 1.5
     }
 
     CardSecondaryCost {
@@ -60,7 +61,7 @@ CardWidget {
       x : 5
       y : 0
 
-      fontScale : 2
+      fontScale : 1.5
     }
 
 //    CardTags {
@@ -79,22 +80,32 @@ CardWidget {
 //      fontScale : 2
 //    }
 
-    CardPrimaryEffect {
-      type : TextDisplayWidget
+    CardMainSection {
+      type : Div
 
-      drawBackground : false
-
-      text : "%(card.effects)"
-
-      x : 5
-//      y : 265
+      x : 0
       y : 0 below CardImage
-      width : rel(-10)
+      width : 100%
+      height : expand to parent
 
-      textAlignment : centered
+      children : {
+        CardPrimaryEffect {
+          type : TextDisplayWidget
 
-      fontScale : 2
+          drawBackground : false
+
+          text : "%(card.effects)"
+
+          y : centered
+          width : 100%
+
+          textAlignment : centered
+
+          fontScale : 2
+        }
+      }
     }
+
   }
 
 }

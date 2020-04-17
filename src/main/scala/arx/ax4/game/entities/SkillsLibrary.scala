@@ -15,16 +15,22 @@ import arx.resource.ResourceManager
 import scala.reflect.ClassTag
 
 
-case class Perk(kind : Taxon,
-					 name : String,
-					 description : String,
-					 effects : Seq[GameEffect],
-					 icon : Option[TToImage]) extends ConfigLoadable
+case class Perk(kind: Taxon,
+								name: String,
+								description: String,
+								effects: Seq[GameEffect],
+								rarity: Taxon,
+								icon: Option[TToImage]) extends ConfigLoadable
+
 object Perk {
-	val Sentinel = Perk(Taxonomy("UnknownPerk"), "Sentinel", "sentinel", Nil, None)
+	val Sentinel = Perk(Taxonomy("UnknownPerk"), "Sentinel", "sentinel", Nil, Rarity.Common, None)
 }
 
-class ClassLevelUpPerk extends ConfigLoadable {
+object Rarity {
+	val Common = Taxonomy("Rarities.Common")
+}
+
+class LevelUpPerk extends ConfigLoadable {
 	var perk : Taxon = Taxonomy.UnknownThing
 	var minLevel : Int = 0
 	var maxLevel : Int = 100
@@ -34,7 +40,7 @@ class ClassLevelUpPerk extends ConfigLoadable {
 	override def customLoadFromConfig(config: ConfigValue): Unit = {
 		for (levelRange <- config.fieldOpt("levelRange")) {
 			levelRange.str match {
-				case ClassLevelUpPerk.levelRangePattern(lower, upper) =>
+				case LevelUpPerk.levelRangePattern(lower, upper) =>
 					minLevel = lower.toInt
 					maxLevel = upper.toInt
 				case s => Noto.warn(s"Invalid level range : $s")
@@ -45,11 +51,12 @@ class ClassLevelUpPerk extends ConfigLoadable {
 
 	}
 }
-object ClassLevelUpPerk {
+
+object LevelUpPerk {
 	val levelRangePattern = "([0-9]+)-([0-9]+)".r
 
-	def apply(perk : Perk, minLevel : Int, maxLevel : Int, requirements : List[Conditional[Entity]]) : ClassLevelUpPerk = {
-		val skill = new ClassLevelUpPerk
+	def apply(perk : Perk, minLevel : Int, maxLevel : Int, requirements : List[Conditional[Entity]]) : LevelUpPerk = {
+		val skill = new LevelUpPerk
 		skill.perk = perk.kind
 		skill.minLevel = minLevel
 		skill.maxLevel = maxLevel
@@ -79,7 +86,7 @@ class Skill extends ConfigLoadable {
 	override def customLoadFromConfig(config: ConfigValue): Unit = {
 		for (perksConf <- config.fieldOpt("cardRewards"); (k,v) <- perksConf.fields) {
 			val cardReward = new SkillCardReward
-			cardReward.card = Taxonomy(k, "cards")
+			cardReward.card = Taxonomy(k, "CardTypes")
 			cardReward.loadFromConfig(v)
 			cardRewards :+= cardReward
 		}
@@ -89,11 +96,11 @@ class Skill extends ConfigLoadable {
 class CharacterClass extends ConfigLoadable {
 	var displayName : String = "Unnamed Class"
 	@NoAutoLoad
-	var levelUpPerks: Vector[ClassLevelUpPerk] = Vector()
+	var levelUpPerks: Vector[LevelUpPerk] = Vector()
 
 	override def customLoadFromConfig(config: ConfigValue): Unit = {
 		for (perksConf <- config.fieldOpt("levelUpPerks"); (k,v) <- perksConf.fields) {
-			val perk = new ClassLevelUpPerk
+			val perk = new LevelUpPerk
 			perk.perk = Taxonomy(k, "perks")
 			perk.loadFromConfig(v)
 			levelUpPerks :+= perk
@@ -106,7 +113,7 @@ object PerksLibrary extends Library[Perk] {
 	override protected def topLevelField: String = "Perks"
 
 	override protected def createBlank(): Perk = {
-		Perk(Taxonomy("perk"), "default perk", "default description", Nil, None)
+		Perk(Taxonomy("perk"), "default perk", "default description", Nil, Rarity.Common, None)
 	}
 
 	override def load(config: ConfigValue): Unit = {
@@ -118,6 +125,7 @@ object PerksLibrary extends Library[Perk] {
 				perkConf.name.strOrElse("Unknown name perk"),
 				perkConf.description.strOrElse("Unknown name perk"),
 				effects,
+				Taxonomy(perkConf.rarity.strOrElse("Common"), "Rarities"),
 				perkConf.fieldOpt("icon").map(_.str)
 			)
 			byKind += kind -> perk

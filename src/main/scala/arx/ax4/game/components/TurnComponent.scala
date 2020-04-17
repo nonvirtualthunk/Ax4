@@ -4,9 +4,9 @@ import arx.ax4.game.entities.{AllegianceData, CardData, DeckData}
 import arx.ax4.game.entities.Companions.{CharacterInfo, DeckData}
 import arx.ax4.game.event.AttackEvent
 import arx.ax4.game.event.TurnEvents.{EntityTurnEndEvent, EntityTurnStartEvent, TurnEndedEvent, TurnStartedEvent}
-import arx.ax4.game.logic.{AllegianceLogic, CardLogic}
+import arx.ax4.game.logic.{AllegianceLogic, CardLogic, TagLogic}
 import arx.core.units.UnitOfTime
-import arx.engine.entity.Entity
+import arx.engine.entity.{Entity, Taxonomy}
 import arx.engine.game.components.GameComponent
 import arx.engine.world.World
 
@@ -15,12 +15,17 @@ class TurnComponent extends GameComponent {
 
 	override protected def onInitialize(world: World): Unit = {
 		implicit val view = world.view
-		onGameEventEnd {
+		onGameEventStart {
 			case TurnStartedEvent(faction, turnNumber) =>
 				for (allegiant <- AllegianceLogic.entitiesInFaction(faction)) {
 					world.startEvent(EntityTurnStartEvent(allegiant, turnNumber))
+
 					world.modify(allegiant, CharacterInfo.actionPoints.recoverToFull())
+					val apBonus = TagLogic.flagValue(allegiant, Taxonomy("flags.ApGainDelta"))
+					world.modify(allegiant, CharacterInfo.actionPoints.changeBy(apBonus, limitToZero = true, limitToBaseValue = false))
+
 					world.modify(allegiant, CharacterInfo.stamina recoverBy allegiant(CharacterInfo).staminaRecoveryRate)
+
 					if (allegiant.hasData[DeckData]) {
 						CardLogic.drawHand(allegiant)(world)
 					}

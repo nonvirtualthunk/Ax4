@@ -124,22 +124,28 @@ object EntityConditionals extends CustomConfigDataLoader[EntityConditional] {
 	val IsAPattern = "(?i)isA\\((.+)\\)".r
 	val HasFlagPattern = "(?i)hasFlag\\((.+),([0-9]+)\\)".r
 
-
 	override def loadedType: AnyRef = scala.reflect.runtime.universe.typeOf[EntityConditional]
 
-	override def loadFrom(configValue: ConfigValue): Option[EntityConditional] = {
-		if (configValue.isStr) {
-			configValue.str match {
-				case PerkPattern(perkName) => Some(hasPerk(Taxonomy(perkName)))
-				case IsAPattern(target) => Some(isA(Taxonomy(target)))
-				case HasFlagPattern(flag, amount) => Some(hasFlag(Taxonomy(flag), amount.toInt))
-				case _ =>
-					None
-			}
+	override def loadFrom(topLevelConfig: ConfigValue): Option[EntityConditional] = {
+		val subConditions = topLevelConfig.asList.flatMap(configValue =>
+			(if (configValue.isStr) {
+				configValue.str match {
+					case PerkPattern(perkName) => Some(hasPerk(Taxonomy(perkName)))
+					case IsAPattern(target) => Some(isA(Taxonomy(target)))
+					case HasFlagPattern(flag, amount) => Some(hasFlag(Taxonomy(flag), amount.toInt))
+					case _ =>
+						None
+				}
 
-		} else {
-			Noto.warn("Non str config for entity conditional, cannot parse")
+			} else {
+				Noto.warn("Non str config for entity conditional, cannot parse")
+				None
+			}) : Option[EntityConditional]
+		)
+		if (subConditions.isEmpty) {
 			None
+		} else {
+			Some(subConditions.reduceLeft(_ and _))
 		}
 	}
 }
@@ -181,24 +187,24 @@ object AttackConditionals extends CustomConfigDataLoader[BaseAttackConditional] 
 			attack.damage.exists(de => de.damageType == damageType)
 		}
 
-		override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"attack deals ${damageType.displayName} damage")
+		override def toRichText(settings: RichTextRenderSettings): RichText = RichText.parse(s"[$damageType] damage", settings)
 	}
 
 	case class HasTargetPattern(pattern: TargetPattern) extends BaseAttackConditionalHelper {
 		override def isTrueFor(implicit view: WorldView, attack: AttackData): Boolean = attack.targetPattern == pattern
 
-		override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"attack targets ${pattern}")
+		override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"targets ${pattern}")
 	}
 
 	case class HasAtLeastMinRange(minRange : Int) extends BaseAttackConditionalHelper {
 		override def isTrueFor(implicit view: WorldView, attack: AttackData): Boolean = attack.minRange >= minRange
 
-		override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"attack has at least ${minRange} min range")
+		override def toRichText(settings: RichTextRenderSettings): RichText = RichText.parse(s"${minRange} [MinimumRange]", settings)
 	}
 	case class HasAtLeastMaxRange(maxRange : Int) extends BaseAttackConditionalHelper {
 		override def isTrueFor(implicit view: WorldView, attack: AttackData): Boolean = attack.maxRange >= maxRange
 
-		override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"attack has at least ${maxRange} max range")
+		override def toRichText(settings: RichTextRenderSettings): RichText = RichText.parse(s"$maxRange [MaximumRange]", settings)
 	}
 
 	abstract class AttackConditional extends BaseAttackConditional {
@@ -217,6 +223,14 @@ object AttackConditionals extends CustomConfigDataLoader[BaseAttackConditional] 
 		override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"attack has a single target")
 	}
 
+	case object IsUnarmedAttack extends BaseAttackConditional {
+		override def isTrueFor(implicit view: WorldView, value: BaseAttackProspect): Boolean = {
+			value.attackData.weapon.dataOpt[Weapon].exists(_.naturalWeapon)
+		}
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = "unarmed attack"
+	}
+
 
 
 	val weaponIsPattern = "(?i)WeaponIsA?\\((.+)\\)".r
@@ -225,6 +239,7 @@ object AttackConditionals extends CustomConfigDataLoader[BaseAttackConditional] 
 	val hasDamageTypePattern = "(?i)HasDamageType\\((.+)\\)".r
 	val hasTargetPattern = "(?i)HasTargetPattern\\((.+)\\)".r
 	val hasAtLeastMaxRange = "(?i)HasAtLeastMaxRange\\((\\d+)\\)".r
+	val isUnarmed = "(?i)IsUnarmed(Attack)?".r
 
 	override def loadedType: AnyRef = scala.reflect.runtime.universe.typeOf[BaseAttackConditional]
 	override def loadFrom(config: ConfigValue): Option[BaseAttackConditional] = if (config.isStr) {
@@ -235,6 +250,7 @@ object AttackConditionals extends CustomConfigDataLoader[BaseAttackConditional] 
 			case hasDamageTypePattern(damageType) => Some(HasDamageType(Taxonomy(damageType)))
 			case hasTargetPattern(patternStr) => Some(HasTargetPattern(TargetPattern.loadFromOrElse(StringConfigValue(patternStr), TargetPattern.SingleEnemy)))
 			case hasAtLeastMaxRange(range) => Some(HasAtLeastMaxRange(range.toInt))
+			case isUnarmed(_) => Some(IsUnarmedAttack)
 			case _ =>
 				Noto.warn(s"Invalid attack conditional string : ${config.str}")
 				None

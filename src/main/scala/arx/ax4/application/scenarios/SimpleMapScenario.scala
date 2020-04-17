@@ -4,10 +4,11 @@ import arx.Prelude
 import arx.application.Noto
 import arx.ax4.control.components.{CardControl, PerkPickControl, SelectionControl, TacticalUIControl}
 import arx.ax4.game.components.{AIComponent, CardCreationComponent, DeckComponent, FlagComponent, TriggeredEffectsComponent, TurnComponent}
+import arx.ax4.game.entities.AttackEffectTrigger.Hit
 import arx.ax4.game.entities.Companions.{CardData, CharacterInfo, DeckData, MonsterData, Physical, Tile, TurnData}
 import arx.ax4.game.entities.EntityConditionals._
 import arx.ax4.game.entities.GatherConditionals._
-import arx.ax4.game.entities.{AllegianceData, AttackData, AttackKey, AxAuxData, CardData, CardLibrary, CardPredicate, CardSelector, CardTypes, CharacterInfo, CombatData, DamageElement, DamageKey, DamageType, DeckData, EntityConditionals, Equipment, FactionData, GatherConditionals, GatherMethod, Inventory, ItemLibrary, LockedCardSlot, LockedCardType, MonsterAttack, MonsterData, Physical, QualitiesData, ReactionData, Resource, ResourceKey, ResourceOrigin, ResourceSourceData, TargetPattern, Terrain, TerrainLibrary, Tile, Tiles, TurnData, Vegetation, VegetationLayer, VegetationLayerType, VegetationLibrary, Weapon, WeaponLibrary}
+import arx.ax4.game.entities.{AffectsSelector, AllegianceData, AttackData, AttackKey, AxAuxData, CardData, CardLibrary, CardPredicate, CardSelector, CardTypes, CharacterInfo, CombatData, DamageElement, DamageKey, DamageType, DeckData, EntityConditionals, Equipment, FactionData, GatherConditionals, GatherMethod, Inventory, ItemLibrary, LockedCardSlot, LockedCardType, MonsterAttack, MonsterData, Physical, QualitiesData, ReactionData, Resource, ResourceKey, ResourceOrigin, ResourceSourceData, TargetPattern, Terrain, TerrainLibrary, Tile, Tiles, TriggeredAttackEffect, TurnData, Vegetation, VegetationLayer, VegetationLayerType, VegetationLibrary, Weapon, WeaponLibrary}
 import arx.ax4.game.logic.{CardLogic, CharacterLogic, InventoryLogic, MovementLogic, SkillsLogic}
 import arx.ax4.graphics.components.{AnimationGraphicsComponent, AnimationGraphicsRenderingComponent, EntityGraphics, TacticalUIGraphics, TileGraphics}
 import arx.ax4.graphics.data.{AxGraphicsData, TacticalUIData}
@@ -196,7 +197,7 @@ object SimpleMapScenario extends Scenario {
 			name = "Slime Smash",
 			attackType = Taxonomy("PhysicalAttack"),
 			damage = Vector(DamageElement(DamageKey.Primary, DicePool(1).d(4), 0, 1.0f, DamageType.Bludgeoning)),
-			onHitEffects = Vector(AddCardToDeck(Seq(Taxonomy("CardTypes.Slime")), DrawPile))
+			triggeredEffects = Vector(TriggeredAttackEffect(Hit ,AffectsSelector.Target, AddCardToDeck(Seq(Taxonomy("CardTypes.Slime")), DrawPile)))
 		)))
 
 		world.attachWorldData(new TurnData)

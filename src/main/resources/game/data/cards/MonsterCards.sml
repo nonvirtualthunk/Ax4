@@ -15,7 +15,7 @@ Cards {
         maxRange : 1
         damage : 1d4 Bludgeoning
 
-        onHitEffects : [
+        onHitTargetEffects : [
           AddCard(Slime)
         ]
       }

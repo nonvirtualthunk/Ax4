@@ -1,12 +1,14 @@
 package arx.ax4.game.entities
 
 import arx.application.Noto
+import arx.ax4.game.entities.AffectsSelector.Target
 import arx.ax4.game.entities.AttackConditionals.AnyAttack
+import arx.ax4.game.entities.AttackEffectTrigger.Hit
 import arx.ax4.game.entities.Conditionals.BaseAttackConditional
 import arx.ax4.game.entities.DamageKey.Primary
 import arx.ax4.game.entities.DamageType.{Piercing, Unknown}
 import arx.ax4.game.entities.TargetPattern.Point
-import arx.ax4.game.entities.cardeffects.{DrawCards, GameEffect}
+import arx.ax4.game.entities.cardeffects.{DrawCards, GameEffect, GameEffectConfigLoader}
 import arx.ax4.game.logic.AllegianceLogic
 import arx.core.NoAutoLoad
 import arx.core.introspection.{CopyAssistant, ReflectionAssistant, TEagerSingleton}
@@ -23,23 +25,24 @@ import com.typesafe.config.Config
 
 
 case class AttackData(var weapon: Entity,
-							 var name: String = "Strike",
-							 var attackType: Taxon = Taxonomy("melee attack"),
-							 var accuracyBonus: Int = 0,
-							 var strikeCount: Int = 1,
-							 var staminaCost: Int = 1,
-							 var actionCost: Int = 1,
-							 var minRange: Int = 0,
-							 var maxRange: Int = 1,
-							 var damage: Vector[DamageElement] = Vector(),
-							 var targetPattern: TargetPattern = TargetPattern.SingleEnemy,
-							 var cardCount: Int = 3,
-							 var onHitEffects: Vector[GameEffect] = Vector()
+											var name: String = "Strike",
+											var attackType: Taxon = Taxonomy("melee attack"),
+											var accuracyBonus: Int = 0,
+											var strikeCount: Int = 1,
+											var staminaCost: Int = 1,
+											var actionCost: Int = 1,
+											var minRange: Int = 0,
+											var maxRange: Int = 1,
+											var damage: Vector[DamageElement] = Vector(),
+											var targetPattern: TargetPattern = TargetPattern.SingleEnemy,
+											var cardCount: Int = 3,
+											var triggeredEffects: Vector[TriggeredAttackEffect] = Vector(),
 							) extends ConfigLoadable {
 	def merge(modifiers: AttackModifier): Unit = {
 		name = modifiers.namePrefix.getOrElse("") + name
 		name = modifiers.nameOverride.getOrElse(name)
 		accuracyBonus += modifiers.accuracyBonus
+		strikeCount *= modifiers.strikeCountMultiplier
 		strikeCount += modifiers.strikeCountBonus
 		staminaCost = (staminaCost + modifiers.staminaCostDelta).max(modifiers.staminaCostMinimum.getOrElse(-1000))
 		actionCost = (actionCost + modifiers.actionCostDelta).max(modifiers.actionCostMinimum.getOrElse(-1000))
@@ -48,6 +51,7 @@ case class AttackData(var weapon: Entity,
 		maxRange = modifiers.maxRangeOverride.getOrElse(maxRange)
 		maxRange = maxRange + modifiers.maxRangeDelta.getOrElse(0)
 		targetPattern = modifiers.targetPatternOverride.getOrElse(targetPattern)
+		triggeredEffects ++= modifiers.triggeredEffects
 		modifiers.damageModifiers.foreach {
 			case DamageModifier(predicate, delta) =>
 				damage = damage.map(de => if (predicate.matches(de)) {
@@ -68,6 +72,64 @@ case class AttackData(var weapon: Entity,
 		// custom in order to support either singular or plural damage
 		//		damage = config.fieldAsList("damage").map(DamageElement.loadFrom).toVector
 		// TODO : target pattern
+
+		for (hitTargetEffect <- config.fieldAsList("onHitTargetEffects")) {
+			GameEffectConfigLoader.loadFrom(hitTargetEffect) match {
+				case Some(effect) => triggeredEffects :+= TriggeredAttackEffect(AttackEffectTrigger.Hit, AffectsSelector.Target, effect)
+				case None => Noto.error(s"Invalid effect in onHitTargetEffects: $hitTargetEffect")
+			}
+		}
+
+		for (hitSelfEffect <- config.fieldAsList("onHitSelfEffects")) {
+			GameEffectConfigLoader.loadFrom(hitSelfEffect) match {
+				case Some(effect) => triggeredEffects :+= TriggeredAttackEffect(AttackEffectTrigger.Hit, AffectsSelector.Self, effect)
+				case None => Noto.error(s"Invalid effect in onHitSelfEffects: $hitSelfEffect")
+			}
+		}
+	}
+}
+
+case class TriggeredAttackEffect(var trigger : AttackEffectTrigger = Hit, var affects : AffectsSelector = Target, var effect : GameEffect = GameEffect.Sentinel) extends ConfigLoadable
+object TriggeredAttackEffect extends CustomConfigDataLoader[TriggeredAttackEffect] {
+	override def loadedType: AnyRef = scala.reflect.runtime.universe.typeOf[TriggeredAttackEffect]
+
+	override def loadFrom(config: ConfigValue): Option[TriggeredAttackEffect] = {
+		val base = TriggeredAttackEffect()
+		base.loadFromConfig(config)
+		Some(base)
+	}
+}
+
+
+sealed abstract class AttackEffectTrigger(val name : String) {
+	override def toString: String = name
+}
+object AttackEffectTrigger extends  CustomConfigDataLoader[AttackEffectTrigger] {
+	case object Hit extends AttackEffectTrigger("hit")
+
+	case object Miss extends AttackEffectTrigger("miss")
+
+	override def loadedType: AnyRef = scala.reflect.runtime.universe.typeOf[AttackEffectTrigger]
+
+	override def loadFrom(config: ConfigValue): Option[AttackEffectTrigger] = config.str.toLowerCase() match {
+		case "hit" => Some(Hit)
+		case "miss" => Some(Miss)
+		case _ => None
+	}
+}
+
+sealed trait AffectsSelector
+object AffectsSelector extends CustomConfigDataLoader[AffectsSelector] {
+	case object Self extends AffectsSelector
+
+	case object Target extends AffectsSelector
+
+	override def loadedType: AnyRef = scala.reflect.runtime.universe.typeOf[AffectsSelector]
+
+	override def loadFrom(config: ConfigValue): Option[AffectsSelector] = config.str.toLowerCase() match {
+		case "self" => Some(Self)
+		case "target" => Some(Target)
+		case _ => None
 	}
 }
 
@@ -107,58 +169,88 @@ case class DefenseData(var armor: Int = 0,
 
 @GenerateCompanion
 case class AttackModifier(var nameOverride: Option[String] = None,
-								  var namePrefix: Option[String] = None,
-								  var accuracyBonus: Int = 0,
-								  var strikeCountBonus: Int = 0,
-								  var actionCostDelta: Int = 0,
-								  var actionCostMinimum: Option[Int] = None,
-								  var staminaCostDelta: Int = 0,
-								  var staminaCostMinimum: Option[Int] = None,
-								  var minRangeDelta: Option[Int] = None,
-								  var minRangeOverride: Option[Int] = None,
-								  var maxRangeDelta: Option[Int] = None,
-								  var maxRangeOverride: Option[Int] = None,
-								  @NoAutoLoad var damageModifiers: Vector[DamageModifier] = Vector(),
-								  var targetPatternOverride: Option[TargetPattern] = None,
-									var onHitEffects : Vector[GameEffect] = Vector()) extends TNestedData with ConfigLoadable with THasRichTextRepresentation {
+													var namePrefix: Option[String] = None,
+													var accuracyBonus: Int = 0,
+													var strikeCountBonus: Int = 0,
+													var strikeCountMultiplier: Int = 1,
+													var actionCostDelta: Int = 0,
+													var actionCostMinimum: Option[Int] = None,
+													var staminaCostDelta: Int = 0,
+													var staminaCostMultiplier : Int = 1,
+													var staminaCostMinimum: Option[Int] = None,
+													var minRangeDelta: Option[Int] = None,
+													var minRangeOverride: Option[Int] = None,
+													var maxRangeDelta: Option[Int] = None,
+													var maxRangeOverride: Option[Int] = None,
+													var damageModifiers: Vector[DamageModifier] = Vector(),
+													var baseDamageOverride: Option[DamageElement] = None,
+													var targetPatternOverride: Option[TargetPattern] = None,
+													var triggeredEffects: Vector[TriggeredAttackEffect] = Vector()) extends TNestedData with ConfigLoadable with THasRichTextRepresentation {
 	override def toRichText(settings: RichTextRenderSettings): RichText = {
 		import arx.Prelude._
 
-		var sections = Seq[RichTextSection]()
+		var res = RichText.Empty
 
-		def appendConceptSection(concept: String, amount: Int) = {
-			if (amount != 0) {
-				sections :+= TextSection(amount.toSignedString)
-				sections :+= HorizontalPaddingSection(5)
-				sections ++= TaxonSections(Taxonomy(concept), settings)
-				sections :+= LineBreakSection(0)
+		def appendConceptSection(concept: String, amount: Int, noOpAmount : Int = 0, prefixNumber : String = "") = {
+			if (amount != noOpAmount) {
+				if (prefixNumber.isEmpty) {
+					res += TextSection(amount.toSignedString)
+				} else {
+					res += TextSection(prefixNumber + amount)
+				}
+				res ++= TaxonSections(Taxonomy(concept), settings)
+				true
+			} else {
+				false
 			}
 		}
 
-		appendConceptSection("GameConcepts.Accuracy", accuracyBonus)
-		appendConceptSection("GameConcepts.ActionPoint", actionCostDelta)
-		appendConceptSection("GameConcepts.StaminaPoint", staminaCostDelta)
+		var anyAdded = false
+		anyAdded |= appendConceptSection("GameConcepts.Accuracy", accuracyBonus)
+		anyAdded |= appendConceptSection("GameConcepts.ActionPoint", actionCostDelta)
+		anyAdded |= appendConceptSection("GameConcepts.StaminaPoint", staminaCostDelta)
+		anyAdded |= appendConceptSection("GameConcepts.StaminaPoint", staminaCostMultiplier, 1, "x")
+		anyAdded |= appendConceptSection("GameConcepts.Strike", strikeCountMultiplier, 1, "x")
+
 		for (minR <- minRangeDelta) {
+			if (res.nonEmpty) { res += LineBreakSection(0) }
 			appendConceptSection("GameConcepts.MinimumRange", minR)
 		}
 		for (maxR <- maxRangeDelta) {
+			if (res.nonEmpty) { res += LineBreakSection(0) }
 			appendConceptSection("GameConcepts.MaximumRange", maxR)
 		}
-		sections ++= damageModifiers.flatMap(_.delta.toRichText(settings).sections)
+		if (damageModifiers.nonEmpty) {
+			if (res.nonEmpty) { res += LineBreakSection(0) }
+			res ++= damageModifiers.flatMap(_.delta.toRichText(settings).sections)
+		}
+		for (dmg <- baseDamageOverride) {
+			if (res.nonEmpty) { res += LineBreakSection(0) }
+			res ++= dmg.toRichText(settings)
+		}
 
 		targetPatternOverride match {
-			case Some(pattern: HexTargetPattern) => sections ++= TextSection("Target") +: HorizontalPaddingSection(4) +: pattern.toRichText(settings).sections
+			case Some(pattern: HexTargetPattern) =>
+				if (res.nonEmpty) { res += LineBreakSection(0) }
+				res ++= Vector(TextSection("Target"), HorizontalPaddingSection(4))
+				res ++= pattern.toRichText(settings)
 			case _ => // do nothing
 		}
 
+
+		if (res.nonEmpty) { res += LineBreakSection(0) }
+		res ++= AttackData.renderTriggeredAttackEffects(triggeredEffects, settings)
 		// TODO : Represent a bunch of other changes
 
-		RichText(sections)
+		res
 	}
 
 	override def customLoadFromConfig(config: ConfigValue): Unit = {
 		for (db <- config.fieldOpt("damageBonus")) {
 			damageModifiers :+= DamageModifier(DamagePredicate.Primary, DamageDelta.DamageBonus(db.int))
+		}
+		for (db <- config.fieldOpt("damageMultiplier")) {
+			damageModifiers :+= DamageModifier(DamagePredicate.Primary, DamageDelta.DamageMultiplier(db.float))
 		}
 		for (db <- config.fieldOpt("damageMalus")) {
 			damageModifiers :+= DamageModifier(DamagePredicate.Primary, DamageDelta.DamageBonus(-db.int))
@@ -166,6 +258,37 @@ case class AttackModifier(var nameOverride: Option[String] = None,
 		for (no <- config.fieldOpt("name")) {
 			nameOverride = Some(no.str)
 		}
+		for (hitTargetEffect <- config.fieldAsList("onHitTargetEffects")) {
+			GameEffectConfigLoader.loadFrom(hitTargetEffect) match {
+				case Some(effect) => triggeredEffects :+= TriggeredAttackEffect(AttackEffectTrigger.Hit, AffectsSelector.Target, effect)
+				case None => Noto.error(s"Invalid effect in onHitTargetEffects: $hitTargetEffect")
+			}
+		}
+
+		for (hitSelfEffect <- config.fieldAsList("onHitSelfEffects")) {
+			GameEffectConfigLoader.loadFrom(hitSelfEffect) match {
+				case Some(effect) => triggeredEffects :+= TriggeredAttackEffect(AttackEffectTrigger.Hit, AffectsSelector.Self, effect)
+				case None => Noto.error(s"Invalid effect in onHitSelfEffects: $hitSelfEffect")
+			}
+		}
+	}
+}
+
+object AttackData {
+	def renderTriggeredAttackEffects(triggeredEffects : Seq[TriggeredAttackEffect], settings : RichTextRenderSettings): RichText = {
+		var text = RichText.Empty
+		for (((trigger, affects),all) <- triggeredEffects.groupBy{ e => (e.trigger, e.affects)}) {
+			val verb = affects match {
+				case AffectsSelector.Self => "receive"
+				case AffectsSelector.Target => "apply"
+			}
+			text += TextSection(s"On $trigger $verb")
+			for (TriggeredAttackEffect(_, _, effect) <- all) {
+				text += LineBreakSection(0)
+				text ++= effect.toRichText(settings)
+			}
+		}
+		text
 	}
 }
 
@@ -281,6 +404,16 @@ case class DamageElement(key: DamageKey, damageDice: DicePool, damageBonus: Int,
 }
 
 case class DamageModifier(predicate: DamagePredicate, delta: DamageDelta)
+object DamageModifier extends CustomConfigDataLoader[DamageModifier] {
+	override def loadedType: AnyRef = scala.reflect.runtime.universe.typeOf[DamageModifier]
+
+	override def loadFrom(config: ConfigValue): Option[DamageModifier] = {
+		(DamagePredicate.loadFrom(config.predicate), DamageDelta.loadFrom(config.delta)) match {
+			case (Some(pred), Some(mod)) => Some(DamageModifier(pred, mod))
+			case _ => None
+		}
+	}
+}
 
 trait DamagePredicate {
 	def matches(de: DamageElement): Boolean
@@ -329,15 +462,23 @@ object DamageDelta extends CustomConfigDataLoader[DamageDelta] {
 		override def toRichText(settings: RichTextRenderSettings): RichText = RichText(TextSection(s"x$mult") :: TaxonSections("Damage", settings))
 	}
 
+	case class SetDamageType(damageType: Taxon) extends DamageDelta {
+		override def modify(elem: DamageElement): DamageElement = elem.copy(damageType = damageType)
+
+		override def toRichText(settings: RichTextRenderSettings): RichText = RichText.parse(s"Does [$damageType] damage", settings)
+	}
+
 	override def loadedType: AnyRef = scala.reflect.runtime.universe.typeOf[DamageDelta]
 
 	val bonusPattern = "([+-]\\d+)".r
 	val multPattern = "([x*]\\d+)".r
+	val damageTypePattern = "(?i)damage\\s?type\\s?\\(([a-zA-Z]+)\\)".r
 	override def loadFrom(config: ConfigValue): Option[DamageDelta] = {
 		if (config.isStr) {
 			config.str match {
 				case bonusPattern(number) => Some(DamageBonus(number.toInt))
 				case multPattern(multBy) => Some(DamageMultiplier(multBy.toInt))
+				case damageTypePattern(dt) => Some(SetDamageType(Taxonomy(dt, "DamageTypes")))
 				case _ => None
 			}
 		} else {

@@ -3,7 +3,7 @@ package arx.ax4.game.components
 import arx.application.Noto
 import arx.ax4.game.components.FlagComponent.{ChangeFlagBy, FlagBehavior}
 import arx.ax4.game.entities.Companions.TagData
-import arx.ax4.game.entities.{ConfigLoadableLibrary, FlagLibrary, Library}
+import arx.ax4.game.entities.{ConfigLoadableLibrary, DeckData, FlagLibrary, Library}
 import arx.ax4.game.event.TurnEvents.EntityTurnEndEvent
 import arx.ax4.game.event.{DamageEvent, DeflectEvent, DodgeEvent}
 import arx.ax4.game.logic.TagLogic
@@ -23,11 +23,16 @@ class FlagComponent extends GameComponent {
 	}
 
 	override protected def onInitialize(world: World): Unit = {
+		implicit val view = world.view
 		onGameEvent {
 			case ge : GameEvent =>
 				for (behavior <- FlagComponent.flagBehaviors) {
 					behavior.liftedCondition(ge) match {
-						case Some(entity) => behavior.alteration.changeFlag(entity, behavior.flag)(world)
+						case Some(baseEntity) =>
+							// operate on all cards of a deck when the deck owner is processed
+							for (entity <- Vector(baseEntity) ++ baseEntity.dataOpt[DeckData].map(_.allCards).getOrElse(Vector())) {
+								behavior.alteration.changeFlag(entity, behavior.flag)(world)
+							}
 						case None => // do nothing
 					}
 				}
@@ -65,5 +70,5 @@ object FlagComponent {
 
 	def flag(str : String) = Taxonomy(str, "Flags")
 
-	val flagBehaviors = FlagLibrary.all.values.flatMap(_.simpleBehaviors)
+	lazy val flagBehaviors = FlagLibrary.all.values.flatMap(_.simpleBehaviors)
 }

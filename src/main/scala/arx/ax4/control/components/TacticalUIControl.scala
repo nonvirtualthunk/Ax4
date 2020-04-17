@@ -18,7 +18,7 @@ import arx.graphics.{GL, TToImage}
 import arx.Prelude.toArxList
 import arx.ax4.control.components.widgets.InventoryWidget
 import arx.ax4.game.event.TurnEvents.{TurnEndedEvent, TurnStartedEvent}
-import arx.ax4.game.logic.{ActionLogic, CharacterLogic, CombatLogic, SkillsLogic, TagLogic}
+import arx.ax4.game.logic.{ActionLogic, AllegianceLogic, CharacterLogic, CombatLogic, SkillsLogic, TagLogic, TurnLogic}
 import arx.ax4.graphics.data.TacticalUIMode.ChooseSpecialAttackMode
 import arx.core.datastructures.{Watcher, Watcher2}
 import arx.core.math.Sext
@@ -109,19 +109,9 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 
 				fireEvent(HexMouseMoveEvent(mousedHex,pos,modifiers))
 			case KeyReleaseEvent(GLFW.GLFW_KEY_ENTER, _) =>
-				val TD = game.view.worldData[TurnData]
-				val factions = game.view.entitiesWithData[FactionData].toList.sortBy(e => e.id)
-				val activeFaction = TD.activeFaction
-				val activeIndex = factions.indexOf(activeFaction)
-				val nextFaction = factions((activeIndex + 1) % factions.size)
-				game.addEvent(TurnEndedEvent(activeFaction, TD.turn))
-
-				if (activeIndex == factions.size - 1) {
-					game.modifyWorld(TurnData.turn + 1)
+				if (AllegianceLogic.isPlayerFaction(TurnLogic.activeFaction)) {
+					TurnLogic.endTurn(game)
 				}
-
-				game.modifyWorld(TurnData.activeFaction -> nextFaction)
-				game.addEvent(TurnStartedEvent(nextFaction, TD.turn))
 			case KeyReleaseEvent(GLFW.GLFW_KEY_I, _) =>
 				val tuid = display[TacticalUIData]
 				tuid.toggleUIMode(TacticalUIMode.InventoryMode)

@@ -7,6 +7,7 @@ import arx.ax4.game.entities.Companions.{CharacterInfo, Physical}
 import arx.ax4.game.entities.{ColorComponentMix, HueShift, Physical}
 import arx.ax4.game.event.CardEvents.{CardDrawn, HandDiscarded, HandDrawn}
 import arx.ax4.game.event.{DamageEvent, EntityMoved, GainSkillLevelEvent, StrikeEvent}
+import arx.ax4.game.logic.AllegianceLogic
 import arx.ax4.graphics.data.{AxAnimatingWorldData, AxDrawingConstants, AxGraphicsData}
 import arx.ax4.graphics.logic.EntityDrawLogic
 import arx.core.introspection.Field
@@ -42,6 +43,8 @@ class AnimationGraphicsComponent extends  GraphicsComponent {
 		val advance = !animData.animations.exists(a => a.blocking)
 		animData.animations = animData.animations.filterNot(a => a(animData.hypotheticalWorld, time))
 
+		implicit val view = game.view
+
 		if (advance) {
 			while (!animData.animations.exists(_.blocking) && animData.currentGameWorldView.currentTime < game.currentTime) {
 				game.updateViewToTime(animData.currentGameWorldView, animData.currentGameWorldView.currentTime + 1)
@@ -75,7 +78,7 @@ class AnimationGraphicsComponent extends  GraphicsComponent {
 							val duration = (damage/5.0f).seconds
 							animData.animations ::= FieldAnimation(entity, CharacterInfo.health, Interpolation.betweenI(startHealth, startHealth.reduceBy(damage, limitToZero = true)), time, time + duration)
 							animData.animations ::= FieldAnimation(entity, Physical.colorTransforms, colorInterp, time, time + duration)
-						case GainSkillLevelEvent(entity, skill, newLevel) =>
+						case GainSkillLevelEvent(entity, skill, newLevel) if AllegianceLogic.isPlayerCharacter(entity) =>
 							implicit val view = animData.currentGameWorldView
 							val skillIcon = SpriteLibrary.iconFor(skill).image
 							val upIcon = ResourceManager.image("third-party/shikashiModified/up_arrow.png")

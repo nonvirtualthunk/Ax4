@@ -36,7 +36,8 @@ object CharacterLogic {
 	}
 
 	def gainMovePoints(character : Entity, mp : Sext)(implicit game : World) = {
-		val effectiveMP = mp - Sext(TagLogic.flagValue(character, Taxonomy("flags.MovementGainDelta")))
+		implicit val view : WorldView = game.view
+		val effectiveMP = mp + Sext(TagLogic.flagValue(character, Taxonomy("flags.MovementGainDelta")))
 		game.startEvent(MovePointsGained(character, effectiveMP))
 		game.modify(character, CharacterInfo.movePoints + effectiveMP)
 		game.endEvent(MovePointsGained(character, effectiveMP))

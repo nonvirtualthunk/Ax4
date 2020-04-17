@@ -51,7 +51,10 @@ trait Library[T] extends TEagerSingleton {
 	protected def topLevelField : String
 	protected def createBlank() : T
 
-	def all = byKind
+	def all = {
+		initialLoadComplete.await()
+		byKind
+	}
 
 	def getWithKind(kind : Taxon) = {
 		initialLoadComplete.await()

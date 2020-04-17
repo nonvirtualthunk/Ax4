@@ -5,6 +5,8 @@ Cards {
     apCost: 2
     staminaCost: 1
     effects: [Gather(1)]
+
+    xp: Gather -> 1
   }
 
   PiercingStab {
@@ -25,6 +27,8 @@ Cards {
     ]
 
     tags: [Expend]
+
+    xp : WeaponSkill -> 2
   }
 
   SwiftStrike {
@@ -41,19 +45,87 @@ Cards {
       },
       Draw(1)
     ]
+
+    xp : WeaponSkill -> 2
   }
 
   SweepingLegStrike {
     name : Sweeping Leg Strike
+    tags : [Expend]
 
     effects: [
       {
         type: SpecialAttack
         name: Sweeping Leg Strike
-        damageBonus : -1
-        onHitEffects : [Slow(1)]
+        damageBonus : 1
+        triggeredEffects : [{
+          trigger : Hit
+          affects : Target
+          effect : Slow(1)
+        }]
       }
     ]
+
+    xp : WeaponSkill -> 2
+  }
+
+  RingingBlow {
+    name : Ringing Blow
+    tags : [Expend]
+
+    effects: [
+      {
+        type: SpecialAttack
+        name: Ringing Blow
+        damageModifiers : [
+          {
+            predicate : "primary"
+            delta : damageType(bludgeoning)
+          }
+        ]
+        onHitTargetEffects : [Stunned(1)]
+      }
+    ]
+
+    xp : WeaponSkill -> 2
+  }
+
+  DoubleStrike {
+    name : Double Strike
+    tags : [Expend]
+
+    effects: [
+      {
+        type : SpecialAttack
+        name : Double Strike
+        strikeCountMultiplier : 2
+        staminaCostMultiplier : 2
+      }
+    ]
+  }
+
+  ChargingStrike {
+    name : Charging Strike
+    tags : [Expend]
+
+    effects : [
+      Move(2),
+      {
+        type : SpecialAttack
+        name : Charging Strike
+        damageMultiplier : 2
+        actionCostDelta : 1
+      }
+    ]
+  }
+
+  FlashingPoints {
+    name : Flashing Points
+    tags : [Expend]
+
+    effectsDescription : "Every strike applies 2 [dazzled] for the rest of the turn"
+
+    effects : [FlashingPoints(1)]
   }
 
   Parry {
@@ -61,7 +133,7 @@ Cards {
 
     apCost: 1
     staminaCost: 1
-    effects: [Parry(1)]
+    effects: [Parry(3)]
 
     xp: Parry -> 1
   }
@@ -83,14 +155,18 @@ Cards {
     staminaCost: 0
     effects: [
       {
-        type: Attack
+        type: SpecialAttack
 
-        name: flurry of blows
+        nameOverride: flurry of blows
         accuracyBonus: -1
-        strikeCount: 1
-        minRange: 0
-        maxRange: 1
-        damage: 1d4 Bludgeoning
+        baseDamageOverride: 1d4 Bludgeoning
+
+        actionCostDelta: -1
+        actionCostMinimum: 0
+        staminaCostDelta: -1
+        staminaCostMinimum: 0
+
+        condition : [IsUnarmedAttack]
       }
     ]
 
@@ -100,11 +176,14 @@ Cards {
       {
         trigger: {
           type: OnCardPlay
-          playedCardCondition: isA(AttackCard)
+          playedCardCondition: isA(UnarmedAttackCard)
           sourceCardCondition: cardIsIn(DiscardPile)
         },
-        effect : MoveCardTo(Hand)
+        effect : MoveCardTo(Hand),
+        description : "Return to hand whenever an unarmed attack is made"
       }
     ]
+
+    xp: UnarmedSkill -> 1
   }
 }

@@ -34,7 +34,13 @@ class CardCreationComponent extends GameComponent {
 							CD.costs = Vector(PayActionPoints(attack.actionCost), PayStamina(attack.staminaCost))
 							CD.source = entity
 						})
-						world.modify(card, IdentityData.kind -> Taxonomy("AttackCard"))
+						val kind = if (weapon.naturalWeapon) {
+							Taxonomy("UnarmedAttackCard")
+						} else {
+							Taxonomy("AttackCard")
+						}
+
+						world.modify(card, IdentityData.kind -> kind)
 						if (entity.hasData[Item]) { world.modify(entity, Item.equippedCards append card) }
 						world.modify(entity, Weapon.attackCards append card)
 					}
