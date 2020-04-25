@@ -59,6 +59,9 @@ object FlagLibrary extends Library[FlagInfo] {
 			if (flagConf.resetAtEndOfTurn.boolOrElse(false)) {
 				behaviors :+= FlagComponent.resetAtEndOfTurn(k)
 			}
+			if (flagConf.resetAtStartOfTurn.boolOrElse(false)) {
+				behaviors :+= FlagComponent.resetAtStartOfTurn(k)
+			}
 			for (equivConf <- flagConf.fieldAsList("countsAs")) {
 				FlagEquivalency.flagEquivalences.add(Taxonomy(equivConf.str, "Flags"), FlagEquivalence(flag,1))
 			}

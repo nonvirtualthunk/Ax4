@@ -201,8 +201,7 @@ Taxonomy {
     GatherCard : CardType
     DefenseCard : SkillCard
 
-    UnarmedAttackCard : AttackCard
-
+    NaturalAttackCard : AttackCard
 
     Harvest : GatherCard
     Gather : GatherCard
@@ -234,6 +233,7 @@ Taxonomy {
   Skills {
     AttackSkill : Skill
     DefenseSkill : Skill
+    MoveSkill : Skill
 
     MeleeSkill : AttackSkill
 
@@ -249,6 +249,7 @@ Taxonomy {
 
     Parry : DefenseSkill
     Block : DefenseSkill
+    Move : MoveSkill
 
     Gather : Skill
   }

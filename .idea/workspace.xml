@@ -6,15 +6,6 @@
         <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
         <item name="LOCAL_ROOT" type="e8cecc67:BranchNodeDescriptor" />
       </path>
-      <path>
-        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
-        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
-      </path>
-      <path>
-        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
-        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
-        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
-      </path>
     </expand>
     <select>
       <path>
@@ -26,65 +17,54 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="739b2d61-3cec-48a9-b219-b6a12786d863" name="Default Changelist" comment="ski">
-      <change afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/TurnLogic.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/FieldGenerator___Ax4.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/FieldGenerator___Ax4.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_code_disaster_steamworks4j_steamworks4j_1_8_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_googlecode_soundlibs_jlayer_1_0_1_4.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_googlecode_soundlibs_jorbis_0_0_17_4.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_googlecode_soundlibs_mp3spi_1_9_5_4.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_googlecode_soundlibs_tritonus_share_0_3_7_4.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_googlecode_soundlibs_vorbisspi_1_0_3_3.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_sun_xml_bind_jaxb_core_2_3_0_1.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_sun_xml_bind_jaxb_impl_2_3_2.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__de_gurkenlabs_litiengine_0_4_20.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__javax_activation_javax_activation_api_1_2_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__javax_xml_bind_jaxb_api_2_4_0_b180830_0359.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__net_java_jinput_jinput_2_0_9.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__net_java_jinput_jinput_natives_all_2_0_9.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/game/data/Taxonomy.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/game/data/Taxonomy.sml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/game/data/cards/Cards.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/game/data/cards/Cards.sml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/game/data/cards/MonsterCards.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/game/data/cards/MonsterCards.sml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/game/data/flags/Flags.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/game/data/flags/Flags.sml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/game/data/skills/Skills.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/game/data/skills/Skills.sml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/game/data/tags/Tags.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/game/data/tags/Tags.sml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/graphics/data/entity/CardImages.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/graphics/data/entity/CardImages.sml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/graphics/icons/parry.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/graphics/icons/parry.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/graphics/ui/attack_card_border.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/graphics/ui/attack_card_border.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/graphics/ui/crosshairs.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/graphics/ui/crosshairs.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/graphics/ui/locked_overlay.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/graphics/ui/locked_overlay.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/graphics/data/entity/Sprites.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/graphics/data/entity/Sprites.sml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/widgets/CardWidgets.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/widgets/CardWidgets.sml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/widgets/PerkSelectionWidgets.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/widgets/PerkSelectionWidgets.sml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/widgets/StatusWidgets.sml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/widgets/StatusWidgets.sml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/application/scenarios/SimpleMapScenario.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/application/scenarios/SimpleMapScenario.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/CardControl.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/CardControl.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/PerkPickControl.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/PerkPickControl.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/SelectionControl.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/SelectionControl.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/TacticalUIControl.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/TacticalUIControl.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/widgets/CardWidget.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/control/components/widgets/CardWidget.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/AIComponent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/AIComponent.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/CardCreationComponent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/CardCreationComponent.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/DeckComponent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/DeckComponent.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/FlagComponent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/FlagComponent.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/TurnComponent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/TurnComponent.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/TriggeredEffectsComponent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/components/TriggeredEffectsComponent.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/AttackData.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/AttackData.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/CharacterInfo.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/CharacterInfo.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Companions.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Companions.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Conditional.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Conditional.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/DeckData.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/DeckData.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Equipment.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Equipment.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/FlagLibrary.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/FlagLibrary.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/SkillsLibrary.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/SkillsLibrary.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Terrain.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/Terrain.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/AttackGameEffect.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/AttackGameEffect.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/CardEffectTrigger.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/CardEffectTrigger.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/GameEffect.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/entities/cardeffects/GameEffect.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/event/AttackEvent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/event/AttackEvent.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CardLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CardLogic.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CharacterLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CharacterLogic.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CombatLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/CombatLogic.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/PerkLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/PerkLogic.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/SkillsLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/SkillsLogic.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/TagLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/TagLogic.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/components/AnimationGraphicsComponent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/components/AnimationGraphicsComponent.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/introspection/Transformation.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/introspection/Transformation.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/representation/HoconAdapter.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/representation/HoconAdapter.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/SpecialAttackLogic.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/game/logic/SpecialAttackLogic.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/components/EntityGraphics.scala" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/scala/arx/ax4/graphics/components/EntityGraphics.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/introspection/ReflectionAssistant.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/introspection/ReflectionAssistant.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/EngineCore.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/EngineCore.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/widgets/TextDisplayWidget.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/widgets/TextDisplayWidget.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/data/Reduceable.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/data/Reduceable.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/entity/Taxonomy.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/entity/Taxonomy.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/game/components/GameComponent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/game/components/GameComponent.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/graphics/components/windowing/TextRenderer.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/graphics/components/windowing/TextRenderer.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/subcomponents/DynamicWidgetComponent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/subcomponents/DynamicWidgetComponent.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/widgets/DynamicWidgetData.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/control/components/windowing/widgets/DynamicWidgetData.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/data/ConfigDataLoader.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/data/ConfigDataLoader.scala" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/event/TEventUser.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/event/TEventUser.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/graphics/components/windowing/WindowingGraphicsComponent.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/graphics/components/windowing/WindowingGraphicsComponent.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/graphics/helpers/RichText.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/graphics/helpers/RichText.scala" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/graphics/text/TextLayouter.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/graphics/text/TextLayouter.scala" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/resource/ResourceManager.scala" beforeDir="false" afterPath="$PROJECT_DIR$/../ledgine/src/main/scala/arx/resource/ResourceManager.scala" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -102,7 +82,7 @@
     </option>
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../ledgine" />
   </component>
   <component name="GithubPullRequestsUISettings">
     <option name="hiddenUrls">
@@ -124,6 +104,7 @@
     <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="last_directory_selection" value="$PROJECT_DIR$/../ledgine/src/main/scala/arx/ax4/graphics/components" />
     <property name="project.structure.last.edited" value="Modules" />
     <property name="project.structure.proportion" value="0.15" />
@@ -155,6 +136,19 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="LITIEngineCore" type="Application" factoryName="Application" temporary="true">
+      <option name="MAIN_CLASS_NAME" value="arx.engine.LITIEngineCore" />
+      <module name="ledgine" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="arx.engine.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="Scala REPL" type="ScalaScriptConsoleRunConfiguration" factoryName="Scala Console" temporary="true" show_console_on_std_err="false" show_console_on_std_out="false">
       <module name="Ax4" />
       <option name="allowRunningInParallel" value="false" />
@@ -174,9 +168,11 @@
       <item itemvalue="Scala REPL.Scala REPL" />
       <item itemvalue="ScalaTest.Field Generator - Ax4 Test" />
       <item itemvalue="ScalaTest.Field Generator - ledgine test" />
+      <item itemvalue="Application.LITIEngineCore" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Application.LITIEngineCore" />
         <item itemvalue="Scala REPL.Scala REPL" />
       </list>
     </recent_temporary>
@@ -209,6 +205,11 @@
         <entry key="MAIN">
           <value>
             <State>
+              <option name="CUSTOM_BOOLEAN_PROPERTIES">
+                <map>
+                  <entry key="Show.Git.Branches" value="true" />
+                </map>
+              </option>
               <option name="FILTERS">
                 <map>
                   <entry key="branch">
@@ -236,70 +237,83 @@
       <screen x="0" y="23" width="1792" height="1097" />
     </state>
     <state x="546" y="191" key="#FieldGenerator_-_Ax4/0.23.1792.1097@0.23.1792.1097" timestamp="1586704469565" />
-    <state x="634" y="344" key="#com.intellij.codeInsight.editorActions.RestoreReferencesDialog" timestamp="1586809628159">
+    <state x="634" y="344" key="#com.intellij.codeInsight.editorActions.RestoreReferencesDialog" timestamp="1587653475810">
       <screen x="0" y="23" width="1792" height="1097" />
     </state>
-    <state x="634" y="344" key="#com.intellij.codeInsight.editorActions.RestoreReferencesDialog/0.23.1792.1097@0.23.1792.1097" timestamp="1586809628159" />
-    <state x="360" y="233" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1586446922496">
+    <state x="634" y="344" key="#com.intellij.codeInsight.editorActions.RestoreReferencesDialog/0.23.1792.1097@0.23.1792.1097" timestamp="1587653475810" />
+    <state x="360" y="233" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1587134261803">
       <screen x="0" y="23" width="1792" height="1097" />
     </state>
-    <state x="360" y="233" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.23.1792.1097@0.23.1792.1097" timestamp="1586446922496" />
+    <state x="360" y="233" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.23.1792.1097@0.23.1792.1097" timestamp="1587134261803" />
     <state x="614" y="380" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1586529870592">
       <screen x="0" y="23" width="1792" height="1097" />
     </state>
     <state x="614" y="380" key="#com.intellij.fileTypes.FileTypeChooser/0.23.1792.1097@0.23.1792.1097" timestamp="1586529870592" />
-    <state x="709" y="285" key="#com.intellij.ide.util.MemberChooser" timestamp="1587046889780">
+    <state x="709" y="285" key="#com.intellij.ide.util.MemberChooser" timestamp="1587567689208">
       <screen x="0" y="23" width="1792" height="1097" />
     </state>
-    <state x="709" y="285" key="#com.intellij.ide.util.MemberChooser/0.23.1792.1097@0.23.1792.1097" timestamp="1587046889780" />
-    <state x="660" y="155" width="1132" height="838" key="#xdebugger.evaluate" timestamp="1587048277931">
+    <state x="709" y="285" key="#com.intellij.ide.util.MemberChooser/0.23.1792.1097@0.23.1792.1097" timestamp="1587567689208" />
+    <state x="634" y="325" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1587829376302">
       <screen x="0" y="23" width="1792" height="1097" />
     </state>
-    <state x="660" y="155" width="1132" height="838" key="#xdebugger.evaluate/0.23.1792.1097@0.23.1792.1097" timestamp="1587048277931" />
-    <state width="607" height="466" key="DebuggerActiveHint" timestamp="1587048441858">
+    <state x="634" y="325" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.23.1792.1097@0.23.1792.1097" timestamp="1587829376302" />
+    <state x="564" y="561" width="917" height="401" key="#xdebugger.evaluate" timestamp="1587392445726">
       <screen x="0" y="23" width="1792" height="1097" />
     </state>
-    <state width="607" height="466" key="DebuggerActiveHint/0.23.1792.1097@0.23.1792.1097" timestamp="1587048441858" />
-    <state width="1750" height="303" key="GridCell.Tab.0.bottom" timestamp="1587089644616">
+    <state x="564" y="561" width="917" height="401" key="#xdebugger.evaluate/0.23.1792.1097@0.23.1792.1097" timestamp="1587392445726" />
+    <state width="607" height="466" key="DebuggerActiveHint" timestamp="1587392497065">
       <screen x="0" y="23" width="1792" height="1097" />
     </state>
+    <state width="607" height="466" key="DebuggerActiveHint/0.23.1792.1097@0.23.1792.1097" timestamp="1587392497065" />
+    <state x="100" y="123" width="1592" height="897" key="DiffContextDialog" timestamp="1587830159956">
+      <screen x="0" y="23" width="1792" height="1097" />
+    </state>
+    <state x="100" y="123" width="1592" height="897" key="DiffContextDialog/0.23.1792.1097@0.23.1792.1097" timestamp="1587830159956" />
+    <state x="750" y="303" key="EnvironmentVariablesDialog" timestamp="1587134261122">
+      <screen x="0" y="23" width="1792" height="1097" />
+    </state>
+    <state x="750" y="303" key="EnvironmentVariablesDialog/0.23.1792.1097@0.23.1792.1097" timestamp="1587134261122" />
+    <state width="1750" height="374" key="GridCell.Tab.0.bottom" timestamp="1587851079190">
+      <screen x="0" y="23" width="1792" height="1097" />
+    </state>
+    <state width="1750" height="374" key="GridCell.Tab.0.bottom/0.0.1792.1120@0.0.1792.1120" timestamp="1587830301329" />
     <state width="1750" height="374" key="GridCell.Tab.0.bottom/0.23.1792.1097@0.0.1792.1120" timestamp="1587047396675" />
-    <state width="1750" height="303" key="GridCell.Tab.0.bottom/0.23.1792.1097@0.23.1792.1097" timestamp="1587089644616" />
-    <state width="1750" height="303" key="GridCell.Tab.0.center" timestamp="1587089644614">
+    <state width="1750" height="374" key="GridCell.Tab.0.bottom/0.23.1792.1097@0.23.1792.1097" timestamp="1587851079190" />
+    <state width="1750" height="374" key="GridCell.Tab.0.center" timestamp="1587851079190">
       <screen x="0" y="23" width="1792" height="1097" />
     </state>
     <state width="1750" height="374" key="GridCell.Tab.0.center/0.23.1792.1097@0.0.1792.1120" timestamp="1587047396673" />
-    <state width="1750" height="303" key="GridCell.Tab.0.center/0.23.1792.1097@0.23.1792.1097" timestamp="1587089644614" />
-    <state width="1750" height="303" key="GridCell.Tab.0.left" timestamp="1587089644614">
+    <state width="1750" height="374" key="GridCell.Tab.0.center/0.23.1792.1097@0.23.1792.1097" timestamp="1587851079190" />
+    <state width="1750" height="374" key="GridCell.Tab.0.left" timestamp="1587851079189">
       <screen x="0" y="23" width="1792" height="1097" />
     </state>
     <state width="1750" height="374" key="GridCell.Tab.0.left/0.0.1792.1120@0.0.1792.1120" timestamp="1587047396636" />
-    <state width="1750" height="303" key="GridCell.Tab.0.left/0.23.1792.1097@0.23.1792.1097" timestamp="1587089644614" />
-    <state width="1750" height="303" key="GridCell.Tab.0.right" timestamp="1587089644615">
+    <state width="1750" height="374" key="GridCell.Tab.0.left/0.23.1792.1097@0.23.1792.1097" timestamp="1587851079189" />
+    <state width="1750" height="374" key="GridCell.Tab.0.right" timestamp="1587851079190">
       <screen x="0" y="23" width="1792" height="1097" />
     </state>
     <state width="1750" height="374" key="GridCell.Tab.0.right/0.23.1792.1097@0.0.1792.1120" timestamp="1587047396674" />
-    <state width="1750" height="303" key="GridCell.Tab.0.right/0.23.1792.1097@0.23.1792.1097" timestamp="1587089644615" />
-    <state width="1750" height="374" key="GridCell.Tab.1.bottom" timestamp="1587089644559">
+    <state width="1750" height="374" key="GridCell.Tab.0.right/0.23.1792.1097@0.23.1792.1097" timestamp="1587851079190" />
+    <state width="1750" height="374" key="GridCell.Tab.1.bottom" timestamp="1587851079191">
       <screen x="0" y="23" width="1792" height="1097" />
     </state>
-    <state width="1750" height="374" key="GridCell.Tab.1.bottom/0.23.1792.1097@0.0.1792.1120" timestamp="1587047396676" />
-    <state width="1750" height="374" key="GridCell.Tab.1.bottom/0.23.1792.1097@0.23.1792.1097" timestamp="1587089644559" />
-    <state width="1750" height="374" key="GridCell.Tab.1.center" timestamp="1587089644559">
+    <state width="1750" height="374" key="GridCell.Tab.1.bottom/0.23.1792.1097@0.0.1792.1120" timestamp="1587830301373" />
+    <state width="1750" height="374" key="GridCell.Tab.1.bottom/0.23.1792.1097@0.23.1792.1097" timestamp="1587851079191" />
+    <state width="1750" height="374" key="GridCell.Tab.1.center" timestamp="1587851079191">
       <screen x="0" y="23" width="1792" height="1097" />
     </state>
-    <state width="1750" height="374" key="GridCell.Tab.1.center/0.23.1792.1097@0.0.1792.1120" timestamp="1587047396676" />
-    <state width="1750" height="374" key="GridCell.Tab.1.center/0.23.1792.1097@0.23.1792.1097" timestamp="1587089644559" />
-    <state width="1750" height="374" key="GridCell.Tab.1.left" timestamp="1587089644559">
+    <state width="1750" height="374" key="GridCell.Tab.1.center/0.23.1792.1097@0.0.1792.1120" timestamp="1587830301371" />
+    <state width="1750" height="374" key="GridCell.Tab.1.center/0.23.1792.1097@0.23.1792.1097" timestamp="1587851079191" />
+    <state width="1750" height="374" key="GridCell.Tab.1.left" timestamp="1587851079190">
       <screen x="0" y="23" width="1792" height="1097" />
     </state>
-    <state width="1750" height="374" key="GridCell.Tab.1.left/0.23.1792.1097@0.0.1792.1120" timestamp="1587047396675" />
-    <state width="1750" height="374" key="GridCell.Tab.1.left/0.23.1792.1097@0.23.1792.1097" timestamp="1587089644559" />
-    <state width="1750" height="374" key="GridCell.Tab.1.right" timestamp="1587089644559">
+    <state width="1750" height="374" key="GridCell.Tab.1.left/0.23.1792.1097@0.0.1792.1120" timestamp="1587830301370" />
+    <state width="1750" height="374" key="GridCell.Tab.1.left/0.23.1792.1097@0.23.1792.1097" timestamp="1587851079190" />
+    <state width="1750" height="374" key="GridCell.Tab.1.right" timestamp="1587851079191">
       <screen x="0" y="23" width="1792" height="1097" />
     </state>
-    <state width="1750" height="374" key="GridCell.Tab.1.right/0.23.1792.1097@0.0.1792.1120" timestamp="1587047396676" />
-    <state width="1750" height="374" key="GridCell.Tab.1.right/0.23.1792.1097@0.23.1792.1097" timestamp="1587089644559" />
+    <state width="1750" height="374" key="GridCell.Tab.1.right/0.23.1792.1097@0.0.1792.1120" timestamp="1587830301372" />
+    <state width="1750" height="374" key="GridCell.Tab.1.right/0.23.1792.1097@0.23.1792.1097" timestamp="1587851079191" />
     <state width="1750" height="374" key="GridCell.Tab.2.bottom" timestamp="1586881725437">
       <screen x="0" y="23" width="1792" height="1097" />
     </state>
@@ -336,14 +350,14 @@
       <screen x="0" y="23" width="1792" height="1097" />
     </state>
     <state x="384" y="153" key="SettingsEditor/0.23.1792.1097@0.23.1792.1097" timestamp="1586963976395" />
-    <state width="896" height="548" key="XDebugger.FullValuePopup" timestamp="1587048189158">
+    <state width="896" height="548" key="XDebugger.FullValuePopup" timestamp="1587392436967">
       <screen x="0" y="23" width="1792" height="1097" />
     </state>
-    <state width="896" height="548" key="XDebugger.FullValuePopup/0.23.1792.1097@0.23.1792.1097" timestamp="1587048189158" />
-    <state x="596" y="328" width="755" height="486" key="find.popup" timestamp="1587046892251">
+    <state width="896" height="548" key="XDebugger.FullValuePopup/0.23.1792.1097@0.23.1792.1097" timestamp="1587392436967" />
+    <state x="596" y="328" width="755" height="538" key="find.popup" timestamp="1587830946821">
       <screen x="0" y="23" width="1792" height="1097" />
     </state>
-    <state x="596" y="328" width="755" height="486" key="find.popup/0.23.1792.1097@0.23.1792.1097" timestamp="1587046892251" />
+    <state x="596" y="328" width="755" height="538" key="find.popup/0.23.1792.1097@0.23.1792.1097" timestamp="1587830946821" />
     <state x="545" y="294" width="700" height="530" key="recent.locations.popup" timestamp="1587046358317">
       <screen x="0" y="23" width="1792" height="1097" />
     </state>
@@ -352,10 +366,10 @@
       <screen x="0" y="23" width="1792" height="1097" />
     </state>
     <state x="605" y="348" key="refactoring.ChangeSignatureDialog/0.23.1792.1097@0.23.1792.1097" timestamp="1586875297985" />
-    <state x="561" y="222" width="670" height="676" key="search.everywhere.popup" timestamp="1587048548737">
+    <state x="561" y="222" width="670" height="676" key="search.everywhere.popup" timestamp="1587850629610">
       <screen x="0" y="23" width="1792" height="1097" />
     </state>
-    <state x="561" y="222" width="670" height="676" key="search.everywhere.popup/0.23.1792.1097@0.23.1792.1097" timestamp="1587048548737" />
+    <state x="561" y="222" width="670" height="676" key="search.everywhere.popup/0.23.1792.1097@0.23.1792.1097" timestamp="1587850629610" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -392,8 +406,28 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="scala-line">
           <url>file://$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/data/ConfigDataLoader.scala</url>
-          <line>155</line>
+          <line>163</line>
           <option name="timeStamp" value="85" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="scala-line">
+          <url>file://$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/representation/HoconAdapter.scala</url>
+          <line>289</line>
+          <option name="timeStamp" value="89" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="scala-line">
+          <url>file://$PROJECT_DIR$/../ledgine/src/main/scala/arx/core/representation/HoconAdapter.scala</url>
+          <line>298</line>
+          <option name="timeStamp" value="92" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="scala-line">
+          <url>file://$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/entity/Taxonomy.scala</url>
+          <line>57</line>
+          <option name="timeStamp" value="93" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="scala-line">
+          <url>file://$PROJECT_DIR$/../ledgine/src/main/scala/arx/engine/entity/Taxonomy.scala</url>
+          <line>62</line>
+          <option name="timeStamp" value="94" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

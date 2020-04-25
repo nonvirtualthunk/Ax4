@@ -6,7 +6,7 @@ import arx.ax4.game.entities.Companions.{CardData, TagData}
 import arx.core.vec.Vec2i
 import arx.engine.control.components.windowing.Widget
 import arx.engine.control.components.windowing.widgets.{PositionExpression, TopLeft}
-import arx.engine.control.components.windowing.widgets.data.{OverlayData, WidgetOverlay}
+import arx.engine.control.components.windowing.widgets.data.{OverlayData, TWidgetAuxData, WidgetOverlay}
 import arx.engine.control.event.{MousePressEvent, MouseReleaseEvent}
 import arx.engine.data.Moddable
 import arx.engine.entity.{Entity, IdentityData, Taxon}
@@ -17,17 +17,17 @@ import arx.resource.ResourceManager
 
 object CardWidget {
 	def apply(parent : Widget, selC : Entity, card : Entity)(implicit view : WorldView) : Widget = {
-		CardWidget(parent, card.data[IdentityData].kind, card.data[CardData], () => CardInfo(selC, card))
+		CardWidget(parent, card.data[IdentityData].kind, card.data[CardData], (activeGroup) => CardInfo(selC, card, activeGroup))
 	}
 
 	def apply(parent : Widget, selC : Option[Entity], cardArch : Taxon)(implicit view : WorldView) : Widget = {
 		val arch = CardLibrary.withKind(cardArch)
 		val CD : CardData = arch.data(CardData)
 		val TD : TagData = arch.data(TagData)
-		CardWidget(parent, cardArch, CD, () => CardInfo(selC, cardArch, CD, TD)(view))
+		CardWidget(parent, cardArch, CD, (activeGroup) => CardInfo(selC, cardArch, CD, TD, activeGroup)(view))
 	}
 
-	def apply(parent : Widget, card : Taxon, cardData : CardData, cardInfo : () => CardInfo) : Widget = {
+	def apply(parent : Widget, card : Taxon, cardData : CardData, cardInfo : (Int) => CardInfo) : Widget = {
 		val cardWidget = parent.createChild("CardWidgets.CardWidget")
 		cardWidget.drawing.backgroundImage = Some(
 			if (card.isA(CardTypes.ItemCard)) {
@@ -42,7 +42,8 @@ object CardWidget {
 				"graphics/ui/card_border_no_padding.png"
 			})
 
-		cardWidget.bind("card", cardInfo)
+		cardWidget.attachData[CardWidgetData]
+		cardWidget.bind("card", () => cardInfo(cardWidget[CardWidgetData].activeGroup))
 
 		cardWidget.attachData[OverlayData]
 		val od = cardWidget[OverlayData]
@@ -62,4 +63,8 @@ object CardWidget {
 
 		cardWidget
 	}
+}
+
+class CardWidgetData extends TWidgetAuxData {
+	var activeGroup = 0
 }

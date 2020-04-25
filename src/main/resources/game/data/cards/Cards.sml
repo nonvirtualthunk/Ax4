@@ -1,5 +1,33 @@
 Cards {
 
+  Move {
+    name : Move
+
+    cardEffectGroups : [
+      {
+        costs : [AP(1), Stamina(0)]
+        effects: [Move(3)]
+      },
+      {
+        name : Hurry
+        costs : [AP(2), Stamina(1)]
+        effects: [Move(5)]
+      }
+    ]
+
+
+    xp: Move -> 1
+  }
+
+  Gather {
+    name : Gather
+    apCost : 2
+    staminaCost : 0
+    effects: [Gather(1)]
+
+    xp: Gather -> 1
+  }
+
   Harvest {
     name: Harvest
     apCost: 2
@@ -176,7 +204,7 @@ Cards {
       {
         trigger: {
           type: OnCardPlay
-          playedCardCondition: isA(UnarmedAttackCard)
+          playedCardCondition: isA(NaturalAttackCard)
           sourceCardCondition: cardIsIn(DiscardPile)
         },
         effect : MoveCardTo(Hand),

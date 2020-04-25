@@ -14,7 +14,7 @@ import arx.graphics.helpers.{RichText, RichTextRenderSettings, THasRichTextRepre
 import arx.Prelude._
 import arx.application.Noto
 import arx.ax4.game.logic.CardLogic.CostsAndEffects
-import arx.engine.data.CustomConfigDataLoader
+import arx.engine.data.{ConfigDataLoader, ConfigLoadable, CustomConfigDataLoader, TNestedData}
 
 @GenerateCompanion
 class DeckData extends AxAuxData {
@@ -136,22 +136,30 @@ object TriggeredGameEffect extends CustomConfigDataLoader[TriggeredGameEffect] {
 }
 
 @GenerateCompanion
-class CardData extends AxAuxData {
-	@NoAutoLoad
-	var inDeck : Entity = Entity.Sentinel
+class CardEffectGroup extends TNestedData with ConfigLoadable {
+	var name : Option[String] = None
 	var costs : Vector[GameEffect] = Vector()
 	var effects : Vector[GameEffect] = Vector()
 	var selfEffects : Vector[GameEffect] = Vector()
 	var triggeredEffects : Vector[TriggeredGameEffect] = Vector()
+	var effectsDescription : Option[String] = None
+}
+
+@GenerateCompanion
+class CardData extends AxAuxData {
+	@NoAutoLoad
+	var inDeck : Entity = Entity.Sentinel
+
+
+	var cardEffectGroups = Vector(new CardEffectGroup)
+
 	@NoAutoLoad
 	var attachments : Map[AnyRef, CardAttachment] = Map()
 	@NoAutoLoad
 	var attachedCards : Map[AnyRef, Vector[Entity]] = Map()
 	@NoAutoLoad
 	var attachedTo : Set[Entity] = Set()
-	var effectsDescription : Option[String] = None
 
-	var cardType : Taxon = CardTypes.GenericCardType
 	var name : String = "Card"
 	var source : Entity = Entity.Sentinel
 	var exhausted : Boolean = false
@@ -160,23 +168,30 @@ class CardData extends AxAuxData {
 
 	override def customLoadFromConfig(config: ConfigValue): Unit = {
 		if (config.hasField("apCost")) {
-			costs :+= PayActionPoints(config.apCost.int)
+			cardEffectGroups(0).costs :+= PayActionPoints(config.apCost.int)
 		}
 		if (config.hasField("staminaCost")) {
-			costs :+= PayStamina(config.staminaCost.int)
+			cardEffectGroups(0).costs :+= PayStamina(config.staminaCost.int)
 		}
-//		for (conf <- config.fieldAsList("costs")) {
-//			costs :+= GameEffectConfigLoader.loadFrom(conf)
-//		}
-//		for (conf <- config.fieldAsList("effects")) {
-//			effects :+= GameEffectConfigLoader.loadFrom(conf)
-//		}
+
+		if (config.hasField("effects")) {
+			ConfigDataLoader.loadFrom[CardEffectGroup](config) match {
+				case Some(cardEffectGroup) => cardEffectGroups = Vector(cardEffectGroup)
+				case None => Noto.error(s"Could not load top level card effect group from top level config despite having 'effects' field: $config")
+			}
+		}
+		if (config.hasField("alternateEffect")) {
+			ConfigDataLoader.loadFrom[CardEffectGroup](config) match {
+				case Some(alternateCardEffectGroup) => cardEffectGroups :+= alternateCardEffectGroup
+				case None => Noto.error(s"Could not load top level card effect group from top level config despite having 'effects' field: $config")
+			}
+		}
 
 		for (specialAttackConf <- config.fieldOpt("specialAttack")) {
 			// a special attack card is set up such that it automatically attaches a single other attack card to itself automatically
 			// when played it plays the base attack card, modified according to the terms of the special attack in addition to any other effects the card has
 			val specialAttack = SpecialAttack.withName(specialAttackConf.str)
-			effects :+= SpecialAttackGameEffect(specialAttack)
+			cardEffectGroups(0).effects :+= SpecialAttackGameEffect(specialAttack)
 //			val attachStyle = AttachmentStyle.PlayModified(SpecialAttackLogic.specialAttackToEffectModifiers(specialAttack))
 //			attachments += specialAttack -> CardAttachment(Vector(CardConditionals.CardMatchesSpecialAttack(specialAttack)), 1, automaticAttachment = true, requiredForPlay = true, removesFromDeck = false, attachStyle)
 		}
@@ -203,6 +218,7 @@ object CardDataRegex {
 object CardTypes {
 	val GenericCardType = Taxonomy("CardType")
 	val AttackCard = Taxonomy("AttackCard")
+	val NaturalAttackCard = Taxonomy("CardTypes.NaturalAttackCard")
 	val StatusCard = Taxonomy("StatusCard")
 	val MoveCard = Taxonomy("MoveCard")
 	val SkillCard = Taxonomy("SkillCard")
@@ -243,40 +259,51 @@ object CardTrigger {
 	case object OnDiscard extends CardTrigger
 }
 
-case class CardPlay(character : Entity, card : Entity) extends CompoundSelectable {
+case class CardPlay(character : Entity, card : Entity, activeEffectGroup: Int) extends CompoundSelectable {
 	override def subSelectables(view : WorldView): Traversable[Selectable] = {
-		val CostsAndEffects(effCosts, effEffects, selfEffects)  = CardLogic.effectiveCostsAndEffects(Some(character), card)(view)
-		effCosts ++ effEffects ++ selfEffects
+		val effectGroups = CardLogic.effectiveCostsAndEffects(Some(character), card)(view)
+		if (effectGroups.size > activeEffectGroup) {
+			val CostsAndEffects(effCosts, effEffects, selfEffects, _, _) = effectGroups(activeEffectGroup)
+			effCosts ++ effEffects ++ selfEffects
+		} else {
+			Noto.error("activeEffectGroup out of bounds in subSelectables for CardPlay")
+			Seq()
+		}
 	}
 
 	override def instantiate(world: WorldView, entity: Entity, effectSource: Entity): Either[CardPlayInstance, String] = {
 		implicit val view = world
 		val CD = view.data[CardData](card)
 
-		val CostsAndEffects(effCosts, effEffects, selfEffects)  = CardLogic.effectiveCostsAndEffects(Some(entity), card)
+		val effectGroups = CardLogic.effectiveCostsAndEffects(Some(character), card)(view)
+		if (effectGroups.size > activeEffectGroup) {
+			val CostsAndEffects(effCosts, effEffects, selfEffects, _, _) = effectGroups(activeEffectGroup)
 
-		// TODO: should the effect source be different for the ones that derive from attached cards?
-		val costsRaw = effCosts.map(c => c -> c.instantiate(view, entity, effectSource))
-		val effectsRaw = effEffects.map(e => e -> e.instantiate(view, entity, effectSource))
-		val selfEffectsRaw = selfEffects.map(e => e -> e.instantiate(view, card, effectSource))
+			// TODO: should the effect source be different for the ones that derive from attached cards?
+			val costsRaw = effCosts.map(c => c -> c.instantiate(view, entity, effectSource))
+			val effectsRaw = effEffects.map(e => e -> e.instantiate(view, entity, effectSource))
+			val selfEffectsRaw = selfEffects.map(e => e -> e.instantiate(view, card, effectSource))
 
 
-		for ((key,attachment) <- CD.attachments; attachedCards = CD.attachedCards.getOrElse(key, Vector())) {
-			if (attachment.requiredForPlay && attachedCards.size < attachment.count) {
-				return Right("Card must have other card(s) attached in order to be played")
+			for ((key, attachment) <- CD.attachments; attachedCards = CD.attachedCards.getOrElse(key, Vector())) {
+				if (attachment.requiredForPlay && attachedCards.size < attachment.count) {
+					return Right("Card must have other card(s) attached in order to be played")
+				}
 			}
-		}
 
-		// check if any of the GameEffects involved failed to instantiate
-		val allInvolvedEffs = costsRaw ++ effectsRaw ++ selfEffectsRaw
-		allInvolvedEffs.map(_._2).collectFirst { case Right(msg) => msg } match {
-			case Some(msg) => Right(msg)
-			case _ =>
-				val costs = costsRaw.collect { case (k, Left(value)) => k -> value }
-				val effects = effectsRaw.collect { case (k, Left(value)) => k -> value }
-				val selfEffects = selfEffectsRaw.collect { case (k, Left(value)) => k -> value }
+			// check if any of the GameEffects involved failed to instantiate
+			val allInvolvedEffs = costsRaw ++ effectsRaw ++ selfEffectsRaw
+			allInvolvedEffs.map(_._2).collectFirst { case Right(msg) => msg } match {
+				case Some(msg) => Right(msg)
+				case _ =>
+					val costs = costsRaw.collect { case (k, Left(value)) => k -> value }
+					val effects = effectsRaw.collect { case (k, Left(value)) => k -> value }
+					val selfEffects = selfEffectsRaw.collect { case (k, Left(value)) => k -> value }
 
-				Left(CardPlayInstance(costs, effects ++ selfEffects))
+					Left(CardPlayInstance(costs, effects ++ selfEffects))
+			}
+		} else {
+			Right(s"invalid card effect group : ${activeEffectGroup}")
 		}
 	}
 }

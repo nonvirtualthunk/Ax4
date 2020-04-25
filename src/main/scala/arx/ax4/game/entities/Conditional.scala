@@ -54,7 +54,7 @@ trait WorldConditional {
 object CardInDeckConditionals {
 	case class CardMatchesSpecialAttack(specialAttack : SpecialAttack) extends CardInDeckConditional {
 		override def isTrueFor(implicit view: WorldView, value: CardInDeck): Boolean = value.card.dataOpt[CardData] match {
-			case Some(cardData) => cardData.effects.exists {
+			case Some(cardData) => cardData.cardEffectGroups.flatMap(_.effects).exists {
 				case AttackGameEffect(_, attackData) => specialAttack.condition.isTrueFor(view, UntargetedAttackProspect(value.entity, attackData))
 				case _ => false
 			}

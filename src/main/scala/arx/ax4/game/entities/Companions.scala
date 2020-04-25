@@ -44,16 +44,6 @@ import arx.ax4.game.entities.CardData
 object CardData extends Clazz[CardData]("CardData", classOf[CardData]){
 	val Sentinel = new CardData
 	override def instantiate = new CardData
-	val costs = Field.fromValue(Sentinel.costs).createField[CardData]("costs",f => f.costs, (f,costs) => f.costs = costs, CardData) 
-	fields += "costs" -> costs
-	val effects = Field.fromValue(Sentinel.effects).createField[CardData]("effects",f => f.effects, (f,effects) => f.effects = effects, CardData) 
-	fields += "effects" -> effects
-	val selfEffects = Field.fromValue(Sentinel.selfEffects).createField[CardData]("selfEffects",f => f.selfEffects, (f,selfEffects) => f.selfEffects = selfEffects, CardData) 
-	fields += "selfEffects" -> selfEffects
-	val triggeredEffects = Field.fromValue(Sentinel.triggeredEffects).createField[CardData]("triggeredEffects",f => f.triggeredEffects, (f,triggeredEffects) => f.triggeredEffects = triggeredEffects, CardData) 
-	fields += "triggeredEffects" -> triggeredEffects
-	val cardType = Field.fromValue(Sentinel.cardType).createField[CardData]("cardType",f => f.cardType, (f,cardType) => f.cardType = cardType, CardData) 
-	fields += "cardType" -> cardType
 	val name = Field.fromValue(Sentinel.name).createField[CardData]("name",f => f.name, (f,name) => f.name = name, CardData) 
 	fields += "name" -> name
 	val source = Field.fromValue(Sentinel.source).createField[CardData]("source",f => f.source, (f,source) => f.source = source, CardData) 
@@ -62,6 +52,8 @@ object CardData extends Clazz[CardData]("CardData", classOf[CardData]){
 	fields += "exhausted" -> exhausted
 	val inDeck = Field.fromValue(Sentinel.inDeck).createField[CardData]("inDeck",f => f.inDeck, (f,inDeck) => f.inDeck = inDeck, CardData) 
 	fields += "inDeck" -> inDeck
+	val cardEffectGroups = Field.fromValue(Sentinel.cardEffectGroups).createField[CardData]("cardEffectGroups",f => f.cardEffectGroups, (f,cardEffectGroups) => f.cardEffectGroups = cardEffectGroups, CardData) 
+	fields += "cardEffectGroups" -> cardEffectGroups
 	val attachments = Field.fromValue(Sentinel.attachments).createField[CardData]("attachments",f => f.attachments, (f,attachments) => f.attachments = attachments, CardData) 
 	fields += "attachments" -> attachments
 	val attachedCards = Field.fromValue(Sentinel.attachedCards).createField[CardData]("attachedCards",f => f.attachedCards, (f,attachedCards) => f.attachedCards = attachedCards, CardData) 
@@ -74,15 +66,11 @@ object CardData extends Clazz[CardData]("CardData", classOf[CardData]){
 	def apply(f : CardData => Unit) : CardData = { val v = new CardData; f(v); v }
 					 
 	def copyInto(from : CardData, to : CardData) {
-		to.costs = from.costs
-		to.effects = from.effects
-		to.selfEffects = from.selfEffects
-		to.triggeredEffects = from.triggeredEffects
-		to.cardType = from.cardType
 		to.name = from.name
 		to.source = from.source
 		to.exhausted = from.exhausted
 		to.inDeck = from.inDeck
+		to.cardEffectGroups = from.cardEffectGroups
 		to.attachments = from.attachments
 		to.attachedCards = from.attachedCards
 		to.attachedTo = from.attachedTo
@@ -507,80 +495,6 @@ object EnemyInfo extends Clazz[EnemyInfo]("EnemyInfo", classOf[EnemyInfo]){
 		to.nextCardPlays = from.nextCardPlays
 	}
 }
-import arx.ax4.game.entities.AttackModifier
-object AttackModifier extends Clazz[AttackModifier]("AttackModifier", classOf[AttackModifier]){
-	val Sentinel = new AttackModifier
-	override def instantiate = new AttackModifier
-	val nameOverride = Field.fromValue(Sentinel.nameOverride).createField[AttackModifier]("nameOverride",f => f.nameOverride, (f,nameOverride) => f.nameOverride = nameOverride, AttackModifier) 
-	fields += "nameOverride" -> nameOverride
-	val namePrefix = Field.fromValue(Sentinel.namePrefix).createField[AttackModifier]("namePrefix",f => f.namePrefix, (f,namePrefix) => f.namePrefix = namePrefix, AttackModifier) 
-	fields += "namePrefix" -> namePrefix
-	val accuracyBonus = Field.fromValue(Sentinel.accuracyBonus).createField[AttackModifier]("accuracyBonus",f => f.accuracyBonus, (f,accuracyBonus) => f.accuracyBonus = accuracyBonus, AttackModifier) 
-	fields += "accuracyBonus" -> accuracyBonus
-	val strikeCountBonus = Field.fromValue(Sentinel.strikeCountBonus).createField[AttackModifier]("strikeCountBonus",f => f.strikeCountBonus, (f,strikeCountBonus) => f.strikeCountBonus = strikeCountBonus, AttackModifier) 
-	fields += "strikeCountBonus" -> strikeCountBonus
-	val actionCostDelta = Field.fromValue(Sentinel.actionCostDelta).createField[AttackModifier]("actionCostDelta",f => f.actionCostDelta, (f,actionCostDelta) => f.actionCostDelta = actionCostDelta, AttackModifier) 
-	fields += "actionCostDelta" -> actionCostDelta
-	val actionCostMinimum = Field.fromValue(Sentinel.actionCostMinimum).createField[AttackModifier]("actionCostMinimum",f => f.actionCostMinimum, (f,actionCostMinimum) => f.actionCostMinimum = actionCostMinimum, AttackModifier) 
-	fields += "actionCostMinimum" -> actionCostMinimum
-	val staminaCostDelta = Field.fromValue(Sentinel.staminaCostDelta).createField[AttackModifier]("staminaCostDelta",f => f.staminaCostDelta, (f,staminaCostDelta) => f.staminaCostDelta = staminaCostDelta, AttackModifier) 
-	fields += "staminaCostDelta" -> staminaCostDelta
-	val staminaCostMinimum = Field.fromValue(Sentinel.staminaCostMinimum).createField[AttackModifier]("staminaCostMinimum",f => f.staminaCostMinimum, (f,staminaCostMinimum) => f.staminaCostMinimum = staminaCostMinimum, AttackModifier) 
-	fields += "staminaCostMinimum" -> staminaCostMinimum
-	val minRangeDelta = Field.fromValue(Sentinel.minRangeDelta).createField[AttackModifier]("minRangeDelta",f => f.minRangeDelta, (f,minRangeDelta) => f.minRangeDelta = minRangeDelta, AttackModifier) 
-	fields += "minRangeDelta" -> minRangeDelta
-	val minRangeOverride = Field.fromValue(Sentinel.minRangeOverride).createField[AttackModifier]("minRangeOverride",f => f.minRangeOverride, (f,minRangeOverride) => f.minRangeOverride = minRangeOverride, AttackModifier) 
-	fields += "minRangeOverride" -> minRangeOverride
-	val maxRangeDelta = Field.fromValue(Sentinel.maxRangeDelta).createField[AttackModifier]("maxRangeDelta",f => f.maxRangeDelta, (f,maxRangeDelta) => f.maxRangeDelta = maxRangeDelta, AttackModifier) 
-	fields += "maxRangeDelta" -> maxRangeDelta
-	val maxRangeOverride = Field.fromValue(Sentinel.maxRangeOverride).createField[AttackModifier]("maxRangeOverride",f => f.maxRangeOverride, (f,maxRangeOverride) => f.maxRangeOverride = maxRangeOverride, AttackModifier) 
-	fields += "maxRangeOverride" -> maxRangeOverride
-	val damageModifiers = Field.fromValue(Sentinel.damageModifiers).createField[AttackModifier]("damageModifiers",f => f.damageModifiers, (f,damageModifiers) => f.damageModifiers = damageModifiers, AttackModifier) 
-	fields += "damageModifiers" -> damageModifiers
-	val targetPatternOverride = Field.fromValue(Sentinel.targetPatternOverride).createField[AttackModifier]("targetPatternOverride",f => f.targetPatternOverride, (f,targetPatternOverride) => f.targetPatternOverride = targetPatternOverride, AttackModifier) 
-	fields += "targetPatternOverride" -> targetPatternOverride
-	val onHitEffects = Field.fromValue(Sentinel.triggeredEffects).createField[AttackModifier]("onHitEffects", f => f.triggeredEffects, (f, onHitEffects) => f.triggeredEffects = onHitEffects, AttackModifier)
-	fields += "onHitEffects" -> onHitEffects
-
-	def apply(f : AttackModifier => Unit) : AttackModifier = { val v = new AttackModifier; f(v); v }
-					 
-	def copyInto(from : AttackModifier, to : AttackModifier) {
-		to.nameOverride = from.nameOverride
-		to.namePrefix = from.namePrefix
-		to.accuracyBonus = from.accuracyBonus
-		to.strikeCountBonus = from.strikeCountBonus
-		to.actionCostDelta = from.actionCostDelta
-		to.actionCostMinimum = from.actionCostMinimum
-		to.staminaCostDelta = from.staminaCostDelta
-		to.staminaCostMinimum = from.staminaCostMinimum
-		to.minRangeDelta = from.minRangeDelta
-		to.minRangeOverride = from.minRangeOverride
-		to.maxRangeDelta = from.maxRangeDelta
-		to.maxRangeOverride = from.maxRangeOverride
-		to.damageModifiers = from.damageModifiers
-		to.targetPatternOverride = from.targetPatternOverride
-		to.triggeredEffects = from.triggeredEffects
-	}
-}
-import arx.ax4.game.entities.VegetationLayer
-object VegetationLayer extends Clazz[VegetationLayer]("VegetationLayer", classOf[VegetationLayer]){
-	val Sentinel = new VegetationLayer
-	override def instantiate = new VegetationLayer
-	val cover = Field.fromValue(Sentinel.cover).createField[VegetationLayer]("cover",f => f.cover, (f,cover) => f.cover = cover, VegetationLayer) 
-	fields += "cover" -> cover
-	val moveCost = Field.fromValue(Sentinel.moveCost).createField[VegetationLayer]("moveCost",f => f.moveCost, (f,moveCost) => f.moveCost = moveCost, VegetationLayer) 
-	fields += "moveCost" -> moveCost
-	val kind = Field.fromValue(Sentinel.kind).createField[VegetationLayer]("kind",f => f.kind, (f,kind) => f.kind = kind, VegetationLayer) 
-	fields += "kind" -> kind
-
-	def apply(f : VegetationLayer => Unit) : VegetationLayer = { val v = new VegetationLayer; f(v); v }
-					 
-	def copyInto(from : VegetationLayer, to : VegetationLayer) {
-		to.cover = from.cover
-		to.moveCost = from.moveCost
-		to.kind = from.kind
-	}
-}
 import arx.ax4.game.entities.GatherMethod
 object GatherMethod extends Clazz[GatherMethod]("GatherMethod", classOf[GatherMethod]){
 	val Sentinel = new GatherMethod
@@ -631,6 +545,25 @@ object DefenseModifier extends Clazz[DefenseModifier]("DefenseModifier", classOf
 		to.armorBonus = from.armorBonus
 	}
 }
+import arx.ax4.game.entities.VegetationLayer
+object VegetationLayer extends Clazz[VegetationLayer]("VegetationLayer", classOf[VegetationLayer]){
+	val Sentinel = new VegetationLayer
+	override def instantiate = new VegetationLayer
+	val cover = Field.fromValue(Sentinel.cover).createField[VegetationLayer]("cover",f => f.cover, (f,cover) => f.cover = cover, VegetationLayer) 
+	fields += "cover" -> cover
+	val moveCost = Field.fromValue(Sentinel.moveCost).createField[VegetationLayer]("moveCost",f => f.moveCost, (f,moveCost) => f.moveCost = moveCost, VegetationLayer) 
+	fields += "moveCost" -> moveCost
+	val kind = Field.fromValue(Sentinel.kind).createField[VegetationLayer]("kind",f => f.kind, (f,kind) => f.kind = kind, VegetationLayer) 
+	fields += "kind" -> kind
+
+	def apply(f : VegetationLayer => Unit) : VegetationLayer = { val v = new VegetationLayer; f(v); v }
+					 
+	def copyInto(from : VegetationLayer, to : VegetationLayer) {
+		to.cover = from.cover
+		to.moveCost = from.moveCost
+		to.kind = from.kind
+	}
+}
 import arx.ax4.game.entities.Resource
 object Resource extends Clazz[Resource]("Resource", classOf[Resource]){
 	val Sentinel = new Resource
@@ -662,20 +595,93 @@ object Resource extends Clazz[Resource]("Resource", classOf[Resource]){
 		to.gatherMethods = from.gatherMethods
 	}
 }
-import arx.ax4.game.entities.TagInfo
-object TagInfo extends Clazz[TagInfo]("TagInfo", classOf[TagInfo]){
-	val Sentinel = new TagInfo
-	override def instantiate = new TagInfo
-	val kind = Field.fromValue(Sentinel.kind).createField[TagInfo]("kind",f => f.kind, (f,kind) => f.kind = kind, TagInfo) 
-	fields += "kind" -> kind
-	val hidden = Field.fromValue(Sentinel.hidden).createField[TagInfo]("hidden",f => f.hidden, (f,hidden) => f.hidden = hidden, TagInfo) 
-	fields += "hidden" -> hidden
+import arx.ax4.game.entities.CardEffectGroup
+object CardEffectGroup extends Clazz[CardEffectGroup]("CardEffectGroup", classOf[CardEffectGroup]){
+	val Sentinel = new CardEffectGroup
+	override def instantiate = new CardEffectGroup
+	val costs = Field.fromValue(Sentinel.costs).createField[CardEffectGroup]("costs",f => f.costs, (f,costs) => f.costs = costs, CardEffectGroup) 
+	fields += "costs" -> costs
+	val effects = Field.fromValue(Sentinel.effects).createField[CardEffectGroup]("effects",f => f.effects, (f,effects) => f.effects = effects, CardEffectGroup) 
+	fields += "effects" -> effects
+	val selfEffects = Field.fromValue(Sentinel.selfEffects).createField[CardEffectGroup]("selfEffects",f => f.selfEffects, (f,selfEffects) => f.selfEffects = selfEffects, CardEffectGroup) 
+	fields += "selfEffects" -> selfEffects
+	val triggeredEffects = Field.fromValue(Sentinel.triggeredEffects).createField[CardEffectGroup]("triggeredEffects",f => f.triggeredEffects, (f,triggeredEffects) => f.triggeredEffects = triggeredEffects, CardEffectGroup) 
+	fields += "triggeredEffects" -> triggeredEffects
+	val effectsDescription = Field.fromValue(Sentinel.effectsDescription).createField[CardEffectGroup]("effectsDescription",f => f.effectsDescription, (f,effectsDescription) => f.effectsDescription = effectsDescription, CardEffectGroup) 
+	fields += "effectsDescription" -> effectsDescription
 
-	def apply(f : TagInfo => Unit) : TagInfo = { val v = new TagInfo; f(v); v }
+	def apply(f : CardEffectGroup => Unit) : CardEffectGroup = { val v = new CardEffectGroup; f(v); v }
 					 
-	def copyInto(from : TagInfo, to : TagInfo) {
-		to.kind = from.kind
-		to.hidden = from.hidden
+	def copyInto(from : CardEffectGroup, to : CardEffectGroup) {
+		to.costs = from.costs
+		to.effects = from.effects
+		to.selfEffects = from.selfEffects
+		to.triggeredEffects = from.triggeredEffects
+		to.effectsDescription = from.effectsDescription
+	}
+}
+import arx.ax4.game.entities.AttackModifier
+object AttackModifier extends Clazz[AttackModifier]("AttackModifier", classOf[AttackModifier]){
+	val Sentinel = new AttackModifier
+	override def instantiate = new AttackModifier
+	val nameOverride = Field.fromValue(Sentinel.nameOverride).createField[AttackModifier]("nameOverride",f => f.nameOverride, (f,nameOverride) => f.nameOverride = nameOverride, AttackModifier) 
+	fields += "nameOverride" -> nameOverride
+	val namePrefix = Field.fromValue(Sentinel.namePrefix).createField[AttackModifier]("namePrefix",f => f.namePrefix, (f,namePrefix) => f.namePrefix = namePrefix, AttackModifier) 
+	fields += "namePrefix" -> namePrefix
+	val accuracyBonus = Field.fromValue(Sentinel.accuracyBonus).createField[AttackModifier]("accuracyBonus",f => f.accuracyBonus, (f,accuracyBonus) => f.accuracyBonus = accuracyBonus, AttackModifier) 
+	fields += "accuracyBonus" -> accuracyBonus
+	val strikeCountBonus = Field.fromValue(Sentinel.strikeCountBonus).createField[AttackModifier]("strikeCountBonus",f => f.strikeCountBonus, (f,strikeCountBonus) => f.strikeCountBonus = strikeCountBonus, AttackModifier) 
+	fields += "strikeCountBonus" -> strikeCountBonus
+	val strikeCountMultiplier = Field.fromValue(Sentinel.strikeCountMultiplier).createField[AttackModifier]("strikeCountMultiplier",f => f.strikeCountMultiplier, (f,strikeCountMultiplier) => f.strikeCountMultiplier = strikeCountMultiplier, AttackModifier) 
+	fields += "strikeCountMultiplier" -> strikeCountMultiplier
+	val actionCostDelta = Field.fromValue(Sentinel.actionCostDelta).createField[AttackModifier]("actionCostDelta",f => f.actionCostDelta, (f,actionCostDelta) => f.actionCostDelta = actionCostDelta, AttackModifier) 
+	fields += "actionCostDelta" -> actionCostDelta
+	val actionCostMinimum = Field.fromValue(Sentinel.actionCostMinimum).createField[AttackModifier]("actionCostMinimum",f => f.actionCostMinimum, (f,actionCostMinimum) => f.actionCostMinimum = actionCostMinimum, AttackModifier) 
+	fields += "actionCostMinimum" -> actionCostMinimum
+	val staminaCostDelta = Field.fromValue(Sentinel.staminaCostDelta).createField[AttackModifier]("staminaCostDelta",f => f.staminaCostDelta, (f,staminaCostDelta) => f.staminaCostDelta = staminaCostDelta, AttackModifier) 
+	fields += "staminaCostDelta" -> staminaCostDelta
+	val staminaCostMultiplier = Field.fromValue(Sentinel.staminaCostMultiplier).createField[AttackModifier]("staminaCostMultiplier",f => f.staminaCostMultiplier, (f,staminaCostMultiplier) => f.staminaCostMultiplier = staminaCostMultiplier, AttackModifier) 
+	fields += "staminaCostMultiplier" -> staminaCostMultiplier
+	val staminaCostMinimum = Field.fromValue(Sentinel.staminaCostMinimum).createField[AttackModifier]("staminaCostMinimum",f => f.staminaCostMinimum, (f,staminaCostMinimum) => f.staminaCostMinimum = staminaCostMinimum, AttackModifier) 
+	fields += "staminaCostMinimum" -> staminaCostMinimum
+	val minRangeDelta = Field.fromValue(Sentinel.minRangeDelta).createField[AttackModifier]("minRangeDelta",f => f.minRangeDelta, (f,minRangeDelta) => f.minRangeDelta = minRangeDelta, AttackModifier) 
+	fields += "minRangeDelta" -> minRangeDelta
+	val minRangeOverride = Field.fromValue(Sentinel.minRangeOverride).createField[AttackModifier]("minRangeOverride",f => f.minRangeOverride, (f,minRangeOverride) => f.minRangeOverride = minRangeOverride, AttackModifier) 
+	fields += "minRangeOverride" -> minRangeOverride
+	val maxRangeDelta = Field.fromValue(Sentinel.maxRangeDelta).createField[AttackModifier]("maxRangeDelta",f => f.maxRangeDelta, (f,maxRangeDelta) => f.maxRangeDelta = maxRangeDelta, AttackModifier) 
+	fields += "maxRangeDelta" -> maxRangeDelta
+	val maxRangeOverride = Field.fromValue(Sentinel.maxRangeOverride).createField[AttackModifier]("maxRangeOverride",f => f.maxRangeOverride, (f,maxRangeOverride) => f.maxRangeOverride = maxRangeOverride, AttackModifier) 
+	fields += "maxRangeOverride" -> maxRangeOverride
+	val damageModifiers = Field.fromValue(Sentinel.damageModifiers).createField[AttackModifier]("damageModifiers",f => f.damageModifiers, (f,damageModifiers) => f.damageModifiers = damageModifiers, AttackModifier) 
+	fields += "damageModifiers" -> damageModifiers
+	val baseDamageOverride = Field.fromValue(Sentinel.baseDamageOverride).createField[AttackModifier]("baseDamageOverride",f => f.baseDamageOverride, (f,baseDamageOverride) => f.baseDamageOverride = baseDamageOverride, AttackModifier) 
+	fields += "baseDamageOverride" -> baseDamageOverride
+	val targetPatternOverride = Field.fromValue(Sentinel.targetPatternOverride).createField[AttackModifier]("targetPatternOverride",f => f.targetPatternOverride, (f,targetPatternOverride) => f.targetPatternOverride = targetPatternOverride, AttackModifier) 
+	fields += "targetPatternOverride" -> targetPatternOverride
+	val triggeredEffects = Field.fromValue(Sentinel.triggeredEffects).createField[AttackModifier]("triggeredEffects",f => f.triggeredEffects, (f,triggeredEffects) => f.triggeredEffects = triggeredEffects, AttackModifier) 
+	fields += "triggeredEffects" -> triggeredEffects
+
+	def apply(f : AttackModifier => Unit) : AttackModifier = { val v = new AttackModifier; f(v); v }
+					 
+	def copyInto(from : AttackModifier, to : AttackModifier) {
+		to.nameOverride = from.nameOverride
+		to.namePrefix = from.namePrefix
+		to.accuracyBonus = from.accuracyBonus
+		to.strikeCountBonus = from.strikeCountBonus
+		to.strikeCountMultiplier = from.strikeCountMultiplier
+		to.actionCostDelta = from.actionCostDelta
+		to.actionCostMinimum = from.actionCostMinimum
+		to.staminaCostDelta = from.staminaCostDelta
+		to.staminaCostMultiplier = from.staminaCostMultiplier
+		to.staminaCostMinimum = from.staminaCostMinimum
+		to.minRangeDelta = from.minRangeDelta
+		to.minRangeOverride = from.minRangeOverride
+		to.maxRangeDelta = from.maxRangeDelta
+		to.maxRangeOverride = from.maxRangeOverride
+		to.damageModifiers = from.damageModifiers
+		to.baseDamageOverride = from.baseDamageOverride
+		to.targetPatternOverride = from.targetPatternOverride
+		to.triggeredEffects = from.triggeredEffects
 	}
 }
 import arx.ax4.game.entities.Skill
@@ -692,6 +698,22 @@ object Skill extends Clazz[Skill]("Skill", classOf[Skill]){
 	def copyInto(from : Skill, to : Skill) {
 		to.displayName = from.displayName
 		to.cardRewards = from.cardRewards
+	}
+}
+import arx.ax4.game.entities.TagInfo
+object TagInfo extends Clazz[TagInfo]("TagInfo", classOf[TagInfo]){
+	val Sentinel = new TagInfo
+	override def instantiate = new TagInfo
+	val kind = Field.fromValue(Sentinel.kind).createField[TagInfo]("kind",f => f.kind, (f,kind) => f.kind = kind, TagInfo) 
+	fields += "kind" -> kind
+	val hidden = Field.fromValue(Sentinel.hidden).createField[TagInfo]("hidden",f => f.hidden, (f,hidden) => f.hidden = hidden, TagInfo) 
+	fields += "hidden" -> hidden
+
+	def apply(f : TagInfo => Unit) : TagInfo = { val v = new TagInfo; f(v); v }
+					 
+	def copyInto(from : TagInfo, to : TagInfo) {
+		to.kind = from.kind
+		to.hidden = from.hidden
 	}
 }
 }

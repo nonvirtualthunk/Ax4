@@ -5,7 +5,7 @@ import arx.application.Noto
 import arx.ax4.control.components.{CardControl, PerkPickControl, SelectionControl, TacticalUIControl}
 import arx.ax4.game.components.{AIComponent, CardCreationComponent, DeckComponent, FlagComponent, TriggeredEffectsComponent, TurnComponent}
 import arx.ax4.game.entities.AttackEffectTrigger.Hit
-import arx.ax4.game.entities.Companions.{CardData, CharacterInfo, DeckData, MonsterData, Physical, Tile, TurnData}
+import arx.ax4.game.entities.Companions.{CardData, CharacterInfo, DeckData, MonsterData, Physical, TagData, Tile, TurnData}
 import arx.ax4.game.entities.EntityConditionals._
 import arx.ax4.game.entities.GatherConditionals._
 import arx.ax4.game.entities.{AffectsSelector, AllegianceData, AttackData, AttackKey, AxAuxData, CardData, CardLibrary, CardPredicate, CardSelector, CardTypes, CharacterInfo, CombatData, DamageElement, DamageKey, DamageType, DeckData, EntityConditionals, Equipment, FactionData, GatherConditionals, GatherMethod, Inventory, ItemLibrary, LockedCardSlot, LockedCardType, MonsterAttack, MonsterData, Physical, QualitiesData, ReactionData, Resource, ResourceKey, ResourceOrigin, ResourceSourceData, TargetPattern, Terrain, TerrainLibrary, Tile, Tiles, TriggeredAttackEffect, TurnData, Vegetation, VegetationLayer, VegetationLayerType, VegetationLibrary, Weapon, WeaponLibrary}
@@ -146,6 +146,10 @@ object SimpleMapScenario extends Scenario {
 		//		world.modify(Tiles.tileAt(0,0), Tile.entities + torbold, None)
 		world.modify(torbold, IdentityData.name -> Some("Torbold"), None)
 
+		world.modify(torbold, TagData.flags.put(Taxonomy("flags.flashingPoints"), 1))
+		world.modify(torbold, TagData.flags.put(Taxonomy("flags.slow"), 1))
+		world.modify(torbold, TagData.flags.put(Taxonomy("flags.parry"), 3))
+
 		playerCharacter = torbold
 
 		def addCardTorbold(cardName : String): Unit = {
@@ -163,7 +167,7 @@ object SimpleMapScenario extends Scenario {
 		addCardTorbold("slime")
 
 
-		val moveCard = torbold(DeckData)(world.view).allCards.find(c => c(CardData)(world.view).cardType == CardTypes.MoveCard).get
+		val moveCard = torbold(DeckData)(world.view).allCards.find(c => c(IdentityData)(world.view).isA(CardTypes.MoveCard)).get
 
 		CardLogic.addLockedCardSlot(torbold, LockedCardSlot(Seq(CardPredicate.IsCard), "Any Card"))(world)
 		CardLogic.addLockedCardSlot(torbold, LockedCardSlot(Seq(CardPredicate.IsCard), "Any Card"))(world)
@@ -205,7 +209,7 @@ object SimpleMapScenario extends Scenario {
 
 		world.addEvent(TurnStartedEvent(player, 0))
 
-		SkillsLogic.gainSkillXP(playerCharacter, Taxonomy("spearSkill"),20)(world)
+//		SkillsLogic.gainSkillXP(playerCharacter, Taxonomy("spearSkill"),20)(world)
 //
 		Mouse.setImage(ResourceManager.image("third-party/shikashiModified/staff1.png"), Vec2i(4,4))
 	}

@@ -68,7 +68,7 @@ class TacticalUIGraphics(anim : AnimationGraphicsComponent) extends AxCanvasGrap
 
 
 			sd.consideredContext match {
-				case Some(SelectionContext(entity, selectable, selectableInst, selectionResults, _)) =>
+				case Some(SelectionContext(entity, selectable, selectableInst, selectionResults, _, _)) =>
 					for (renderer <- selectableRenderers) {
 						renderer.renderSelectable(view, display, entity, canvas, selectable, selectableInst, selectionResults)
 					}

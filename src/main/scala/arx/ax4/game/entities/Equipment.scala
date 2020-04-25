@@ -69,12 +69,21 @@ class TagData extends AxAuxData {
 	var flags: Map[Taxon, Int] = Map()
 }
 
+/*
+4 attacks
+3 moves
+1 defend
+1 gather
+
+ */
+
 @GenerateCompanion
 class Weapon extends AxAuxData {
 	@NoAutoLoad var attacks: Map[AttackKey, AttackData] = Map()
 	var primaryAttack: AttackKey = AttackKey.Primary
-	var weaponSkills: List[Taxon] = Nil
+	var weaponSkills: Vector[Taxon] = Vector()
 	var naturalWeapon: Boolean = false
+	var attackCardCount : Int = 4
 
 	@NoAutoLoad var attackCards: Vector[Entity] = Vector()
 
@@ -84,9 +93,6 @@ class Weapon extends AxAuxData {
 				val attData = AttackData(Entity.Sentinel).loadFromConfig(attDataConfig)
 				attacks += AttackKey.parse(attName) -> attData
 			}
-		}
-		for (weaponSkillsConf <- config.fieldOpt("weaponSkills")) {
-			weaponSkills = weaponSkillsConf.arr.map(cv => Taxonomy(cv.str)).toList
 		}
 	}
 }

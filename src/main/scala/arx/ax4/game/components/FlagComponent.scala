@@ -4,7 +4,7 @@ import arx.application.Noto
 import arx.ax4.game.components.FlagComponent.{ChangeFlagBy, FlagBehavior}
 import arx.ax4.game.entities.Companions.TagData
 import arx.ax4.game.entities.{ConfigLoadableLibrary, DeckData, FlagLibrary, Library}
-import arx.ax4.game.event.TurnEvents.EntityTurnEndEvent
+import arx.ax4.game.event.TurnEvents.{EntityTurnEndEvent, EntityTurnStartEvent}
 import arx.ax4.game.event.{DamageEvent, DeflectEvent, DodgeEvent}
 import arx.ax4.game.logic.TagLogic
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
@@ -48,6 +48,10 @@ object FlagComponent {
 
 	def resetAtEndOfTurn(flagStr : String) = FlagBehavior(flag(flagStr), ResetToZero, {
 		case EntityTurnEndEvent(entity, _) => entity
+	})
+
+	def resetAtStartOfTurn(flagStr : String) = FlagBehavior(flag(flagStr), ResetToZero, {
+		case EntityTurnStartEvent(entity, _) => entity
 	})
 
 	trait FlagAlteration {

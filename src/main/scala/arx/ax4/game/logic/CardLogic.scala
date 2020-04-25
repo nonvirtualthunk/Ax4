@@ -9,7 +9,7 @@ import arx.ax4.game.entities._
 import arx.ax4.game.event.CardEvents._
 import arx.core.representation.ConfigValue
 import arx.engine.data.CustomConfigDataLoader
-import arx.engine.entity.{Entity, IdentityData, Taxonomy}
+import arx.engine.entity.{Entity, IdentityData, Taxon, Taxonomy}
 import arx.engine.world.{World, WorldView}
 import arx.game.logic.Randomizer
 import arx.graphics.helpers.{RichText, RichTextRenderSettings, THasRichTextRepresentation, TaxonSections}
@@ -235,10 +235,12 @@ object CardLogic {
 		card
 	}
 
-	def createCard(source: Entity, cardInit: CardData => Unit)(implicit world: World): Entity = {
+	def createCard(source: Entity, kind : Taxon, cardInit: CardData => Unit)(implicit world: World): Entity = {
 		val ent = world.createEntity()
 		ent.attach(new TagData).in(world)
-		ent.attach(new IdentityData).in(world)
+		val ID = new IdentityData()
+		ID.kind = kind
+		ent.attach(ID).in(world)
 		val CD = new CardData
 		cardInit(CD)
 		CD.source = source
@@ -275,7 +277,7 @@ object CardLogic {
 			case LockedCardType.SpecificCard(card) => card
 				// TODO: Special attacks and locked card interaction
 			case LockedCardType.MetaAttackCard(attackKey, specialAttack) => source[DeckData].allAvailableCards.find(c =>
-				c[CardData].effects.exists {
+				c[CardData].cardEffectGroups.flatMap(_.effects).exists {
 					case AttackGameEffect(key, attackData) => key == attackKey
 					case _ => false
 				}).getOrElse(Entity.Sentinel)
@@ -312,17 +314,15 @@ object CardLogic {
 	}
 
 	def isAttackCard(card: Entity, isNaturalWeapon : Boolean)(implicit view: WorldView): Boolean = {
-		val cd = card[CardData]
-		cd.cardType == CardTypes.AttackCard &&
-			(cd.source.dataOpt[Weapon] match {
-				case Some(weapon) => weapon.naturalWeapon == isNaturalWeapon
-				case None => false
-			})
+		IdentityLogic.isA(card, CardTypes.AttackCard) &&
+		IdentityLogic.isA(card, CardTypes.NaturalAttackCard) == isNaturalWeapon
 	}
 
 	def isPlayable(entity : Entity, card: Entity)(implicit view : WorldView): Boolean = {
-		val CostsAndEffects(costs,effects, selfEffects) = effectiveCostsAndEffects(Some(entity), card)
-		costs.nonEmpty || effects.nonEmpty || selfEffects.nonEmpty
+		effectiveCostsAndEffects(Some(entity), card).exists {
+			case CostsAndEffects(costs, effects, selfEffects, _, _) =>
+				costs.nonEmpty || effects.nonEmpty || selfEffects.nonEmpty
+		}
 	}
 
 	private def removeCardFromCurrentPileIntern(entity : Entity, card : Entity)(implicit world : World) = {
@@ -393,41 +393,46 @@ object CardLogic {
 		card[CardData].attachedCards.foreach{ case (key, attachedV) => attachedV.foreach(a => detachCard(entity, card, key, a)) }
 	}
 
-	def effectiveCostsAndEffects(entity : Option[Entity], card : Entity)(implicit view : WorldView) : CostsAndEffects = {
+	def effectiveCostsAndEffects(entity : Option[Entity], card : Entity)(implicit view : WorldView) : Vector[CostsAndEffects] = {
 		effectiveCostsAndEffects(entity, card(CardData))
 	}
-	def effectiveCostsAndEffects(entity : Option[Entity], CD : CardData)(implicit view : WorldView) : CostsAndEffects = {
-		var costs = CD.costs
-		var effects = CD.effects
-		val selfEffects = CD.selfEffects
+	def effectiveCostsAndEffects(entity : Option[Entity], CD : CardData)(implicit view : WorldView) : Vector[CostsAndEffects] = {
+		for (effGroup <- CD.cardEffectGroups) yield {
+			var costs = effGroup.costs
+			val effects = effGroup.effects
+			val selfEffects = effGroup.selfEffects
 
-		for (ent <- entity) {
-			// TODO: Generify
-			effects.ofType[SpecialAttackGameEffect].foreach (eff => {
-				CombatLogic.resolveSpecialAttack(ent, eff.specialAttack) match {
-					case Some(effAttack) =>
-						costs :+= PayActionPoints(effAttack.actionCost)
-						costs :+= PayStamina(effAttack.staminaCost)
-					case None => // do nothing
-				}
-				eff.specialAttack.attackModifier
-			})
-		}
-
-		for ((key,attachment) <- CD.attachments; attachedCards = CD.attachedCards.getOrElse(key, Vector())) {
-			attachment.attachmentStyle match {
-				case AttachmentStyle.Contained =>
-				// do nothing, nothing specific happens to the contained card
-				case AttachmentStyle.PlayModified(effectModifiers) =>
-					// if this is a play-modified attachment, add all of the costs and effects from the attached card to this one
-					for (attachedCardEnt <- attachedCards; attachedCard = attachedCardEnt[CardData]) {
-						costs ++= attachedCard.costs.map(c => GameEffectModifier.applyAll(c, effectModifiers))
-						effects ++= attachedCard.effects.map(c => GameEffectModifier.applyAll(c, effectModifiers))
+			for (ent <- entity) {
+				// TODO: Generify
+				effects.ofType[SpecialAttackGameEffect].foreach (eff => {
+					CombatLogic.resolveSpecialAttack(ent, eff.specialAttack) match {
+						case Some(effAttack) =>
+							costs :+= PayActionPoints(effAttack.actionCost)
+							costs :+= PayStamina(effAttack.staminaCost)
+						case None => // do nothing
 					}
+					eff.specialAttack.attackModifier
+				})
 			}
+
+			for ((key,attachment) <- CD.attachments; attachedCards = CD.attachedCards.getOrElse(key, Vector())) {
+				attachment.attachmentStyle match {
+					case AttachmentStyle.Contained =>
+					// do nothing, nothing specific happens to the contained card
+					case AttachmentStyle.PlayModified(effectModifiers) =>
+						// if this is a play-modified attachment, add all of the costs and effects from the attached card to this one
+						for (attachedCardEnt <- attachedCards; attachedCard = attachedCardEnt[CardData]) {
+							Noto.error("PlayModified(...) attachment cards are not currently supported")
+//
+//							costs ++= attachedCard.costs.map(c => GameEffectModifier.applyAll(c, effectModifiers))
+//							effects ++= attachedCard.effects.map(c => GameEffectModifier.applyAll(c, effectModifiers))
+						}
+				}
+			}
+
+			CostsAndEffects(costs, effects, selfEffects, effGroup.triggeredEffects, effGroup.effectsDescription)
 		}
 
-		CostsAndEffects(costs, effects, selfEffects)
 	}
 
 	def cardAndAllAttachments(card: Entity)(implicit view : WorldView): List[Entity] = {
@@ -447,7 +452,7 @@ object CardLogic {
 	}
 
 
-	case class CostsAndEffects (costs : Vector[GameEffect], effects : Vector[GameEffect], selfEffects : Vector[GameEffect])
+	case class CostsAndEffects (costs : Vector[GameEffect], effects : Vector[GameEffect], selfEffects : Vector[GameEffect], triggeredEffects: Vector[TriggeredGameEffect], description : Option[String])
 }
 
 

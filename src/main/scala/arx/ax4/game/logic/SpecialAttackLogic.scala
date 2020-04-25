@@ -27,7 +27,7 @@ object SpecialAttackLogic {
 	}
 
 	private def matchingAttackData(attacker : Entity, card : Entity, specialAttack: SpecialAttack)(implicit view : WorldView) : Option[AttackData] = {
-		card[CardData].effects.collectFirst {
+		card[CardData].cardEffectGroups.flatMap(_.effects).collectFirst {
 			case AttackGameEffect(_, attackData) if specialAttack.condition.isTrueFor(view, UntargetedAttackProspect(attacker, attackData)) => attackData
 		}
 	}

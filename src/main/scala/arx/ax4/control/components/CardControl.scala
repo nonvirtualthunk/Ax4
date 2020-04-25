@@ -1,6 +1,8 @@
 package arx.ax4.control.components
+import java.util.concurrent.atomic.AtomicBoolean
+
 import arx.application.Noto
-import arx.ax4.control.components.widgets.CardWidget
+import arx.ax4.control.components.widgets.{CardWidget, CardWidgetData}
 import arx.ax4.game.entities.Companions.{CardData, DeckData, TagData}
 import arx.ax4.game.entities.cardeffects.{PayActionPoints, PayStamina}
 import arx.ax4.game.entities.{AttachmentStyle, CardData, CardPlay, CardTypes, TagData, TagLibrary}
@@ -12,7 +14,7 @@ import arx.core.units.UnitOfTime
 import arx.core.vec.{ReadVec2i, Vec2f, Vec2i}
 import arx.engine.control.components.windowing.Widget
 import arx.engine.control.components.windowing.widgets.data.{OverlayData, WidgetOverlay}
-import arx.engine.control.components.windowing.widgets.{PositionExpression, TopLeft}
+import arx.engine.control.components.windowing.widgets.{ListItemMousedOver, ListItemSelected, PositionExpression, TopLeft}
 import arx.engine.control.event.{KeyModifiers, KeyboardMirror, Mouse, MouseButton, MousePressEvent, MouseReleaseEvent}
 import arx.engine.data.Moddable
 import arx.engine.entity.Companions.IdentityData
@@ -26,9 +28,10 @@ class CardControl(selectionControl : SelectionControl) extends AxControlComponen
 
 	var cardWidgets : Map[Entity, Widget] = Map()
 	var heldCard : Option[Entity] = None
+	var heldEffectGroup : Int = 0
 	var selectedCard : Option[Entity] = None
 	var grabOffset : ReadVec2i = Vec2i.Zero
-	var useCardOnDrop = false
+	var useCardOnDrop = new AtomicBoolean(false)
 
 
 	override protected def onUpdate(gameView: HypotheticalWorldView, game: World, display: World, dt: UnitOfTime): Unit = {
@@ -55,8 +58,15 @@ class CardControl(selectionControl : SelectionControl) extends AxControlComponen
 					cardWidget.onEvent {
 						case MousePressEvent(button, pos, modifiers) =>
 							heldCard = Some(card)
+							heldEffectGroup = cardWidget[CardWidgetData].activeGroup
 							grabOffset = cardWidget.windowingSystem.currentWindowingMousePosition - cardWidget.drawing.absolutePosition.xy
 						case MouseReleaseEvent(button, pos, modifiers) =>
+							cardDropped(game, display)
+							heldCard = None
+						case ListItemMousedOver(_,index,_) =>
+							cardWidget[CardWidgetData].activeGroup = index
+						case ListItemSelected(_, index, _) =>
+							cardWidget[CardWidgetData].activeGroup = index
 							cardDropped(game, display)
 							heldCard = None
 					}
@@ -184,11 +194,11 @@ class CardControl(selectionControl : SelectionControl) extends AxControlComponen
 				val od = widget[OverlayData]
 
 				od.overlays(CardControl.ActiveOverlay).drawOverlay = Moddable(if (heldCard.contains(card) && widget.drawing.absolutePosition.y < (widget.parent.drawing.effectiveDimensions.y - 1000) && CardLogic.isPlayable(selC, card)(game.view)) {
-					useCardOnDrop = true
+					useCardOnDrop.set(true)
 					true
 				} else {
 					if (heldCard.contains(card)) {
-						useCardOnDrop = false
+						useCardOnDrop.set(false)
 					}
 					false
 				})
@@ -217,10 +227,10 @@ class CardControl(selectionControl : SelectionControl) extends AxControlComponen
 		val tuid = display[TacticalUIData]
 		implicit val view = game.view
 
-		if (useCardOnDrop) {
+		if (useCardOnDrop.get()) {
 			for (card <- heldCard ; selC <- tuid.selectedCharacter) {
 				if (CardLogic.isPlayable(selC, card)) {
-					val cardPlay = CardPlay(selC, card)
+					val cardPlay = CardPlay(selC, card, heldEffectGroup)
 					cardPlay.instantiate(game.view, selC, card) match {
 						case Left(cardPlayInst) =>
 							selectedCard = Some(card)
@@ -243,51 +253,57 @@ object CardControl {
 	val ActiveOverlay = "Active Overlay"
 }
 
-case class CardInfo(name : String, tags : List[Taxon], image : Image, mainCost : RichText, secondaryCost : RichText, effects : RichText) {
+case class CardInfo(name : String, tags : List[Taxon], image : Image, mainCost : RichText, secondaryCost : RichText, effects : Vector[RichText]) {
 	val hasTags = tags.nonEmpty
 }
 object CardInfo {
 	import arx.Prelude._
 
-	def apply(character : Entity, card : Entity)(implicit view : WorldView) : CardInfo = {
-		CardInfo(Some(character), card(IdentityData).kind, card(CardData), card(TagData))
+	def apply(character : Entity, card : Entity, activeEffectGroup : Int)(implicit view : WorldView) : CardInfo = {
+		CardInfo(Some(character), card(IdentityData).kind, card(CardData), card(TagData), activeEffectGroup)
 	}
-	def apply(character : Option[Entity], cardKind : Taxon, CD : CardData, TD : TagData)(implicit view : WorldView) : CardInfo = {
+	def apply(character : Option[Entity], cardKind : Taxon, CD : CardData, TD : TagData, activeEffectGroupIndex : Int)(implicit view : WorldView) : CardInfo = {
 		val settings = RichTextRenderSettings()
 
-		val CostsAndEffects(costs, effects, selfEffects) = CardLogic.effectiveCostsAndEffects(character, CD)
-		val apCosts = costs.collect {
-			case PayActionPoints(ap) => ap
-		}
-		val staminaCosts = costs.collect {
-			case PayStamina(stamina) => stamina
-		}
-
-		val mainCost =  if (apCosts.nonEmpty) {
-			val totalCost = apCosts.sum
-			RichText(TextSection(totalCost.toString) :: TaxonSections("GameConcepts.ActionPoint", settings))
-		} else {
-			RichText.Empty
-		}
-
-		val secondaryCost = if (staminaCosts.nonEmpty) {
-			val totalCost = staminaCosts.sum + TagLogic.flagValue(TD, Taxonomy("StaminaCostDelta"))
-			RichText(TextSection(totalCost.toString) :: TaxonSections("GameConcepts.StaminaPoint", settings))
-		} else {
-			RichText.Empty
-		}
-
-		val effectTextSections = effects.map(e => {
-			character match {
-				case Some(c) => e.toRichText(view, c, RichTextRenderSettings()).sections
-				case None => e.toRichText(settings).sections
+		val costAndEffectSections = for (CostsAndEffects(costs, effects, selfEffects, triggeredEffects, description) <- CardLogic.effectiveCostsAndEffects(character, CD)) yield {
+			val apCosts = costs.collect {
+				case PayActionPoints(ap) => ap
 			}
-		})
-		val selfEffectTextSections = selfEffects.map(e => e.toRichText(settings).sections)
+			val staminaCosts = costs.collect {
+				case PayStamina(stamina) => stamina
+			}
 
-		val combinedEffectsSections = CD.effectsDescription match {
-			case Some(desc) => RichText.parse(desc, settings).sections
-			case None => (effectTextSections ++ selfEffectTextSections).reduceLeftOrElse((t1, t2) => t1 ++ Seq(LineBreakSection(0)) ++ t2, Vector())
+			val mainCost = if (apCosts.nonEmpty) {
+				val totalCost = apCosts.sum
+				RichText(TextSection(totalCost.toString) :: TaxonSections("GameConcepts.ActionPoint", settings))
+			} else {
+				RichText.Empty
+			}
+
+			val secondaryCost = if (staminaCosts.nonEmpty) {
+				val totalCost = staminaCosts.sum + TagLogic.flagValue(TD, Taxonomy("StaminaCostDelta"))
+				RichText(TextSection(totalCost.toString) :: TaxonSections("GameConcepts.StaminaPoint", settings))
+			} else {
+				RichText.Empty
+			}
+
+			val effectTextSections = effects.map(e => {
+				character match {
+					case Some(c) => e.toRichText(view, c, RichTextRenderSettings()).sections
+					case None => e.toRichText(settings).sections
+				}
+			})
+			val selfEffectTextSections = selfEffects.map(e => e.toRichText(settings).sections)
+
+			val combinedEffectsSections = description match {
+				case Some(desc) => RichText.parse(desc, settings).sections
+				case None => (effectTextSections ++ selfEffectTextSections).reduceLeftOrElse((t1, t2) => t1 ++ Seq(LineBreakSection(0)) ++ t2, Vector())
+			}
+
+			val triggeredEffectSection = triggeredEffects.map(LineBreakSection(0) + _.toRichText(settings)).foldLeft(RichText.Empty)(_ ++ _)
+
+			val effectText = RichText(combinedEffectsSections) ++ triggeredEffectSection
+			(mainCost, secondaryCost, effectText)
 		}
 
 		var attachmentSections = Vector[RichTextSection]()
@@ -308,6 +324,18 @@ object CardInfo {
 			}
 		}
 
+		val (mainCost, secondaryCost, _) = if (costAndEffectSections.size > activeEffectGroupIndex) { costAndEffectSections(activeEffectGroupIndex) } else { costAndEffectSections.head }
+
+		var effectText = Vector[RichText]()
+		for (((_,_,text),index) <- costAndEffectSections.zipWithIndex) {
+
+			if (index == activeEffectGroupIndex) {
+				effectText ++= text
+			} else {
+				effectText ++= RichText(text.sections.map(_.applyTint(Moddable(RGBA(1.0f,1.0f,1.0f,1.0f)))))
+			}
+		}
+
 		var tagsSections = TD.tags.toVector.map(t => TagLibrary.withKind(t))
 			.filter(!_.hidden)
    		.map(_.toRichText(settings))
@@ -316,12 +344,9 @@ object CardInfo {
 			tagsSections = tagsSections + LineBreakSection(20)
 		}
 
-		val triggeredEffectSection = CD.triggeredEffects.map(LineBreakSection(0) + _.toRichText(settings)).foldLeft(RichText.Empty)(_ ++ _)
+		val name = CD.cardEffectGroups(activeEffectGroupIndex).name.getOrElse(CD.name)
 
-
-		val effectText = tagsSections ++ attachmentSections ++ combinedEffectsSections ++ triggeredEffectSection
-
-		val cardImage : TToImage = CardImageLibrary.cardImageOpt(CD.name) match {
+		val cardImage : TToImage = CardImageLibrary.cardImageOpt(name) match {
 			case Some(img) => img
 			case _ =>
 				if (cardKind.isA(CardTypes.ItemCard)) {
@@ -337,7 +362,7 @@ object CardInfo {
 				}
 		}
 
-		CardInfo(CD.name.capitalize, TD.tags.toList, cardImage, mainCost, secondaryCost, effectText)
+		CardInfo(name.capitalize, TD.tags.toList, cardImage, mainCost, secondaryCost, effectText)
 	}
 }
 

@@ -58,7 +58,7 @@ object CharacterLogic {
 		world.attachData(creature, new TagData)
 		world.attachDataWith(creature, (wd : Weapon) => {
 			wd.attacks += AttackKey.Primary -> AttackData(creature, "Punch", Taxonomy("BludgeoningAttack"), 0, 1, 1, 1, 0, 1, Vector(DamageElement(DamageKey.Primary, DicePool(1).d(4), 0, 1.0f, DamageType.Bludgeoning)), TargetPattern.SingleEnemy, cardCount = 2)
-			wd.weaponSkills = List(Taxonomy("UnarmedSkill"))
+			wd.weaponSkills = Vector(Taxonomy("UnarmedSkill"))
 			wd.naturalWeapon = true
 		})
 		world.attachDataWith(creature, (ad : AllegianceData) => {

@@ -108,14 +108,14 @@ case class GatherCardEffect(range : Int) extends GameEffect {
 	override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"Gather $range")
 }
 
-case class GainMovePoints(bonusMP : Sext) extends SimpleGameEffect {
+case class GainMovePoints(mp : Sext) extends SimpleGameEffect {
 	override def applyEffect(world: World, entity: Entity): Unit = {
-		CharacterLogic.gainMovePoints(entity, entity(CharacterInfo)(world.view).moveSpeed + bonusMP)(world)
+		CharacterLogic.gainMovePoints(entity, mp)(world)
 	}
 
-	override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"Move [Speed] + $bonusMP")
+	override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"Move $mp")
 
-	override def toRichText(view: WorldView, entity: Entity, settings: RichTextRenderSettings): RichText = RichText(s"Move ${entity(CharacterInfo)(view).moveSpeed + bonusMP}")
+	override def toRichText(view: WorldView, entity: Entity, settings: RichTextRenderSettings): RichText = RichText(s"Move ${mp}")
 }
 
 case class PayActionPoints(ap : Int) extends GameEffect {

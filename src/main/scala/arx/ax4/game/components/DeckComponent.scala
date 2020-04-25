@@ -6,7 +6,7 @@ import arx.ax4.game.entities.{CardData, CardInDeck, CardTypes, CharacterInfo, De
 import arx.ax4.game.event.CardEvents.AttachedCardsChanged
 import arx.ax4.game.event.{DeckModificationEvent, EntityCreated, EntityPlaced, EquipItem, TransferItem, UnequipItem}
 import arx.ax4.game.logic.CardAdditionStyle.{DrawDiscardSplit, DrawPile}
-import arx.ax4.game.logic.{CardAdditionStyle, CardLogic}
+import arx.ax4.game.logic.{CardAdditionStyle, CardLogic, IdentityLogic}
 import arx.core.introspection.FieldOperations.MapField
 import arx.core.math.Sext
 import arx.core.units.UnitOfTime
@@ -30,7 +30,7 @@ class DeckComponent extends GameComponent {
 					// add all the cards for the item being equipped
 					ID.equippedCards.foreach(card => CardLogic.addCard(entity, card, CardAdditionStyle.DrawDiscardSplit))
 					// if we add an attack card from an item, then remove all natural attack cards
-					if (ID.equippedCards.exists(c => c[CardData].cardType == CardTypes.AttackCard)) {
+					if (ID.equippedCards.exists(c => IdentityLogic.isA(c, CardTypes.AttackCard))) {
 						for (naturalAttackCard <- deck.allCards.filter(c => CardLogic.isNaturalAttackCard(c))) {
 							CardLogic.removeCard(entity, naturalAttackCard)
 						}

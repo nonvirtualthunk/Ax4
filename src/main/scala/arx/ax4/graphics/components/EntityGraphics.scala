@@ -1,17 +1,21 @@
 package arx.ax4.graphics.components
-import arx.ax4.game.entities.{CharacterInfo, Physical, Tile, Tiles}
-import arx.ax4.graphics.data.{AxDrawingConstants, CullingData}
+import arx.ax4.game.entities.{CharacterInfo, FlagLibrary, Physical, TagData, Tile, Tiles}
+import arx.ax4.game.logic.TagLogic
+import arx.ax4.graphics.data.{AxDrawingConstants, CullingData, TacticalUIData}
 import arx.ax4.graphics.resources.CharacterImageset
 import arx.core.units.UnitOfTime
 import arx.core.vec.Vec2f
-import arx.core.vec.coordinates.{AxialVec, CartVec, Hex}
+import arx.core.vec.coordinates.{AxialVec, AxialVec3, CartVec, Hex}
 import arx.engine.graphics.components.DrawPriority
 import arx.engine.simple.{DrawLayer, HexCanvas}
 import arx.engine.world.{HypotheticalWorldView, World}
+import arx.graphics.data.SpriteLibrary
 import arx.graphics.helpers.{Color, RGBA}
 import arx.resource.ResourceManager
 
 class EntityGraphics extends AxCanvasGraphicsComponent {
+
+	var iconOpacity = Map[AxialVec,Float]().withDefaultValue(0.0f)
 
 	override def drawPriority = DrawPriority.Late
 	override protected def onInitialize(game: World, display: World): Unit = {}
@@ -32,6 +36,8 @@ class EntityGraphics extends AxCanvasGraphicsComponent {
 //
 //
 //
+		implicit val view = game
+
 		val imageset = EntityGraphics.characterImageset
 		val cull = display[CullingData]
 		val const = display[AxDrawingConstants]
@@ -52,6 +58,41 @@ class EntityGraphics extends AxCanvasGraphicsComponent {
    					.dimensions(layer.image.width * 4, layer.image.height * 4)
    					.layer(DrawLayer.Entity)
    					.draw()
+				}
+
+				var opacity = iconOpacity(tilePos)
+				if (display[TacticalUIData].mousedOverHex == AxialVec3(tilePos, 0)) {
+					opacity = (opacity + 0.1f).min(1.0f)
+				} else {
+					opacity = (opacity - 0.1f).max(0.0f)
+				}
+				iconOpacity += tilePos -> opacity
+
+				if (opacity > 0.01f) {
+					val scale = 2
+					var offset = -0.2f
+					for ((flag, count) <- TagLogic.allFlags(ent) if count != 0;
+							 flagInfo <- FlagLibrary.getWithKind(flag) if !flagInfo.hidden;
+							 spriteInfo <- SpriteLibrary.getSpriteDefinitionFor(flag)) {
+						canvas.quad(rawCenter)
+							.hexBottomOrigin(-0.05f + offset, -0.1f)
+							.texture(spriteInfo.icon)
+							.dimensions(32 * scale, 32 * scale)
+							.color(RGBA(1.0f,1.0f,1.0f,opacity))
+							.layer(DrawLayer.Entity)
+							.draw()
+
+						offset += 0.05f * scale
+
+						canvas.quad(rawCenter)
+							.hexBottomOrigin(-0.05f + offset, -0.1f)
+							.texture(s"graphics/ui/numerals/$count.png", 1)
+							.color(RGBA(1.0f,1.0f,1.0f,opacity))
+							.layer(DrawLayer.Entity)
+							.draw()
+
+						offset += 0.125f * scale
+					}
 				}
 
 

@@ -21,7 +21,7 @@ class TriggeredEffectsComponent extends GameComponent {
 					val deck = entity[DeckData]
 					for (card <- deck.allCards) {
 						val CD = card(CardData)
-						for (triggeredEffect <- CD.triggeredEffects if triggeredEffect.trigger.matches(entity, card, ge)) {
+						for (effGroup <- CD.cardEffectGroups; triggeredEffect <- effGroup.triggeredEffects if triggeredEffect.trigger.matches(entity, card, ge)) {
 							triggeredEffect.effect.instantiate(view, entity, card) match {
 								case Left(inst) =>
 									var sel = SelectionResult()

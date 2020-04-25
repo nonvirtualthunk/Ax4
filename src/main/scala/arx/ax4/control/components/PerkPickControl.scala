@@ -64,7 +64,7 @@ class PerkSelectionDynamicFunctions(tuid: TacticalUIData, implicit val view: Wor
       .toList
   }
 
-  override def createChildFromData(dynWidget: Widget, data: Any): Widget = {
+  override def createChildrenFromData(dynWidget: Widget, data: Any): Seq[Widget] = {
     data match {
       case (source: PerkSource, perk: Perk) =>
 
@@ -85,10 +85,10 @@ class PerkSelectionDynamicFunctions(tuid: TacticalUIData, implicit val view: Wor
             PerkLogic.takePerk(tuid.selectedCharacter.getOrElse(Entity.Sentinel), perk, source)
         }
 
-        div
+        Vector(div)
       case other =>
         Noto.warn(s"Non-perk in perk selection, $other")
-        dynWidget.createChild(SimpleWidget).widget
+        Vector(dynWidget.createChild(SimpleWidget).widget)
     }
   }
 

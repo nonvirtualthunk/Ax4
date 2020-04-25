@@ -624,7 +624,7 @@ object TargetPattern extends CustomConfigDataLoader[TargetPattern] {
 	case object Point extends HexTargetPattern {
 		override def targetedHexes(sourcePoint: AxialVec3, targetPoint: AxialVec3): Seq[AxialVec3] = targetPoint :: Nil
 
-		override def toRichText(settings: RichTextRenderSettings): RichText = ImageSection("graphics/ui/vertical_hex.png", RichTextScale.ScaleToText(true), richTextHexColor)
+		override def toRichText(settings: RichTextRenderSettings): RichText = ImageSection("graphics/ui/vertical_hex.png", RichTextScale.ScaleToText(true, settings.scale), richTextHexColor)
 	}
 
 	case class Line(startDist: Int, length: Int) extends HexTargetPattern {
@@ -643,7 +643,7 @@ object TargetPattern extends CustomConfigDataLoader[TargetPattern] {
 				} else {
 					"graphics/ui/vertical_hex.png"
 				}
-				ImageSection(img, RichTextScale.ScaleToText(true), richTextHexColor)
+				ImageSection(img, RichTextScale.ScaleToText(true, settings.scale), richTextHexColor)
 			}
 			RichText(sections)
 		}

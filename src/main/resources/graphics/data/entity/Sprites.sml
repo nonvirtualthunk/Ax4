@@ -76,6 +76,22 @@ Sprites {
     icon : "graphics/icons/block.png"
   }
 
+  "Flags.Stunned" : {
+    icon : "graphics/icons/stunned.png"
+  }
+
+  "Flags.Dazzled" : {
+    icon : "graphics/icons/dazzled.png"
+  }
+
+  "Flags.Slow" : {
+    icon : "graphics/icons/slow.png"
+  }
+
+  "Flags.FlashingPoints" : {
+    icon : "graphics/icons/flashing_points.png"
+  }
+
   "GameConcepts.ActionPoint" : {
     icon : "graphics/ui/action_point.png"
   }
@@ -83,4 +99,5 @@ Sprites {
   "GameConcepts.StaminaPoint" : {
     icon : "graphics/ui/stamina_point_large.png"
   }
+
 }

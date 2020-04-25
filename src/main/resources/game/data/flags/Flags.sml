@@ -3,7 +3,7 @@ Flags {
   Parry {
     description : "Parry incoming attacks, reducing their chance to hit"
     tickDownOn : DodgeEvent
-    resetAtEndOfTurn : true
+    resetAtStartOfTurn : true
     hidden : false
     countsAs : DefenseDelta
   }
@@ -11,7 +11,7 @@ Flags {
   Block {
     description : "Block incoming attacks, reducing the damage they deal"
     tickDownOn : ArmorUsedEvent
-    resetAtEndOfTurn : true
+    resetAtStartOfTurn : true
     hidden : false
     countsAs : ArmorDelta
   }
@@ -32,7 +32,6 @@ Flags {
 
   Stunned {
     description : "Stunned and disoriented, reduces the number of action points each turn by one"
-    resetAtEndOfTurn : false
     hidden : false
     countAsNegative : ApGainDelta
     tickDownOn : EndOfTurn
@@ -59,6 +58,10 @@ Flags {
     hidden : false
     countAsNegative : AccuracyDelta
   }
+
+  // +============================================================+
+  // |                        Internal Flags                      |
+  // +============================================================+
 
   MovementGainDelta {
     description : "Movement Gain Delta"

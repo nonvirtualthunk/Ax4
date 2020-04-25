@@ -64,48 +64,56 @@ CardWidget {
       fontScale : 1.5
     }
 
-//    CardTags {
-//      type : TextDisplayWidget
-//
-//      drawBackground : false
-//
-//      text : "%(card.tags)"
-//
-//      x : 5
-//      y : 0 below CardImage
-//      width : rel(-10)
-//      textAlignment : centered
-//      showing : "%(card.hasTags)"
-//
-//      fontScale : 2
-//    }
 
     CardMainSection {
       type : Div
 
-      x : 0
+      x : 5
       y : 0 below CardImage
-      width : 100%
+      width : rel(-10)
       height : expand to parent
 
       children : {
-        CardPrimaryEffect {
-          type : TextDisplayWidget
-
-          drawBackground : false
-
-          text : "%(card.effects)"
+        CardEffects {
+          type : ListWidget
 
           y : centered
           width : 100%
+          height : wrapContent
+          drawBackground : false
 
-          textAlignment : centered
-
-          fontScale : 2
+          listItemArchetype : CardWidgets.CardEffect
+          listItemBinding: "card.effects -> effect"
+          listItemGapSize : 30
+          separator : "CardWidgets.CardEffectGroupDivider"
+          selectable : true
         }
       }
     }
 
   }
 
+}
+
+CardEffect {
+  type : TextDisplayWidget
+
+  drawBackground : false
+
+  text : "%(effect)"
+
+  textAlignment : centered
+  width : 100%
+
+  fontScale : 2
+}
+
+CardEffectGroupDivider {
+  type : ImageDisplayWidget
+
+  image : "graphics/ui/card_divider.png"
+  scalingStyle : scale(200%)
+  x : centered
+
+  drawBackground : false
 }

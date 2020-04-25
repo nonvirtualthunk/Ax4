@@ -3,7 +3,7 @@ package arx.ax4.game.components
 import arx.Prelude._
 import arx.ax4.game.entities.Companions.{CharacterInfo, Item, Weapon}
 import arx.ax4.game.entities.cardeffects._
-import arx.ax4.game.entities.{CardTypes, CharacterInfo, Item, Weapon}
+import arx.ax4.game.entities.{CardEffectGroup, CardLibrary, CardTypes, CharacterInfo, Item, Weapon}
 import arx.ax4.game.event.EntityCreated
 import arx.ax4.game.logic.{AllegianceLogic, CardLogic, IdentityLogic}
 import arx.core.introspection.FieldOperations._
@@ -26,21 +26,27 @@ class CardCreationComponent extends GameComponent {
 		onGameEventEndWithPrecedence(5) {
 			case EntityCreated(entity) =>
 				for (weapon <- entity.dataOpt[Weapon]) {
-					for ((key, attack) <- weapon.attacks; _ <- 0 until attack.cardCount) yield {
-						val card = CardLogic.createCard(entity, CD => {
-							CD.cardType = CardTypes.AttackCard
-							CD.name = attack.name
-							CD.effects = Vector(AttackGameEffect(key, attack.copy(weapon = entity)))
-							CD.costs = Vector(PayActionPoints(attack.actionCost), PayStamina(attack.staminaCost))
-							CD.source = entity
-						})
+
+					for (i <- 0 until weapon.attackCardCount) {
 						val kind = if (weapon.naturalWeapon) {
-							Taxonomy("UnarmedAttackCard")
+							CardTypes.NaturalAttackCard
 						} else {
-							Taxonomy("AttackCard")
+							CardTypes.AttackCard
 						}
 
-						world.modify(card, IdentityData.kind -> kind)
+						val card = CardLogic.createCard(entity, kind, CD => {
+							CD.name = "Strike"
+							CD.cardEffectGroups = for ((key,attack) <- weapon.attacks.toVector.sortBy(_._1)) yield {
+								val effGroup = new CardEffectGroup
+								effGroup.name = Some(attack.name)
+								effGroup.effects = Vector(AttackGameEffect(key, attack.copy(weapon = entity)))
+								effGroup.costs = Vector(PayActionPoints(attack.actionCost), PayStamina(attack.staminaCost))
+								effGroup
+							}
+
+							CD.source = entity
+						})
+
 						if (entity.hasData[Item]) { world.modify(entity, Item.equippedCards append card) }
 						world.modify(entity, Weapon.attackCards append card)
 					}
@@ -49,28 +55,14 @@ class CardCreationComponent extends GameComponent {
 				for (charInfo <- entity.dataOpt[CharacterInfo]) {
 					var innateCards = Seq[Entity]()
 					val moveCards = for (_ <- 0 until 3) yield {
-						val moveCard = CardLogic.createCard(entity, cd => {
-							cd.costs = Vector(PayActionPoints(1))
-							cd.effects = Vector(GainMovePoints(bonusMP = Sext(0)))
-							cd.cardType = CardTypes.MoveCard
-							cd.name = "Move"
-						})
-						world.modify(moveCard, IdentityData.kind -> Taxonomy("MoveCard"))
-						moveCard
+						CardLogic.createCard(entity, CardLibrary.withKind(Taxonomy("CardTypes.move")))
 					}
 
 					innateCards ++= moveCards
 
 					if (AllegianceLogic.isPlayerCharacter(entity)) {
 						val gatherCards = for (_ <- 0 until 1) yield {
-							val gatherCard = CardLogic.createCard(entity, cd => {
-								cd.costs = Vector(PayActionPoints(2))
-								cd.name = "Gather"
-								cd.cardType = CardTypes.GatherCard
-								cd.effects = Vector(GatherCardEffect(1))
-							})
-							world.modify(gatherCard, IdentityData.kind -> Taxonomy("GatherCard"))
-							gatherCard
+							CardLogic.createCard(entity, CardLibrary.withKind(Taxonomy("CardTypes.gather")))
 						}
 						innateCards ++= gatherCards
 					}
@@ -82,18 +74,18 @@ class CardCreationComponent extends GameComponent {
 				for (item <- entity.dataOpt[Item]) {
 					// if this item is a weapon, add attack cards corresponding to its various attacks
 					if (item.equipable) {
-						val card = CardLogic.createCard(entity, CD => {
-							CD.cardType = CardTypes.ItemCard
+						val card = CardLogic.createCard(entity, CardTypes.ItemCard, CD => {
 							CD.name = s"Equip ${IdentityLogic.name(entity).capitalizeAll}"
-							CD.effects = Vector(EquipItemEffect(entity))
-							CD.costs = Vector(PayActionPoints(1))
+							val effGroup = new CardEffectGroup
+							effGroup.effects = Vector(EquipItemEffect(entity))
+							effGroup.costs = Vector(PayActionPoints(1))
+							CD.cardEffectGroups = Vector(effGroup)
 						})
+						world.modify(card, IdentityData.kind -> Taxonomy("CardTypes.ItemCard"))
 						world.modify(entity, Item.inventoryCards append card)
 					} else {
-						val card = CardLogic.createCard(entity, CD => {
-							CD.cardType = CardTypes.ItemCard
+						val card = CardLogic.createCard(entity, CardTypes.ItemCard, CD => {
 							CD.name = IdentityLogic.name(entity).capitalizeAll
-							CD.cardType = CardTypes.ItemCard
 						})
 						world.modify(entity, Item.inventoryCards append card)
 					}
