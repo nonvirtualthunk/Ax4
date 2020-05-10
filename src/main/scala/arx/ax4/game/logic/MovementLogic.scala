@@ -9,7 +9,7 @@ import arx.core.vec.coordinates.AxialVec3
 import arx.engine.entity.Entity
 import arx.engine.world.{EntityDataStore, TEntityDataStore, World, WorldView}
 import arx.Prelude.toArxList
-import arx.ax4.game.event.{EntityMoved, EntityPlaced}
+import arx.ax4.game.event.{EntityMoved, EntityMovementEnded, EntityPlaced}
 
 object MovementLogic {
 	import arx.core.introspection.FieldOperations._
@@ -76,22 +76,28 @@ object MovementLogic {
 		}
 	}
 
-	def moveCharacterOnPath(character : Entity, path : Path[AxialVec3])(implicit world : World) : Boolean = {
+	def moveCharacterOnPath(character : Entity, path : Path[AxialVec3], fixedDistance : Option[Sext])(implicit world : World) : Boolean = {
 		implicit val view = world.view
 
 		val physical = character[Physical]
 
+		var remainingFixedDistance = fixedDistance
+		def remainingMove = remainingFixedDistance.getOrElse(CharacterLogic.curMovePoints(character))
+
 		if (path.steps.headOption.exists(h => h.node == physical.position)) {
 			for ((from,to) <- path.steps.map(p => p.node).sliding2) {
 				moveCostTo(character, to) match {
-					case Some(moveCost) if CharacterLogic.curMovePoints(character) >= moveCost =>
+					case Some(moveCost) if remainingMove >= moveCost =>
 						world.startEvent(EntityMoved(character, from, to))
 						val positionChangedSuccessfully = setCharacterPosition(character, to)
 						if (!positionChangedSuccessfully) {
 							return false
 						}
 
-						world.modify(character, CharacterInfo.movePoints - moveCost, "movement")
+						remainingFixedDistance match {
+							case Some(fd) => remainingFixedDistance = Some(fd - moveCost)
+							case None => world.modify(character, CharacterInfo.movePoints - moveCost, "movement")
+						}
 						world.endEvent(EntityMoved(character, from, to))
 					case _ => return false
 				}
@@ -139,5 +145,11 @@ object MovementLogic {
 			}
 		}
 		mp
+	}
+
+	def forceEndOfMovement(character : Entity)(implicit world : World) = {
+		world.eventStmt(EntityMovementEnded(character)) {
+			world.modify(character, CharacterInfo.movePoints -> Sext(0))
+		}
 	}
 }

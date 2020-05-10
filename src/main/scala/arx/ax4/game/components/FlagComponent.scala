@@ -2,11 +2,11 @@ package arx.ax4.game.components
 
 import arx.application.Noto
 import arx.ax4.game.components.FlagComponent.{ChangeFlagBy, FlagBehavior}
-import arx.ax4.game.entities.Companions.TagData
-import arx.ax4.game.entities.{ConfigLoadableLibrary, DeckData, FlagLibrary, Library}
+import arx.ax4.game.entities.Companions.{Physical, TagData}
+import arx.ax4.game.entities.{ConfigLoadableLibrary, DeckData, FlagLibrary, Library, Tiles}
 import arx.ax4.game.event.TurnEvents.{EntityTurnEndEvent, EntityTurnStartEvent}
-import arx.ax4.game.event.{DamageEvent, DeflectEvent, DodgeEvent}
-import arx.ax4.game.logic.TagLogic
+import arx.ax4.game.event.{DamageEvent, DeflectEvent, DodgeEvent, EntityMoved}
+import arx.ax4.game.logic.{AllegianceLogic, CharacterLogic, CombatLogic, MapLogic, MovementLogic, TagLogic}
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.world.World
 import arx.core.introspection.FieldOperations._
@@ -23,7 +23,9 @@ class FlagComponent extends GameComponent {
 	}
 
 	override protected def onInitialize(world: World): Unit = {
+		implicit val impWorld = world
 		implicit val view = world.view
+
 		onGameEvent {
 			case ge : GameEvent =>
 				for (behavior <- FlagComponent.flagBehaviors) {
@@ -36,6 +38,45 @@ class FlagComponent extends GameComponent {
 						case None => // do nothing
 					}
 				}
+		}
+
+		onGameEventEnd {
+			case EntityMoved(entity, from, to) =>
+				for (enemy <- AllegianceLogic.enemiesOf(entity)) {
+					val zoc = TagLogic.flagValue(enemy, Taxonomy("Flags.ZoneOfControlRange"))
+					val enemyPos = CharacterLogic.position(enemy)
+
+					val fromDist = enemyPos.distance(from)
+					val toDist = enemyPos.distance(to)
+
+					// if it's moving from a non-zoc hex to a zoc hex
+					if (toDist < zoc && fromDist >= zoc) {
+						MovementLogic.forceEndOfMovement(entity)
+					}
+
+					val approachAttacks = TagLogic.flagValue(enemy, Taxonomy("Flags.OnApproachAttack"))
+					if (approachAttacks > 0) {
+						val (_, primAttack) = CombatLogic.defaultAttack(enemy)
+
+						val enemyPos = CharacterLogic.position(enemy)
+						val couldAttackPrev = CombatLogic.couldAttackBeMadeFromLocation(enemy, enemyPos, from, Left(entity), primAttack)
+						val canAttackNow = CombatLogic.couldAttackBeMadeFromLocation(enemy, enemyPos, to, Left(entity), primAttack)
+						if (!couldAttackPrev && canAttackNow) {
+							CombatLogic.attack(world, enemy, Vector(entity), primAttack)
+						}
+					}
+				}
+
+
+				for (adjEntity <- to.neighbors.flatMap(adj => MapLogic.characterOnTile(adj))) {
+					if (AllegianceLogic.areEnemies(entity, adjEntity)) {
+						if (TagLogic.flagValue(adjEntity, Taxonomy("Flags.ZoneOfControlRange")) > 0) {
+
+						}
+					}
+				}
+
+
 		}
 	}
 }

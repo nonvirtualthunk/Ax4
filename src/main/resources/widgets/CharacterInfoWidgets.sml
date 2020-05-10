@@ -16,13 +16,13 @@ SelectedCharacterInfo {
   type : Window
 
   position : ["0 from Right", 0]
-  dimensions : [500, "100%"]
+  dimensions : [500, rel(-500)]
 
   backgroundPixelScale : 1
   background.image : "ui/greenWoodBorder.png"
   drawBackground : true
 
-  backgroundEdges : [0]
+  backgroundEdges : [0,3]
 
   children : {
     Portrait : {

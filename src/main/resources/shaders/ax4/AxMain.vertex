@@ -9,7 +9,7 @@ in vec4 LightColor;
 out vec4 colorV;
 out vec2 texCoordV;
 out float visionPcntV;
-out vec3 positionV;
+//out vec3 positionV;
 
 uniform mat4 ProjectionMatrix;
 uniform mat4 ModelViewMatrix;
@@ -45,7 +45,7 @@ void main (){
     colorV = vec4(adjustedColor,Color.a);
 
     visionPcntV = VisionPcnt;
-    positionV = Vertex;
+    //positionV = Vertex;
 
     gl_Position = ProjectionMatrix * ModelViewMatrix * vec4(Vertex,1.0);
 }

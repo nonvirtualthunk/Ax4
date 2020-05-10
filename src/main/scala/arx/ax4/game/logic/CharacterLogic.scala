@@ -69,4 +69,11 @@ object CharacterLogic {
 		creature
 	}
 
+	def position(entity : Entity)(implicit view : WorldView) = entity[Physical].position
+
+
+	def adjustedMoveDistance(character : Entity, baseDistance : Sext)(implicit view : WorldView) : Sext = {
+		val effectiveDist = baseDistance + Sext(TagLogic.flagValue(character, Taxonomy("flags.MovementGainDelta")))
+		effectiveDist
+	}
 }

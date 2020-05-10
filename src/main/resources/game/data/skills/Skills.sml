@@ -70,4 +70,12 @@ Skills {
 
     }
   }
+
+  MoveSkill {
+    displayName : "Move Skill"
+  }
+
+  Parry {
+    displayName : "Parry"
+  }
 }

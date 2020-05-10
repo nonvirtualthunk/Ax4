@@ -28,7 +28,7 @@ class DeckComponent extends GameComponent {
 				for (deck <- entity.dataOpt[DeckData]) {
 					val ID = item[Item]
 					// add all the cards for the item being equipped
-					ID.equippedCards.foreach(card => CardLogic.addCard(entity, card, CardAdditionStyle.DrawDiscardSplit))
+					CardLogic.addCards(entity, ID.equippedCards, CardAdditionStyle.DrawDiscardSplit)
 					// if we add an attack card from an item, then remove all natural attack cards
 					if (ID.equippedCards.exists(c => IdentityLogic.isA(c, CardTypes.AttackCard))) {
 						for (naturalAttackCard <- deck.allCards.filter(c => CardLogic.isNaturalAttackCard(c))) {
@@ -60,7 +60,7 @@ class DeckComponent extends GameComponent {
 					}
 					to match {
 						case Some(entity) if entity.hasData[DeckData] && itemData.inventoryCards.nonEmpty =>
-							itemData.inventoryCards.foreach(c => CardLogic.addCard(entity, c, CardAdditionStyle.DrawDiscardSplit))
+							CardLogic.addCards(entity, itemData.inventoryCards, CardAdditionStyle.DrawDiscardSplit)
 							CardLogic.shuffleDrawPile(entity)
 						case _ => // do nothing
 					}
@@ -77,16 +77,16 @@ class DeckComponent extends GameComponent {
 	}
 
 	def initializeDeck(entity: Entity)(implicit world : World, view : WorldView): Unit = {
-		for (charInfo <- entity.dataOpt[CharacterInfo]; card <- charInfo.innateCards) {
-			CardLogic.addCard(entity, card, DrawPile)
+		for (charInfo <- entity.dataOpt[CharacterInfo]) {
+			CardLogic.addCards(entity, charInfo.innateCards, DrawPile)
 		}
 
 		addNaturalAttackCards(entity)
 	}
 
 	def addNaturalAttackCards(entity : Entity)(implicit world : World, view : WorldView): Unit = {
-		for (weapon <- entity.dataOpt[Weapon] if weapon.naturalWeapon ; card <- weapon.attackCards) {
-			CardLogic.addCard(entity, card, DrawDiscardSplit)
+		for (weapon <- entity.dataOpt[Weapon] if weapon.naturalWeapon) {
+			CardLogic.addCards(entity, weapon.attackCards, DrawDiscardSplit)
 		}
 	}
 

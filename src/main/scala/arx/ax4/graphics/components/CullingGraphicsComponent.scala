@@ -12,7 +12,7 @@ import arx.engine.world.{HypotheticalWorldView, World}
 import arx.graphics.GL
 
 class CullingGraphicsComponent extends AxGraphicsComponent {
-	val margin = -300
+	val margin = -400
 
 	var lastCameraPos = AxialVec(-100000,-10000)
 	var cameraPosWatcher : Watcher[AxialVec] = _

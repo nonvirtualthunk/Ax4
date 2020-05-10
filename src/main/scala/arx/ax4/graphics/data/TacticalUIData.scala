@@ -13,6 +13,7 @@ class TacticalUIData extends TControlData with TMutableAuxData with TWorldAuxDat
 	var selectedCharacterInfoWidget : Widget = _
 	var inventoryWidget : InventoryWidget = _
 	var mainSectionWidget : Widget = _
+	var fullGameAreaWidget : Widget = _
 
 	var perkSelectionWidget : Widget = _
 

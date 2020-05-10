@@ -65,10 +65,14 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 		}
 		tuid.selectedCharacterInfoWidget = selCInfo
 
+		tuid.fullGameAreaWidget = desktop
+
 		val mainSection = desktop.createChild(SimpleWidget).widget
 		mainSection.width = ExpandTo(tuid.selectedCharacterInfoWidget)
 		mainSection.height = DimensionExpression.Proportional(1.0f)
 		mainSection.drawing.drawBackground = false
+		mainSection.z = 50
+		mainSection.acceptsMouseInteraction = false
 		tuid.mainSectionWidget = mainSection
 
 //		tuid.inventoryWidget = new InventoryWidget(mainSection)
@@ -164,8 +168,10 @@ class TacticalUIControl(windowing : WindowingControlComponent) extends AxControl
 			tuid.selectedCharacterInfoWidget.bind("attacks", () => Nil)
 
 			tuid.selectedCharacterInfoWidget.bind("skills", () => {
-				SkillsLogic.skillLevels(selC).toList.map {
-					case (taxon, level) =>
+				// display any skill for which we have any xp
+				SkillsLogic.skillXP(selC).toList.map {
+					case (taxon, _) =>
+						val level = SkillsLogic.skillLevel(selC, taxon)
 						SkillsLibrary.getWithKind(taxon) match {
 							case Some(skill) => SimpleSkillDisplayInfo(skill.displayName.capitalize, level, SpriteLibrary.iconFor(taxon), SkillsLogic.currentLevelXp(selC, taxon), SkillsLogic.currentLevelXpRequired(selC, taxon))
 							case None => Noto.error(s"Skill display couldn't find info for skill $taxon")

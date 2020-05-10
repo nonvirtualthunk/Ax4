@@ -164,6 +164,7 @@ Taxonomy {
     ExhaustPile : GameConcept
     ExpendedPile : GameConcept
     Hand : GameConcept
+    NotInDeck : GameConcept
   }
 
   DamageType : []
@@ -200,6 +201,7 @@ Taxonomy {
     MoveCard : CardType
     GatherCard : CardType
     DefenseCard : SkillCard
+    StanceCard : SkillCard
 
     NaturalAttackCard : AttackCard
 
@@ -219,6 +221,9 @@ Taxonomy {
 
     Parry : DefenseCard
     Block : DefenseCard
+
+    TurtleStance : StanceCard
+    HedgehogStance : StanceCard
 
 
     MonsterCard : CardType
@@ -286,6 +291,11 @@ Taxonomy {
 
     FlashingPoints : PositiveFlag
 
+    Stance : PositiveFlag
+
+    HedgehogStance : Stance
+    TurtleStance : Stance
+
 
     ApCostDelta : InternalFlag
     ApGainDelta : InternalFlag
@@ -294,7 +304,9 @@ Taxonomy {
     AccuracyDelta : InternalFlag
     ArmorDelta : InternalFlag
     MovementGainDelta : InternalFlag
-
+    BlockDelta : InternalFlag
+    OnApproachAttack : InternalFlag
+    ZoneOfControlRange : InternalFlag
   }
 
   Tag : []

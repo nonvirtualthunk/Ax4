@@ -43,6 +43,7 @@ class CardCreationComponent extends GameComponent {
 								effGroup.costs = Vector(PayActionPoints(attack.actionCost), PayStamina(attack.staminaCost))
 								effGroup
 							}
+							CD.xp = Map(Taxonomy("Skills.WeaponSkill") -> 1)
 
 							CD.source = entity
 						})

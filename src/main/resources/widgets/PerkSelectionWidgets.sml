@@ -4,7 +4,6 @@ PerkSelectionWidget {
   y : 20
   width : 90%
   height : 95%
-  z : 50
 
   children : {
     Heading : {

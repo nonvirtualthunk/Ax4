@@ -168,24 +168,27 @@ case class DefenseData(var armor: Int = 0,
 
 
 @GenerateCompanion
-case class AttackModifier(var nameOverride: Option[String] = None,
-													var namePrefix: Option[String] = None,
-													var accuracyBonus: Int = 0,
-													var strikeCountBonus: Int = 0,
-													var strikeCountMultiplier: Int = 1,
-													var actionCostDelta: Int = 0,
-													var actionCostMinimum: Option[Int] = None,
-													var staminaCostDelta: Int = 0,
-													var staminaCostMultiplier : Int = 1,
-													var staminaCostMinimum: Option[Int] = None,
-													var minRangeDelta: Option[Int] = None,
-													var minRangeOverride: Option[Int] = None,
-													var maxRangeDelta: Option[Int] = None,
-													var maxRangeOverride: Option[Int] = None,
-													var damageModifiers: Vector[DamageModifier] = Vector(),
-													var baseDamageOverride: Option[DamageElement] = None,
-													var targetPatternOverride: Option[TargetPattern] = None,
-													var triggeredEffects: Vector[TriggeredAttackEffect] = Vector()) extends TNestedData with ConfigLoadable with THasRichTextRepresentation {
+class AttackModifier extends TNestedData with ConfigLoadable with THasRichTextRepresentation {
+	var nameOverride: Option[String] = None
+	var namePrefix: Option[String] = None
+	var accuracyBonus: Int = 0
+	var strikeCountBonus: Int = 0
+	var strikeCountMultiplier: Int = 1
+	var actionCostDelta: Int = 0
+	var actionCostMinimum: Option[Int] = None
+	var staminaCostDelta: Int = 0
+	var staminaCostMultiplier : Int = 1
+	var staminaCostMinimum: Option[Int] = None
+	var minRangeDelta: Option[Int] = None
+	var minRangeOverride: Option[Int] = None
+	var maxRangeDelta: Option[Int] = None
+	var maxRangeOverride: Option[Int] = None
+	var damageModifiers: Vector[DamageModifier] = Vector()
+	var baseDamageOverride: Option[DamageElement] = None
+	var targetPatternOverride: Option[TargetPattern] = None
+	var triggeredEffects: Vector[TriggeredAttackEffect] = Vector()
+
+
 	override def toRichText(settings: RichTextRenderSettings): RichText = {
 		import arx.Prelude._
 
@@ -293,6 +296,8 @@ object AttackData {
 }
 
 object AttackModifier {
+	def apply() = new AttackModifier
+
 	def loadFromConfig(config: ConfigValue): AttackModifier = {
 		val mod = AttackModifier()
 		mod.loadFromConfig(config)
@@ -324,37 +329,6 @@ object SpecialAttack {
 		override def isTrueFor(implicit view: WorldView, value: BaseAttackProspect): Boolean = wrapped.isTrueFor(view, value)
 
 		override def toRichText(settings: RichTextRenderSettings): RichText = RichText.parse("piercing reach attack", settings)
-	}
-
-	case object PiercingStab extends SpecialAttack {
-		condition = PiercingStabCondition
-		attackModifier = AttackModifier(
-			nameOverride = Some("piercing stab"),
-			accuracyBonus = -1,
-			targetPatternOverride = Some(TargetPattern.Line(startDist = 1, length = 2)),
-			minRangeOverride = Some(1),
-			maxRangeOverride = Some(1)
-		)
-	}
-
-	case object PowerAttack extends SpecialAttack {
-		condition = AttackConditionals.AnyAttack
-		attackModifier = AttackModifier(
-			namePrefix = Some("power attack : "),
-			accuracyBonus = -2,
-			damageModifiers = Vector(DamageModifier(DamagePredicate.Primary, DamageDelta.DamageMultiplier(2.0f)))
-		)
-	}
-
-	case object SwiftStrike extends SpecialAttack {
-		condition = AttackConditionals.HasDamageType(Piercing)
-		attackModifier = AttackModifier(
-			nameOverride = Some("swift strike"),
-			accuracyBonus = -1,
-			damageModifiers = Vector(DamageModifier(DamagePredicate.Primary, DamageDelta.DamageBonus(-1))),
-			actionCostDelta = -1,
-			actionCostMinimum = Some(1)
-		)
 	}
 
 	import arx.Prelude._

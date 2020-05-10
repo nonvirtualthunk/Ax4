@@ -26,7 +26,7 @@ object CardEvents {
 
 	case class CardRemoved(entity : Entity, card : Entity) extends GameEvent with DeckModificationEvent
 
-	case class CardAdded(entity : Entity, card : Entity) extends GameEvent with DeckModificationEvent
+	case class CardsAdded(entity : Entity, cards : Vector[Entity]) extends GameEvent with DeckModificationEvent
 
 	case class CardMoved(entity : Entity, card : Entity, from : CardLocation, to : CardLocation) extends GameEvent with DeckModificationEvent
 

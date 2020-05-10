@@ -39,6 +39,10 @@ object SkillsLogic {
 		character(CharacterInfo).skillLevels
 	}
 
+	def skillXP(character : Entity)(implicit view :WorldView) = {
+		character(CharacterInfo).skillXP
+	}
+
 	def skillLevel(character : Entity, skill : Taxon)(implicit view : WorldView) = {
 		character(CharacterInfo).skillLevels.getOrElse(skill, 0)
 	}

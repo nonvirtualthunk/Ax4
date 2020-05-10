@@ -30,16 +30,16 @@ case class AttackGameEffect(key: AttackKey, attackData: AttackData) extends Game
 		} else {
 			(attackData, Vector())
 		}
-		AttackGameEffect.toRichText(attackData, effAttackData, settings)
+		AttackGameEffect.toRichText(attackData, effAttackData, "Attack", settings)
 	}
 }
 
 object AttackGameEffect {
-	def toRichText(attackData: AttackData, effAttackData: AttackData, settings: RichTextRenderSettings): RichText = {
+	def toRichText(attackData: AttackData, effAttackData: AttackData, prefix : String, settings: RichTextRenderSettings): RichText = {
 		val accuracyColor = attackDataPartToColor(attackData, effAttackData, _.accuracyBonus)
 
 		val mainLine = RichText(Vector(
-			TextSection(s"Attack "),
+			TextSection(s"$prefix "),
 			TextSection(s"${effAttackData.accuracyBonus.toSignedString}", Moddable(accuracyColor)),
 			HorizontalPaddingSection(4)) ++
 			TaxonSections("Accuracy", settings) ++
@@ -48,7 +48,7 @@ object AttackGameEffect {
 		if (effAttackData.minRange > 1 || effAttackData.maxRange > 1) {
 			val rangeExpr = s"${effAttackData.maxRange}"
 			//			rangeShapeLine ++= Seq(LineBreakSection(10), TextSection(s"$rangeExpr"), HorizontalPaddingSection(4), ImageSection(s"graphics/ui/range.png", 1.0f, Color.White))
-			rangeShapeLine ++= Seq(TextSection(s"Range $rangeExpr"), HorizontalPaddingSection(10))
+			rangeShapeLine ++= Seq(TextSection(s"Range $rangeExpr"), HorizontalPaddingSection(5))
 		}
 		effAttackData.targetPattern match {
 			case pattern: HexTargetPattern => rangeShapeLine ++= TextSection("Target") +: HorizontalPaddingSection(4) +: pattern.toRichText(settings).sections
@@ -56,13 +56,13 @@ object AttackGameEffect {
 		}
 		var effLine = mainLine
 		if (rangeShapeLine.nonEmpty) {
-			effLine += LineBreakSection(10)
+			effLine += LineBreakSection(5)
 			effLine ++= rangeShapeLine
 		}
 
 		val triggeredLine = AttackData.renderTriggeredAttackEffects(attackData.triggeredEffects, settings)
 		if (triggeredLine.nonEmpty) {
-			effLine += LineBreakSection(10)
+			effLine += LineBreakSection(5)
 			effLine ++= triggeredLine
 		}
 
@@ -111,7 +111,7 @@ case class SpecialAttackGameEffect(specialAttack: SpecialAttack) extends GameEff
 			CombatLogic.resolveSpecialAttack(attacker, specialAttack)(view) match {
 				case Some(baseAttack) =>
 					val (effAttack, _) = CombatLogic.resolveUntargetedConditionalAttackData(view, attacker, baseAttack)
-					AttackGameEffect.toRichText(baseAttack, effAttack, settings)
+					AttackGameEffect.toRichText(baseAttack, effAttack, "Attack", settings)
 				case None =>
 					//  + TextSection("(No Matching Attack)\nModifiers\n")
 					preamble ++ modifierSections

@@ -19,6 +19,12 @@ Sprites {
   unarmedSkill : {
     icon: ${DHGZ}"/skills/unarmed.png"
   }
+  "Skills.MoveSkill" {
+    icon: ${DHGZ}"/skills/move.png"
+  }
+  "Skills.Parry" {
+    icon: "graphics/icons/parry.png"
+  }
 
 
 
@@ -90,6 +96,10 @@ Sprites {
 
   "Flags.FlashingPoints" : {
     icon : "graphics/icons/flashing_points.png"
+  }
+
+  "Flags.HedgehogStance" : {
+    icon : "graphics/icons/hedgehog.png"
   }
 
   "GameConcepts.ActionPoint" : {

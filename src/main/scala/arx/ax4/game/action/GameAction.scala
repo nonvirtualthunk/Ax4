@@ -7,6 +7,7 @@ import arx.ax4.game.entities.cardeffects.{GameEffect, GameEffectInstance}
 import arx.ax4.game.entities.{AllegianceData, AttackData, AttackProspect, CharacterInfo, EntityTarget, FactionData, HexTargetPattern, Physical, TargetPattern, Tile, Tiles}
 import arx.ax4.game.event.AttackEventInfo
 import arx.ax4.game.logic.{AllegianceLogic, AxPathfinder, CharacterLogic, CombatLogic, MovementLogic}
+import arx.core.math.Sext
 import arx.core.vec.coordinates.{AxialVec, AxialVec3, HexDirection}
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.world.{World, WorldView}
@@ -43,14 +44,14 @@ case class AttackAction(attacker: Entity,
 
 
 case object MoveCharacter extends GameEffect {
-	def forceInstantiate(world: WorldView, entity : Entity) = MoveCharacterInstance(entity)
+	def forceInstantiate(world: WorldView, entity : Entity) = MoveCharacterInstance(entity, None, allowZeroMove = false)
 
 	override def instantiate(world: WorldView, entity: Entity, effectSource: Entity): Either[GameEffectInstance, String] = Left(forceInstantiate(world, entity))
 
 	override def toRichText(settings: RichTextRenderSettings): RichText = RichText("Move")
 }
 
-case class MoveCharacterInstance(entity : Entity) extends GameEffectInstance {
+case class MoveCharacterInstance(entity : Entity, fixedDistance : Option[Sext], allowZeroMove : Boolean) extends GameEffectInstance {
 	protected case class CustomPathSelector(entity : Entity, selectable : Selectable) extends PathSelector(entity, TargetPattern.Point, selectable) {
 		override def hexPredicate(view: WorldView, v: AxialVec3): Boolean = {
 			view.hasData[Tile](Tiles.tileAt(v)) && // it is a tile
@@ -58,8 +59,8 @@ case class MoveCharacterInstance(entity : Entity) extends GameEffectInstance {
 		}
 
 		override def pathPredicate(view: WorldView, path: Path[AxialVec3]): Boolean = {
-			path.steps.size >= 2 &&
-				MovementLogic.movePointsRequiredForPath(entity, path)(view) <= CharacterLogic.curMovePoints(entity)(view)
+			(allowZeroMove || path.steps.size >= 2) &&
+				MovementLogic.movePointsRequiredForPath(entity, path)(view) <= fixedDistance.getOrElse(CharacterLogic.curMovePoints(entity)(view))
 		}
 	}
 
@@ -67,7 +68,7 @@ case class MoveCharacterInstance(entity : Entity) extends GameEffectInstance {
 
 	override def applyEffect(world: World, selectionResult: SelectionResult): Unit = {
 		val path = selectionResult.single(pathSelector)
-		MovementLogic.moveCharacterOnPath(entity, path)(world)
+		MovementLogic.moveCharacterOnPath(entity, path, fixedDistance)(world)
 	}
 
 	override def nextSelector(results: SelectionResult): Option[Selector[_]] = {

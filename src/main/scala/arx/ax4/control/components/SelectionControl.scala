@@ -13,12 +13,15 @@ import arx.ax4.control.event.SelectionMadeEvent
 import arx.ax4.game.logic.AllegianceLogic
 import arx.ax4.graphics.components.subcomponents.TacticalSelectableRenderer
 import arx.core.introspection.ReflectionAssistant
+import arx.core.metrics.Metrics
 import arx.engine.control.event.{KeyModifiers, KeyReleaseEvent}
 import arx.engine.data.{TMutableAuxData, TWorldAuxData}
 import org.lwjgl.glfw.GLFW
 
 class SelectionControl(mainControl : TacticalUIControl) extends AxControlComponent {
 	lazy val selectableRenderers = ReflectionAssistant.instancesOfSubtypesOf[TacticalSelectableRenderer]
+
+	var ticker = 0
 
 	override protected def onUpdate(gameView: HypotheticalWorldView, game: World, display: World, dt: UnitOfTime): Unit = {
 		val SD = display[SelectionData]
@@ -67,17 +70,32 @@ class SelectionControl(mainControl : TacticalUIControl) extends AxControlCompone
 		}
 	}
 
+
+	var lastSelectionContextIfClicked : Option[SelectionContext] = None
+	var lastSelectionContextIfClickedKey : Option[(List[Any], Entity, Selectable, Selector[_])] = None
+	val skippedRecalculationCounter = Metrics.counter("SelectionControl.selectionContextIfClickedShortCircuit")
+
 	def selectionContextIfClicked(implicit view : WorldView, display : World) : Option[SelectionContext] = {
 		val SD = display[SelectionData]
 		val tuid = display[TacticalUIData]
 
+		val toConsiderForSelection: List[Any] = Tiles.entitiesOnTile(tuid.mousedOverHex).toList ::: tuid.mousedOverBiasedHex :: tuid.mousedOverHex :: Nil
+
 
 		for (ctxt <- SD.activeContext; selector <- ctxt.nextSelector()) {
-			val toConsiderForSelection: List[Any] = Tiles.entitiesOnTile(tuid.mousedOverHex).toList ::: tuid.mousedOverBiasedHex :: tuid.mousedOverHex :: Nil
-			for ((_, (satisfying, satisfiedAmount)) <- toConsiderForSelection.findFirstWith(thing => selector.satisfiedBy(view, thing))) {
-				return Some(ctxt.copy(selectionResults = ctxt.selectionResults.addResult(selector, satisfying, satisfiedAmount)))
+			val key = Some((toConsiderForSelection, ctxt.entity, ctxt.selectable, selector))
+			if (key == lastSelectionContextIfClickedKey) {
+				skippedRecalculationCounter.inc()
+				return lastSelectionContextIfClicked
+			} else {
+				for ((_, (satisfying, satisfiedAmount)) <- toConsiderForSelection.findFirstWith(thing => selector.satisfiedBy(view, thing))) {
+					lastSelectionContextIfClickedKey = key
+					lastSelectionContextIfClicked = Some(ctxt.copy(selectionResults = ctxt.selectionResults.addResult(selector, satisfying, satisfiedAmount)))
+					return lastSelectionContextIfClicked
+				}
 			}
 		}
+
 		SD.activeContext
 	}
 

@@ -24,11 +24,12 @@ object CardWidget {
 		val arch = CardLibrary.withKind(cardArch)
 		val CD : CardData = arch.data(CardData)
 		val TD : TagData = arch.data(TagData)
-		CardWidget(parent, cardArch, CD, (activeGroup) => CardInfo(selC, cardArch, CD, TD, activeGroup)(view))
+		CardWidget(parent, cardArch, CD, (activeGroup) => CardInfo(Entity.Sentinel, selC, cardArch, CD, TD, activeGroup)(view))
 	}
 
 	def apply(parent : Widget, card : Taxon, cardData : CardData, cardInfo : (Int) => CardInfo) : Widget = {
 		val cardWidget = parent.createChild("CardWidgets.CardWidget")
+		cardWidget.showing = Moddable(false)
 		cardWidget.drawing.backgroundImage = Some(
 			if (card.isA(CardTypes.ItemCard)) {
 				"graphics/ui/item_card_border.png"
@@ -61,6 +62,7 @@ object CardWidget {
 			pixelSizeDelta = Vec2i(3,3)
 		)
 
+		cardWidget.showing = Moddable(true)
 		cardWidget
 	}
 }

@@ -128,6 +128,9 @@ class HexSelectorRenderer extends TacticalSelectorRenderer {
 trait TacticalSelectableRenderer {
 	def renderSelectable(game: HypotheticalWorldView, display: World, entity: Entity, canvas: HexCanvas, selectable: Selectable, selectableInst: SelectableInstance, selectionResults: SelectionResult): Unit
 
+	def handlesCompoundSelectables : Boolean = false
+
+
 	def updateUI(game: WorldView, display: World, entity: Entity, selectable: Selectable, selectableInst: SelectableInstance, consideredSelectionResult: SelectionResult, activeSelectionResults: SelectionResult, desktop: Widget): Unit = {}
 	def update(game: WorldView, display: World, entity: Entity, selectable: Selectable, selectableInst: SelectableInstance, selectionResult: SelectionResult): Unit = {}
 }
@@ -138,7 +141,7 @@ object CompoundSelectableRenderer extends TacticalSelectableRenderer  {
 	override def renderSelectable(game: HypotheticalWorldView, display: World, entity: Entity, canvas: HexCanvas, selectable: Selectable, selectableInst: SelectableInstance, selectionResults: SelectionResult): Unit = {
 		selectableInst match {
 			case compound : CompoundSelectableInstance =>
-				for ((subSel, subSelInst) <- compound.subSelectableInstances ; renderer <- otherRenderers) {
+				for (renderer <- otherRenderers ; if !renderer.handlesCompoundSelectables ; (subSel, subSelInst) <- compound.subSelectableInstances) {
 					renderer.renderSelectable(game, display, entity, canvas, subSel, subSelInst, selectionResults)
 				}
 			case _ =>
@@ -148,7 +151,7 @@ object CompoundSelectableRenderer extends TacticalSelectableRenderer  {
 	override def updateUI(game: WorldView, display: World, entity: Entity, selectable: Selectable, selectableInst: SelectableInstance, consideredSelectionResult: SelectionResult, activeSelectionResults: SelectionResult, desktop: Widget): Unit = {
 		selectableInst match {
 			case compound : CompoundSelectableInstance =>
-				for ((subSel, subSelInst) <- compound.subSelectableInstances ; renderer <- otherRenderers) {
+				for (renderer <- otherRenderers ; if !renderer.handlesCompoundSelectables ; (subSel, subSelInst) <- compound.subSelectableInstances) {
 					renderer.updateUI(game, display, entity, subSel, subSelInst, consideredSelectionResult, activeSelectionResults, desktop)
 				}
 			case _ =>
@@ -158,7 +161,7 @@ object CompoundSelectableRenderer extends TacticalSelectableRenderer  {
 	override def update(game: WorldView, display: World, entity: Entity, selectable: Selectable, selectableInst: SelectableInstance, selectionResult: SelectionResult): Unit = {
 		selectableInst match {
 			case compound : CompoundSelectableInstance =>
-				for ((subSel, subSelInst) <- compound.subSelectableInstances ; renderer <- otherRenderers) {
+				for (renderer <- otherRenderers ; if !renderer.handlesCompoundSelectables; (subSel, subSelInst) <- compound.subSelectableInstances) {
 					renderer.update(game, display, entity, subSel, subSelInst, selectionResult)
 				}
 			case _ =>
@@ -169,50 +172,59 @@ object CompoundSelectableRenderer extends TacticalSelectableRenderer  {
 object AttackCardEffectRenderer extends TacticalSelectableRenderer {
 	var widgets : Map[SelectableInstance,Map[Entity,Widget]] = Map()
 
-	override def renderSelectable(game: HypotheticalWorldView, display: World, entity: Entity, canvas: HexCanvas, selectable: Selectable, selectableInst: SelectableInstance, selectionResults: SelectionResult): Unit = {
-		selectableInst match {
-			case ce @ AttackGameEffectInstance(attacker, attack, _) =>
-				implicit val view = game
+	override def renderSelectable(game: HypotheticalWorldView, display: World, entity: Entity, canvas: HexCanvas, selectable: Selectable, baseSelectableInst: SelectableInstance, selectionResults: SelectionResult): Unit = {
+		val allSelectablePairs = baseSelectableInst match {
+			case compound : CompoundSelectableInstance => compound.subSelectableInstances
+			case other => List(selectable -> other)
+		}
+		for ((_,selectableInst) <- allSelectablePairs) {
+			selectableInst match {
+				case ce@AttackGameEffectInstance(attacker, attack, _) =>
+					implicit val view = game
 
-				val targetSel = ce.targetSelector
-				if (selectionResults.fullySatisfied(targetSel)) {
-					val attackFrom = entity(Physical).position
-					val targets = selectionResults(targetSel)
+					val targetSel = ce.targetSelector
+					if (selectionResults.fullySatisfied(targetSel)) {
+						val attackFrom = entity(Physical).position
+						val targets = selectionResults(targetSel)
 
-					val img = ResourceManager.image("third-party/DHGZ/sword1.png")
-					val startPos = attackFrom
-					val endPos = targets match {
-						case Left(entities) => entities.head(Physical).position
-						case Right(hexes) => hexes.flatten.head
+						val img = ResourceManager.image("third-party/DHGZ/sword1.png")
+						val startPos = attackFrom
+						val endPos = targets match {
+							case Left(entities) => entities.head(Physical).position
+							case Right(hexes) => hexes.flatten.head
+						}
+
+						canvas.quad((startPos.qr.asCartesian + endPos.qr.asCartesian) * 0.5f)
+							.texture(img, 4)
+							.layer(DrawLayer.OverEntity)
+							.draw()
+
+						targets match {
+							case Left(entities) =>
+								for (e <- entities) {
+									canvas.quad(e(Physical).position)
+										.texture(ResourceManager.image("third-party/DHGZ/targetIcon.png"), 4)
+										.layer(DrawLayer.OverEntity)
+										.draw()
+								}
+							case Right(hexes) =>
+								for (h <- hexes.flatten) {
+									canvas.quad(h)
+										.texture(ResourceManager.image("third-party/zeshioModified/ui/hex_selection.png"))
+										.color(RGBA(0.7f, 0.1f, 0.1f, 0.8f))
+										.hexBottomOrigin()
+										.layer(DrawLayer.UnderEntity)
+										.draw()
+								}
+						}
 					}
-
-					canvas.quad((startPos.qr.asCartesian + endPos.qr.asCartesian) * 0.5f)
-						.texture(img, 4)
-						.layer(DrawLayer.OverEntity)
-						.draw()
-
-					targets match {
-						case Left(entities) =>
-							for (e <- entities) {
-								canvas.quad(e(Physical).position)
-									.texture(ResourceManager.image("third-party/DHGZ/targetIcon.png"), 4)
-									.layer(DrawLayer.OverEntity)
-									.draw()
-							}
-						case Right(hexes) =>
-							for (h <- hexes.flatten) {
-								canvas.quad(h)
-									.texture(ResourceManager.image("third-party/zeshioModified/ui/hex_selection.png"))
-									.color(RGBA(0.7f, 0.1f, 0.1f, 0.8f))
-									.hexBottomOrigin()
-									.layer(DrawLayer.UnderEntity)
-									.draw()
-							}
-					}
-				}
-			case _ => // do nothing
+				case _ => // do nothing
+			}
 		}
 	}
+
+
+	override def handlesCompoundSelectables: Boolean = true
 
 	override def updateUI(game: WorldView, display: World, entity: Entity, selectable: Selectable, selectableInst: SelectableInstance, consideredSelectionResult: SelectionResult, activeSelectionResults: SelectionResult, desktop: Widget): Unit = {
 		implicit val view = game
@@ -222,7 +234,12 @@ object AttackCardEffectRenderer extends TacticalSelectableRenderer {
 			case other => List(selectable -> other)
 		}
 
+		var pairCount = 0
 		for ((selectable, selectableInst) <- allSelectablePairs) {
+			pairCount += 1
+			if (pairCount > 20) {
+				println("WAT")
+			}
 			selectableInst match {
 				case ace@AttackGameEffectInstance(attacker, attack, _) =>
 					val targetSel = ace.targetSelector
@@ -254,10 +271,16 @@ object AttackCardEffectRenderer extends TacticalSelectableRenderer {
 		}
 
 		val allSelectableInstances = allSelectablePairs.map(_._2).toSet
-		for (outdatedMap <- widgets.filterKeys(s => ! allSelectableInstances.contains(s)).values; (_, widget) <- outdatedMap) {
+		if (allSelectableInstances.size > 100 || widgets.size > 100) {
+			println("WAT")
+		}
+		// Note: this is in this strange construction due to a stack overflow we were hitting. It was _actually_ caused by widgets = widgets.filterKeys(...) (a trap!)
+		// but we haven't unwound this yet, it works fine this way anyway
+		val outdatedMaps = widgets.toVector.filter(s => ! allSelectableInstances.contains(s._1)).map(_._2)
+		for (outdatedMap <- outdatedMaps; (_, widget) <- outdatedMap) {
 			widget.destroy()
 		}
-		widgets = widgets.filterKeys(s => allSelectableInstances.contains(s))
+		widgets = widgets.filter(s => allSelectableInstances.contains(s._1))
 	}
 
 	override def update(game: WorldView, display: World, entity: Entity, selectable: Selectable, selectableInst: SelectableInstance, selectionResult: SelectionResult): Unit = {
@@ -280,7 +303,7 @@ object AttackCardEffectRenderer extends TacticalSelectableRenderer {
 case object MoveCharacterRenderer extends TacticalSelectableRenderer {
 	override def renderSelectable(game: HypotheticalWorldView, display: World, entity: Entity, canvas: HexCanvas, selectable: Selectable, selectableInst: SelectableInstance, selectionResults: SelectionResult): Unit = {
 		selectableInst match {
-			case mce @ MoveCharacterInstance(_) =>
+			case mce @ MoveCharacterInstance(_, _, _) =>
 				val selector = mce.pathSelector
 				if (selectionResults.fullySatisfied(selector)) {
 					val path = selectionResults.single(selector)

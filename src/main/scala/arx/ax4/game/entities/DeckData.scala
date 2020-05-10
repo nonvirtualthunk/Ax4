@@ -162,7 +162,7 @@ class CardData extends AxAuxData {
 
 	var name : String = "Card"
 	var source : Entity = Entity.Sentinel
-	var exhausted : Boolean = false
+	var locked : Boolean = false
 
 	@NoAutoLoad var xp : Map[Taxon, Int] = Map()
 

@@ -18,6 +18,13 @@ Perks {
 //    effect: AddCard(Parry)
 //  }.
 
+  HoldTheLine {
+    name : "Hold the Line"
+    description : "No one can pass your guard. Any enemy that moves into an adjacent hex must end its movement there."
+    icon: "graphics/icons/shield.png"
+    effect : "ZoneOfControlRange increase to 1"
+  }
+
   SpearProficiency {
     name: "Spear Proficiency"
     description: "Become proficient in the use of the spear and increase your accuracy and damage"

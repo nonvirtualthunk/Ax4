@@ -154,18 +154,10 @@ object SimpleMapScenario extends Scenario {
 
 		def addCardTorbold(cardName : String): Unit = {
 			val card = CardLibrary.withKind(Taxonomy(cardName, "CardTypes")).createEntity(world)
-			CardLogic.addCard(torbold, card, DrawPile)(world)
+			CardLogic.addCards(torbold, Vector(card), DrawPile)(world)
 		}
 
-//		val specialAttackCard = CardLibrary.withKind(Taxonomy("PiercingStab", "CardTypes")).createEntity(world)
-//		CardLogic.addCard(torbold, specialAttackCard, DrawPile)(world)
-
-//		val parryCard = CardLibrary.withKind(Taxonomy("Parry", "CardTypes")).createEntity(world)
-//		CardLogic.addCard(torbold, parryCard, DrawPile)(world)
-
-		addCardTorbold("flurry of blows")
-		addCardTorbold("slime")
-
+		addCardTorbold("HedgehogStance")
 
 		val moveCard = torbold(DeckData)(world.view).allCards.find(c => c(IdentityData)(world.view).isA(CardTypes.MoveCard)).get
 
@@ -184,9 +176,6 @@ object SimpleMapScenario extends Scenario {
 		val scythe = scytheArch.createEntity(world)
 		//		InventoryLogic.equip(torbold, longspear)(world)
 		InventoryLogic.transferItem(scythe, to = Some(torbold))(world)
-
-		val stamPot = ItemLibrary.withKind(Taxonomy("staminaPotion")).createEntity(world)
-		InventoryLogic.transferItem(stamPot, Some(torbold))(world)
 
 
 		val slime = CharacterLogic.createCharacter(enemy)(world)
@@ -209,7 +198,7 @@ object SimpleMapScenario extends Scenario {
 
 		world.addEvent(TurnStartedEvent(player, 0))
 
-//		SkillsLogic.gainSkillXP(playerCharacter, Taxonomy("spearSkill"),20)(world)
+		SkillsLogic.gainSkillXP(playerCharacter, Taxonomy("spearSkill"),20)(world)
 //
 		Mouse.setImage(ResourceManager.image("third-party/shikashiModified/staff1.png"), Vec2i(4,4))
 	}

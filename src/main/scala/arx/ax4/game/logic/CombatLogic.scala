@@ -3,9 +3,9 @@ package arx.ax4.game.logic
 import arx.application.Noto
 import arx.ax4.game.action.SelectionResult
 import arx.ax4.game.entities.AttackEffectTrigger.Hit
-import arx.ax4.game.entities.Companions.{CharacterInfo, CombatData, Equipment, Physical, Weapon}
+import arx.ax4.game.entities.Companions.{CharacterInfo, CombatData, Equipment, Physical, TagData, Weapon}
 import arx.ax4.game.entities.{AffectsSelector, AttackData, AttackEffectTrigger, AttackModifier, AttackProspect, CharacterInfo, CombatData, DamageResult, DamageType, DefenseData, DefenseModifier, Physical, SpecialAttack, Tiles, TriggeredAttackEffect, UntargetedAttackProspect, Weapon}
-import arx.ax4.game.event.{ArmorUsedEvent, AttackEvent, AttackEventInfo, DamageEvent, DeflectEvent, DodgeEvent, StrikeEvent, SubStrike}
+import arx.ax4.game.event.{ArmorUsedEvent, AttackEvent, AttackEventInfo, BlockUsedEvent, DamageEvent, DeflectEvent, DodgeEvent, StrikeEvent, SubStrike}
 import arx.core.vec.coordinates.{AxialVec3, BiasedAxialVec3}
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.world.{World, WorldView}
@@ -58,9 +58,6 @@ object CombatLogic {
 			world.endEvent(StrikeEvent(AttackEventInfo(attacker, weapon, targets, untargetedAttackData)))
 		}
 
-		for (weaponSkill <- weapon.dataOpt[Weapon].map(_.weaponSkills)) {
-			SkillsLogic.gainSkillXP(attacker, weaponSkill, 10)(world)
-		}
 		world.endEvent(AttackEvent(AttackEventInfo(attacker, weapon, targets, untargetedAttackData)))
 	}
 
@@ -119,40 +116,58 @@ object CombatLogic {
 		}.min(world.view.data[CharacterInfo](target).health.currentValue)
 
 		if (effDamage > 0) {
-			world.startEvent(DamageEvent(target, effDamage, damageType))
-			world.modify(target, CharacterInfo.health reduceBy effDamage)
-			world.endEvent(DamageEvent(target, effDamage, damageType))
+			val block = TagLogic.flagValue(target, "BlockDelta")(world.view).min(effDamage)
+			val postBlockDamage = (effDamage - block).max(0)
+			if (block > 0) {
+				world.eventStmt(BlockUsedEvent(target, damage, block, damageType)) {
+					world.modify(target, TagData.flags.decrementKey(Taxonomy("Flags.BlockDelta"), block))
+				}
+			}
+
+			if (postBlockDamage > 0) {
+				world.startEvent(DamageEvent(target, postBlockDamage, damageType))
+				world.modify(target, CharacterInfo.health reduceBy postBlockDamage)
+				world.endEvent(DamageEvent(target, postBlockDamage, damageType))
+			}
 		} else {
 			world.addEvent(DeflectEvent(target, damage, damageType))
 		}
 	}
 
+	/**
+	 * Checks that an attack is valid to do, checks action point and stamina point availability, distance, etc
+	 */
 	def canAttackBeMade(attacker: Entity, attackerPos: AxialVec3, target: Either[Entity, AxialVec3], attackData: AttackData)(implicit worldView: WorldView): Boolean = {
 		if (attackData.actionCost > attacker(CharacterInfo).actionPoints.currentValue) {
 			false
 		} else if (attackData.staminaCost * attackData.strikeCount > attacker(CharacterInfo).stamina.currentValue) {
 			false
 		} else {
-			target match {
+			val targetPos = target match {
 				case Left(targetEnt) =>
-					worldView.dataOpt[Physical](targetEnt) match {
-						case Some(p) =>
-							val dist = attackerPos.distance(p.position).toInt
-							if (dist >= attackData.minRange && dist <= attackData.maxRange) {
-								true
-							} else {
-								false
-							}
-						case None => false
+					targetEnt.dataOpt[Physical] match {
+						case Some(phys) => phys.position
+						case None =>
+							Noto.warn(s"Target of possible attack is non-physical: ${targetEnt}")
+							return false
 					}
 				case Right(hex) =>
-					val dist = attackerPos.distance(hex).toInt
-					if (dist >= attackData.minRange && dist <= attackData.maxRange) {
-						true
-					} else {
-						false
-					}
+					hex
 			}
+			couldAttackBeMadeFromLocation(attacker, attackerPos, targetPos, target, attackData)
+		}
+	}
+
+	/**
+	 * Checks range and validity of an attack from a particular location, but does not check anything about the availability of
+	 * resources to perform that attack
+	 */
+	def couldAttackBeMadeFromLocation(attacker: Entity, attackerPos: AxialVec3, targetPos : AxialVec3, target: Either[Entity, AxialVec3], attackData: AttackData)(implicit worldView: WorldView): Boolean = {
+		val dist = attackerPos.distance(targetPos).toInt
+		if (dist >= attackData.minRange && dist <= attackData.maxRange) {
+			true
+		} else {
+			false
 		}
 	}
 
@@ -255,6 +270,10 @@ object CombatLogic {
 			.filter(item => item.hasData[Weapon])
    		.flatMap(weapon => weapon[Weapon].attacks.toVector.sortBy(_._1).map(weapon -> _._2))
    		.toVector
+	}
+
+	def defaultAttack(attacker : Entity)(implicit view : WorldView) : (Entity, AttackData) = {
+		availableAttacks(attacker).headOption.getOrElse(Entity.Sentinel -> new AttackData(Entity.Sentinel, name = "No Attack"))
 	}
 
 	def availableAttacks(attacker : Entity)(implicit view : WorldView) : Vector[(Entity, AttackData)] = {

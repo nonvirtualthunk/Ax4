@@ -117,3 +117,31 @@ CardEffectGroupDivider {
 
   drawBackground : false
 }
+
+
+
+CardPileWidget {
+  type : ImageDisplayWidget
+
+  drawBackground : false
+
+  image : "%(pile.icon)"
+  showing : "%(pile.showing)"
+
+  scalingStyle : scale(200%)
+
+  children {
+    CardCountWidget: {
+      type: TextDisplayWidget
+
+      drawBackground : false
+
+      text: "%(pile.cardCount)"
+      fontScale : 3
+      fontColor : [0,0,0,1]
+
+      x: 0 from right
+      y: 0 from bottom
+    }
+  }
+}

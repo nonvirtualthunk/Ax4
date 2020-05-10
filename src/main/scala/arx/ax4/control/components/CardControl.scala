@@ -1,19 +1,27 @@
 package arx.ax4.control.components
 import java.util.concurrent.atomic.AtomicBoolean
 
+import arx.Prelude
 import arx.application.Noto
 import arx.ax4.control.components.widgets.{CardWidget, CardWidgetData}
 import arx.ax4.game.entities.Companions.{CardData, DeckData, TagData}
 import arx.ax4.game.entities.cardeffects.{PayActionPoints, PayStamina}
 import arx.ax4.game.entities.{AttachmentStyle, CardData, CardPlay, CardTypes, TagData, TagLibrary}
-import arx.ax4.game.logic.{CardLogic, TagLogic}
+import arx.ax4.game.logic.{AllegianceLogic, CardLocation, CardLogic, TagLogic}
 import arx.ax4.game.logic.CardLogic.CostsAndEffects
 import arx.ax4.graphics.data.{CardImageLibrary, TacticalUIData}
-import arx.core.datastructures.OneOrMore.fromSingle
+import arx.core.math.Rectf
+import arx.core.metrics.Metrics
+import arx.core.vec.{Cardinals, ReadVec3f, ReadVec3i, Vec2T, Vec3f, Vec3i}
+import arx.engine.control.components.windowing.widgets.{BottomLeft, BottomRight}
+import arx.engine.control.components.windowing.widgets.data.TWidgetAuxData
+import arx.engine.world.GameEventClock
+import overlock.atomicmap.AtomicMap
+//import arx.core.datastructures.OneOrMore.fromSingle
 import arx.core.units.UnitOfTime
 import arx.core.vec.{ReadVec2i, Vec2f, Vec2i}
-import arx.engine.control.components.windowing.Widget
-import arx.engine.control.components.windowing.widgets.data.{OverlayData, WidgetOverlay}
+import arx.engine.control.components.windowing.{Widget, WidgetData}
+import arx.engine.control.components.windowing.widgets.data.{DrawingData, OverlayData, WidgetOverlay}
 import arx.engine.control.components.windowing.widgets.{ListItemMousedOver, ListItemSelected, PositionExpression, TopLeft}
 import arx.engine.control.event.{KeyModifiers, KeyboardMirror, Mouse, MouseButton, MousePressEvent, MouseReleaseEvent}
 import arx.engine.data.Moddable
@@ -24,193 +32,168 @@ import arx.graphics.helpers._
 import arx.graphics.{Image, TToImage}
 import arx.resource.ResourceManager
 
+
+case class CardPositioning (currentPosition : ReadVec2i, desiredPosition : ReadVec2i, lastUpdate : UnitOfTime)
+
 class CardControl(selectionControl : SelectionControl) extends AxControlComponent {
 
 	var cardWidgets : Map[Entity, Widget] = Map()
-	var heldCard : Option[Entity] = None
-	var heldEffectGroup : Int = 0
-	var selectedCard : Option[Entity] = None
-	var grabOffset : ReadVec2i = Vec2i.Zero
-	var useCardOnDrop = new AtomicBoolean(false)
 
+	val unselectedDepth = -450
+	val selectedDepth = 20
+
+	var pileWidgets : Map[CardLocation, Widget] = Map()
+
+	def updateCards(tuid : TacticalUIData, game : World, display : World)(implicit view : WorldView) : Map[Entity, Widget] = {
+		tuid.selectedCharacter match {
+			case Some(selC) if AllegianceLogic.isPlayerCharacter(selC) =>
+				val DD = selC(DeckData)
+
+				val handWithoutSelected = DD.hand.filterNot(h => cardWidgets.get(h).exists(w => w[CardInHand].isSelected))
+				val handAndAttachments = DD.hand.flatMap(c => CardLogic.cardAndAllAttachments(c))
+
+				val handRect = calculateHandRect
+
+				val res = for (card <- handAndAttachments) yield {
+					card -> cardWidgets.getOrElse(card, createCardWidget(tuid.fullGameAreaWidget, selC, card))
+				}
+				val newWidgets = res.toMap
+
+				// destory old widgets that are no longer necessary
+				val existingWidgets = cardWidgets
+				existingWidgets.filterKeys(e => !newWidgets.contains(e)).values.foreach(w => w.destroy())
+
+				// mark everything as unheld if the mouse is not down
+				if (!Mouse.buttonDown.getOrElse(MouseButton.Left, false)) {
+					newWidgets.foreach(_._2[CardInHand].held = false)
+				}
+
+				// interpolate positions and update overlays
+				val heldCard = newWidgets.find(_._2[CardInHand].held).map(_._1)
+				for ((card,widget) <- newWidgets) {
+					val cardInHand = widget[CardInHand]
+					widget.showing = Moddable(!cardInHand.isSelected)
+					val desired = Vec3f(desiredPositionFor(card, widget, newWidgets, heldCard, handWithoutSelected.indexOf(card), handRect))
+					card[CardData].attachedTo.headOption.flatMap(newWidgets.get) match {
+						case Some(otherWidget) =>
+							widget.x = PositionExpression.Relative(otherWidget, 50, Cardinals.Right)
+							widget.y = PositionExpression.Relative(otherWidget, 50, Cardinals.Up)
+							widget.z = desired.z.round
+						case None =>
+							val dt = Prelude.curTime() - cardInHand.updatedAt
+							cardInHand.updatedAt = Prelude.curTime()
+							val eff = moveTo(cardInHand.position, desired, (if (heldCard.contains(card)) { 2000.0f } else { cardInHand.velocity }) * (dt.inSeconds / 0.0166667f))
+							if (eff != desired) {
+								cardInHand.velocity += 2f
+							} else {
+								cardInHand.velocity = 32.0f
+							}
+							cardInHand.position = eff
+							widget.x = PositionExpression.Absolute(eff.x.round)
+							widget.y = PositionExpression.Absolute(eff.y.round)
+							widget.z = eff.z.round
+					}
+
+					val isLockedCard = DD.lockedCards.map(_.resolvedCard).contains(card)
+
+					val od = widget[OverlayData]
+
+					val playable = heldCard.contains(card)
+
+					cardInHand.useCardOnDrop = widget.drawing.absolutePosition.y < (widget.parent.drawing.effectiveDimensions.y - 1000) && CardLogic.isPlayable(selC, card)
+					od.overlays(CardControl.ActiveOverlay).drawOverlay = Moddable(playable)
+					od.overlays(CardControl.LockedOverlay).drawOverlay = Moddable(isLockedCard)
+				}
+
+				Mouse.setVisible(heldCard.isEmpty)
+
+				newWidgets
+			case None =>
+				Map()
+		}
+	}
+
+	def calculateHandRect = {
+		val drawPileDraw = pileWidgets(CardLocation.DrawPile).drawing
+		val discardPileDraw = pileWidgets(CardLocation.DiscardPile).drawing
+		Rectf(drawPileDraw.absolutePosition.x + drawPileDraw.effectiveDimensions.x + 100, 0, discardPileDraw.absolutePosition.x - 100, 500)
+	}
+
+	def createCardWidget(parentWidget : Widget, selC : Entity, card : Entity)(implicit view : WorldView) = {
+		val cardWidget = CardWidget(parentWidget, selC, card)
+		val posY = cardWidget.parent.drawing.absolutePosition.y + cardWidget.parent.drawing.effectiveDimensions.y + unselectedDepth
+		cardWidget.y = PositionExpression.Absolute(posY, TopLeft)
+
+		cardWidget.attachData[CardInHand]
+		cardWidget[CardInHand].position = Vec3i(0, posY, 0)
+		cardWidget[CardInHand].desiredPosition = Vec3i(0, posY, 0)
+
+		cardWidget.onEvent {
+			case MousePressEvent(button, pos, modifiers) =>
+				cardWidget[CardInHand].held = true
+				cardWidget[CardInHand].grabOffset = cardWidget.windowingSystem.currentWindowingMousePosition - cardWidget.drawing.absolutePosition.xy
+			case MouseReleaseEvent(button, pos, modifiers) =>
+				cardWidget[CardInHand].dropTriggered = true
+				cardWidget[CardInHand].held = false
+			case ListItemMousedOver(_, index, _) =>
+				cardWidget[CardInHand].activeEffectGroup = index
+				cardWidget[CardWidgetData].activeGroup = index
+			case ListItemSelected(_, index, _) =>
+				cardWidget[CardInHand].activeEffectGroup = index
+				cardWidget[CardWidgetData].activeGroup = index
+				cardWidget[CardInHand].dropTriggered = true
+				cardWidget[CardInHand].held = false
+		}
+		cardWidget
+	}
+
+	def desiredPositionFor(card : Entity, widget : Widget, widgets : Map[Entity,Widget], heldCard : Option[Entity], index : Int, handRect : Rectf)(implicit view : WorldView) = {
+		val availableSpace = handRect.width
+		val xGap = (availableSpace / (widgets.size-1).max(1)).min((widget.drawing.effectiveDimensions.x * 0.75f).toInt)
+
+		val desiredX = if (heldCard.contains(card)) {
+			widget.windowingSystem.currentWindowingMousePosition.x - widget[CardInHand].grabOffset.x
+		} else {
+			handRect.x + 50 + xGap * index
+		}
+
+		val desiredY: Int = heldCard match {
+			case Some(held) if card == held =>
+				widget.windowingSystem.currentWindowingMousePosition.y - widget[CardInHand].grabOffset.y
+			case None if widget.isUnderCursor =>
+				widget.parent.drawing.absolutePosition.y + widget.parent.drawing.effectiveDimensions.y - widget.drawing.effectiveDimensions.y + selectedDepth
+			case _ =>
+				widget.parent.drawing.absolutePosition.y + widget.parent.drawing.effectiveDimensions.y + unselectedDepth
+		}
+
+		val desiredZ = 20 + (if (card[CardData].attachedTo.nonEmpty) { -20 } else { - index })
+
+		Vec3i(desiredX.toInt, desiredY.toInt, desiredZ.toInt)
+	}
+
+	def moveTo(a : ReadVec3f, t : ReadVec3f, maxVelocity : Float) = {
+		val d = t - a
+		val n = d.normalizeSafe
+		val l = d.lengthSafe
+		if (maxVelocity > l) {
+			t
+		} else {
+			a + n * l.min(maxVelocity)
+		}
+	}
 
 	override protected def onUpdate(gameView: HypotheticalWorldView, game: World, display: World, dt: UnitOfTime): Unit = {
 		val tuid = display[TacticalUIData]
 		implicit val view = gameView
 
-		if (!Mouse.buttonDown.getOrElse(MouseButton.Left, false)) {
-			heldCard = None
-		}
+		cardWidgets = updateCards(tuid, game, display)
 
-		val unselectedDepth = -450
-
-
-
-		for (selC <- tuid.selectedCharacter) {
-			val DD = selC(DeckData)(gameView)
-			val effHand = DD.hand.filterNot(selectedCard.contains)
-			val handAndAttachments = effHand.flatMap(c => CardLogic.cardAndAllAttachments(c)(gameView)).filterNot(selectedCard.contains)
-			for (card <- handAndAttachments) {
-				if (!cardWidgets.contains(card)) {
-					val cardWidget = CardWidget(tuid.mainSectionWidget, selC, card)
-					cardWidget.y = PositionExpression.Absolute(cardWidget.parent.drawing.absolutePosition.y + cardWidget.parent.drawing.effectiveDimensions.y + unselectedDepth, TopLeft)
-
-					cardWidget.onEvent {
-						case MousePressEvent(button, pos, modifiers) =>
-							heldCard = Some(card)
-							heldEffectGroup = cardWidget[CardWidgetData].activeGroup
-							grabOffset = cardWidget.windowingSystem.currentWindowingMousePosition - cardWidget.drawing.absolutePosition.xy
-						case MouseReleaseEvent(button, pos, modifiers) =>
-							cardDropped(game, display)
-							heldCard = None
-						case ListItemMousedOver(_,index,_) =>
-							cardWidget[CardWidgetData].activeGroup = index
-						case ListItemSelected(_, index, _) =>
-							cardWidget[CardWidgetData].activeGroup = index
-							cardDropped(game, display)
-							heldCard = None
-					}
-
-					cardWidgets += card -> cardWidget
-				}
+		for ((card,widget) <- cardWidgets) {
+			val cardInHand = widget[CardInHand]
+			if (cardInHand.dropTriggered) {
+				cardDropped(card, widget, game, display)
+				cardInHand.dropTriggered = false
 			}
-
-			val toRemove = cardWidgets.filterKeys(c => ! handAndAttachments.contains(c))
-			for ((card, widget) <- toRemove) {
-				widget.destroy()
-				cardWidgets -= card
-			}
-
-			for ((card, widget) <- cardWidgets) {
-				val index = effHand.indexOf(card)
-
-				val activeDisplay = card[CardData].attachedTo.headOption.flatMap(cardWidgets.get) match {
-					case Some(attachedWidget) => attachedWidget.isUnderCursor && Mouse.isInWindow && KeyboardMirror.activeModifiers.shift
-					case None => heldCard.contains(card) || (heldCard.isEmpty && widget.isUnderCursor && card[CardData].attachedTo.isEmpty && Mouse.isInWindow)
-				}
-
-				widget.z = if (activeDisplay) {
-					100 + (if (card[CardData].attachedTo.nonEmpty ) { -1 } else { 0 })
-				} else {
-					20 + (if (card[CardData].attachedTo.nonEmpty) { if (activeDisplay) { 20 } else { -20 } } else { - index })
-				}
-
-
-				val desiredY : Int = card[CardData].attachedTo.headOption match {
-					case Some(attachedTo) =>
-						cardWidgets.get(attachedTo) match {
-							case Some(attachedWidget) =>
-								attachedWidget.y match {
-									case PositionExpression.Absolute(value, _) => value - 60
-									case _ => 0
-								}
-							case _ => 0
-						}
-					case None =>
-						heldCard match {
-							case Some(held) =>
-								if (card == held) {
-									widget.windowingSystem.currentWindowingMousePosition.y - grabOffset.y
-								} else {
-									widget.parent.drawing.absolutePosition.y + widget.parent.drawing.effectiveDimensions.y + unselectedDepth
-								}
-							case None =>
-								if (widget.isUnderCursor) {
-									widget.parent.drawing.absolutePosition.y + widget.parent.drawing.effectiveDimensions.y - widget.drawing.effectiveDimensions.y + 20
-								} else {
-									widget.parent.drawing.absolutePosition.y + widget.parent.drawing.effectiveDimensions.y + unselectedDepth
-								}
-						}
-				}
-
-				val selWidgetSpace = if (tuid.selectedCharacterInfoWidget.showing.resolve()) {
-					tuid.selectedCharacterInfoWidget.drawing.effectiveDimensions.x
-				} else {
-					0
-				}
-				val availableSpace = (widget.parent.drawing.effectiveDimensions.x - selWidgetSpace) - 100
-				val xGap = (availableSpace / (cardWidgets.size-1).max(1)).min((widget.drawing.effectiveDimensions.x * 0.75f).toInt)
-
-				val desiredX = if (heldCard.contains(card)) {
-					widget.windowingSystem.currentWindowingMousePosition.x - grabOffset.x
-				} else {
-					card[CardData].attachedTo.headOption.flatMap(cardWidgets.get) match {
-						case None => widget.parent.drawing.absolutePosition.x + 50 + xGap * index
-						case Some(attachedWidget) => attachedWidget.position.x match {
-							case PositionExpression.Absolute(xv,_) =>
-								if (activeDisplay) {
-									xv + widget.drawing.effectiveDimensions.x - 30
-								} else {
-									xv
-								}
-							case _ => 0
-						}
-					}
-				}
-
-				val curY = widget.position.y match {
-					case PositionExpression.Absolute(value, _) => value
-					case _ => desiredY
-				}
-
-				val curX = widget.position.x match {
-					case PositionExpression.Absolute(value, _) => value
-					case _ => desiredX
-				}
-
-
-				val maxSpeed = if (card[CardData].attachedTo.nonEmpty) { 64.0f } else if (heldCard.contains(card)) { 64.0f } else { 32.0f }
-				val delta = (Vec2f(desiredX, desiredY) - Vec2f(curX, curY))
-				val baseSpeed = if (card[CardData].attachedTo.nonEmpty) { delta.lengthSafe } else { delta.lengthSafe * 0.7f }
-				val deltaN = delta.normalizeSafe * baseSpeed.max(0.0f).min(maxSpeed)
-
-				val deltaY = deltaN.y.round.abs
-				val newY = if (deltaY == 0) {
-					desiredY
-				} else if (desiredY > curY) {
-					(curY + deltaY).min(desiredY)
-				} else if (desiredY < curY) {
-					(curY - deltaY).max(desiredY)
-				} else {
-					desiredY
-				}
-
-				val deltaX = deltaN.x.round.abs
-				val newX = if (deltaX == 0) {
-					desiredX
-				} else if (desiredX > curX) {
-					(curX + deltaX).min(desiredX)
-				} else if (desiredX < curX) {
-					(curX - deltaX).max(desiredX)
-				} else {
-					desiredX
-				}
-
-				widget.x = PositionExpression.Absolute(newX, TopLeft)
-				widget.y = PositionExpression.Absolute(newY, TopLeft)
-
-				val isLockedCard = DD.lockedCards.map(_.resolvedCard).contains(card)
-
-				val od = widget[OverlayData]
-
-				od.overlays(CardControl.ActiveOverlay).drawOverlay = Moddable(if (heldCard.contains(card) && widget.drawing.absolutePosition.y < (widget.parent.drawing.effectiveDimensions.y - 1000) && CardLogic.isPlayable(selC, card)(game.view)) {
-					useCardOnDrop.set(true)
-					true
-				} else {
-					if (heldCard.contains(card)) {
-						useCardOnDrop.set(false)
-					}
-					false
-				})
-
-				od.overlays(CardControl.LockedOverlay).drawOverlay = Moddable(isLockedCard)
-			}
-		}
-
-		if (heldCard.isDefined) {
-			Mouse.setVisible(false)
-		} else {
-			Mouse.setVisible(true)
 		}
 	}
 
@@ -218,28 +201,28 @@ class CardControl(selectionControl : SelectionControl) extends AxControlComponen
 		val tuid = display[TacticalUIData]
 		implicit val view = game.view
 
-		onControlEvent {
-			case HexMouseReleaseEvent(_,_,_,_) => cardDropped(game, display)
-		}
+		pileWidgets = List(CardLocation.DrawPile, CardLocation.DiscardPile)
+			.map(l => l -> PileWidget.create(tuid, l)(hypView))
+			.toMap
 	}
 
-	def cardDropped(game : World, display : World): Unit = {
+	def cardDropped(card : Entity, widget : Widget, game : World, display : World): Unit = {
 		val tuid = display[TacticalUIData]
 		implicit val view = game.view
 
-		if (useCardOnDrop.get()) {
-			for (card <- heldCard ; selC <- tuid.selectedCharacter) {
+		for (selC <- tuid.selectedCharacter) {
+			val cardInHand = widget[CardInHand]
+			if (cardInHand.useCardOnDrop) {
 				if (CardLogic.isPlayable(selC, card)) {
-					val cardPlay = CardPlay(selC, card, heldEffectGroup)
+					val cardPlay = CardPlay(selC, card, cardInHand.activeEffectGroup)
 					cardPlay.instantiate(game.view, selC, card) match {
 						case Left(cardPlayInst) =>
-							selectedCard = Some(card)
+							cardInHand.isSelected = true
 							selectionControl.changeSelectionTarget(game, display, cardPlay, cardPlayInst,
 								(sc) => {
 									CardLogic.playCard(selC, card, cardPlayInst, sc.selectionResults)(game)
-									selectedCard = None
 								},
-								() => selectedCard = None)
+								() => {})
 						case Right(msg) => Noto.error(s"Could not play card: $msg")
 					}
 				}
@@ -253,16 +236,80 @@ object CardControl {
 	val ActiveOverlay = "Active Overlay"
 }
 
+class CardInHand extends TWidgetAuxData {
+	var activeEffectGroup: Int = 0
+	var isSelected: Boolean = false
+	var grabOffset: ReadVec2i = Vec2i.Zero
+	var dropTriggered: Boolean = false
+	var held : Boolean = false
+	var useCardOnDrop: Boolean = false
+	var position: ReadVec3f = Vec3f.Zero
+	var desiredPosition : ReadVec3f = Vec3f(0,0,0)
+	var updatedAt: UnitOfTime = Prelude.curTime()
+	var velocity: Float = 10.0f
+}
+object CardInHand {
+	val Sentinel = new CardInHand
+}
+
+object PileWidget {
+	val iconsByLocation : Map[CardLocation, Image] = Map[CardLocation, String](
+		CardLocation.Hand -> "graphics/icons/card_back_large.png",
+		CardLocation.DrawPile -> "graphics/icons/card_back_large.png",
+		CardLocation.DiscardPile -> "graphics/icons/card_back_large.png",
+		CardLocation.ExhaustPile -> "graphics/icons/card_back_large.png",
+		CardLocation.ExpendedPile -> "graphics/icons/card_back_large.png",
+		CardLocation.NotInDeck -> "graphics/icons/card_back_large.png"
+	).mapValues(s => ResourceManager.image(s))
+
+	case class PileInfo(icon : Image, cardCount : Int, showing : Boolean)
+	def create(tuid : TacticalUIData, location : CardLocation)(implicit view : WorldView) = {
+		val pileWidget = tuid.fullGameAreaWidget.createChild("CardWidgets.CardPileWidget")
+		location match {
+			case CardLocation.Hand => Noto.warn("displaying hand as a pile doesn't make sense")
+			case CardLocation.DrawPile => pileWidget.position = Vec2T(PositionExpression.Constant(10, BottomLeft), PositionExpression.Constant(10, BottomLeft))
+			case CardLocation.DiscardPile => pileWidget.position = Vec2T(PositionExpression.Constant(10, BottomRight), PositionExpression.Constant(10, BottomRight))
+			case CardLocation.ExhaustPile => Noto.warn("displaying exhaust pile not yet supported")
+			case CardLocation.ExpendedPile => Noto.warn("displaying expended pile not yet supported")
+			case CardLocation.NotInDeck => Noto.warn("displaying not-in-deck pile doesn't make sense")
+		}
+
+		pileWidget.bind("pile", () => tuid.selectedCharacter match {
+			case Some(selC) => PileInfo(iconsByLocation(location), CardLogic.cardsInLocation(selC, location).size, showing = true)
+			case None => PileInfo(iconsByLocation(location), 0, showing = false)
+		})
+
+		pileWidget
+	}
+}
+
 case class CardInfo(name : String, tags : List[Taxon], image : Image, mainCost : RichText, secondaryCost : RichText, effects : Vector[RichText]) {
 	val hasTags = tags.nonEmpty
 }
 object CardInfo {
 	import arx.Prelude._
 
+	val cacheHits = Metrics.counter("CardInfo.cacheHits")
+	val totalCreations = Metrics.counter("CardInfo.creations")
+
+	case class CardInfoKey(entity : Entity, activeGroup : Int, cardKind : Taxon)
+	// TODO: Clear this out, occassionally
+	val cardInfoCache = AtomicMap.atomicNBHM[CardInfoKey, (GameEventClock, CardInfo)]
+
 	def apply(character : Entity, card : Entity, activeEffectGroup : Int)(implicit view : WorldView) : CardInfo = {
-		CardInfo(Some(character), card(IdentityData).kind, card(CardData), card(TagData), activeEffectGroup)
+		CardInfo(card, Some(character), card(IdentityData).kind, card(CardData), card(TagData), activeEffectGroup)
 	}
-	def apply(character : Option[Entity], cardKind : Taxon, CD : CardData, TD : TagData, activeEffectGroupIndex : Int)(implicit view : WorldView) : CardInfo = {
+	def apply(cardEntity : Entity, character : Option[Entity], cardKind : Taxon, CD : CardData, TD : TagData, activeEffectGroupIndex : Int)(implicit view : WorldView) : CardInfo = {
+		totalCreations.inc()
+		val cacheKey = CardInfoKey(cardEntity, activeEffectGroupIndex, cardKind)
+		val cached = cardInfoCache.get(cacheKey)
+		if (cached.isDefined) {
+			if (cached.get._1 == view.currentTime) {
+				cacheHits.inc()
+				return cached.get._2
+			}
+		}
+
 		val settings = RichTextRenderSettings()
 
 		val costAndEffectSections = for (CostsAndEffects(costs, effects, selfEffects, triggeredEffects, description) <- CardLogic.effectiveCostsAndEffects(character, CD)) yield {
@@ -330,9 +377,9 @@ object CardInfo {
 		for (((_,_,text),index) <- costAndEffectSections.zipWithIndex) {
 
 			if (index == activeEffectGroupIndex) {
-				effectText ++= text
+				effectText :+= text
 			} else {
-				effectText ++= RichText(text.sections.map(_.applyTint(Moddable(RGBA(1.0f,1.0f,1.0f,1.0f)))))
+				effectText :+= RichText(text.sections.map(_.applyTint(Moddable(RGBA(1.0f,1.0f,1.0f,1.0f)))))
 			}
 		}
 
@@ -362,7 +409,9 @@ object CardInfo {
 				}
 		}
 
-		CardInfo(name.capitalize, TD.tags.toList, cardImage, mainCost, secondaryCost, effectText)
+		val info = CardInfo(name.capitalize, TD.tags.toList, cardImage, mainCost, secondaryCost, effectText)
+		cardInfoCache.put(cacheKey, (view.currentTime, info))
+		info
 	}
 }
 

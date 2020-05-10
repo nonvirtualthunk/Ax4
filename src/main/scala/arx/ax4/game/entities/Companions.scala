@@ -48,8 +48,6 @@ object CardData extends Clazz[CardData]("CardData", classOf[CardData]){
 	fields += "name" -> name
 	val source = Field.fromValue(Sentinel.source).createField[CardData]("source",f => f.source, (f,source) => f.source = source, CardData) 
 	fields += "source" -> source
-	val exhausted = Field.fromValue(Sentinel.exhausted).createField[CardData]("exhausted",f => f.exhausted, (f,exhausted) => f.exhausted = exhausted, CardData) 
-	fields += "exhausted" -> exhausted
 	val inDeck = Field.fromValue(Sentinel.inDeck).createField[CardData]("inDeck",f => f.inDeck, (f,inDeck) => f.inDeck = inDeck, CardData) 
 	fields += "inDeck" -> inDeck
 	val cardEffectGroups = Field.fromValue(Sentinel.cardEffectGroups).createField[CardData]("cardEffectGroups",f => f.cardEffectGroups, (f,cardEffectGroups) => f.cardEffectGroups = cardEffectGroups, CardData) 
@@ -68,7 +66,6 @@ object CardData extends Clazz[CardData]("CardData", classOf[CardData]){
 	def copyInto(from : CardData, to : CardData) {
 		to.name = from.name
 		to.source = from.source
-		to.exhausted = from.exhausted
 		to.inDeck = from.inDeck
 		to.cardEffectGroups = from.cardEffectGroups
 		to.attachments = from.attachments

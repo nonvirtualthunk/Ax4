@@ -28,8 +28,9 @@ object CardLogic {
 
 		world.startEvent(HandDrawn(entity))
 		for (i <- 0 until DD.drawCount) {
-			if (lockedSlots.size > i && !lockedSlots(i).resolvedCard.isSentinel && !lockedSlots(i).resolvedCard[CardData].exhausted) {
-				val lockedCard = lockedSlots(i).resolvedCard
+			val resolvedCard = if (lockedSlots.size > i ) { lockedSlots(i).resolvedCard } else { Entity.Sentinel }
+			if (lockedSlots.size > i && !resolvedCard.isSentinel && CardLogic.isCardInOneOf(entity, resolvedCard, Vector(CardLocation.DrawPile, CardLocation.DiscardPile))) {
+				val lockedCard = resolvedCard
 				drawSpecificCardFromDrawOrDiscard(entity, lockedCard)
 			} else {
 				drawCard(entity)
@@ -142,12 +143,12 @@ object CardLogic {
 		}
 	}
 
-	def addCard(entity: Entity, card: Entity, style: CardAdditionStyle)(implicit world: World): Unit = {
+	def addCards(entity: Entity, cards: Vector[Entity], style: CardAdditionStyle)(implicit world: World): Unit = {
 		implicit val view = world.view
 		val deck = entity[DeckData]
 
-		if (!card.hasData[CardData]) {
-			Noto.error("Trying to add non-card to deck")
+		if (!cards.forall(_.hasData[CardData])) {
+			Noto.error(s"Trying to add non-card to deck: ${cards.find(! _.hasData[CardData])}")
 		}
 
 		val weightDrawPile = style match {
@@ -159,19 +160,21 @@ object CardLogic {
 			case _ => deck.discardPile.size
 		}
 
-		world.startEvent(CardAdded(entity, card))
-		world.modify(card, CardData.inDeck -> entity)
-		if (style == CardAdditionStyle.Hand) {
-			world.modify(entity, DeckData.hand append card)
-		} else {
-			val randomizer = Randomizer(world)
-			if (randomizer.nextInt(weightDrawPile + weightDiscardPile) < weightDrawPile) {
-				world.modify(entity, DeckData.drawPile append card)
+		world.startEvent(CardsAdded(entity, cards))
+		for (card <- cards) {
+			world.modify(card, CardData.inDeck -> entity)
+			if (style == CardAdditionStyle.Hand) {
+				world.modify(entity, DeckData.hand append card)
 			} else {
-				world.modify(entity, DeckData.discardPile append card)
+				val randomizer = Randomizer(world)
+				if (randomizer.nextInt(weightDrawPile + weightDiscardPile) < weightDrawPile) {
+					world.modify(entity, DeckData.drawPile append card)
+				} else {
+					world.modify(entity, DeckData.discardPile append card)
+				}
 			}
 		}
-		world.endEvent(CardAdded(entity, card))
+		world.endEvent(CardsAdded(entity, cards))
 	}
 
 	def moveCardTo(entity : Entity, card : Entity, to : CardLocation)(implicit world : World): Unit = {
@@ -202,6 +205,7 @@ object CardLogic {
 	def playCard(entity: Entity, card: Entity, cardPlayInstance: CardPlayInstance, selections: SelectionResult)(implicit world: World): Unit = {
 		implicit val view = world.view
 
+		val randomizer = Randomizer(world)
 		world.startEvent(CardPlayed(entity, card))
 
 		if (TagLogic.hasTag(card, Taxonomy("tags.expend"))) {
@@ -219,6 +223,37 @@ object CardLogic {
 
 		for ((_, effect) <- cardPlayInstance.effects) {
 			effect.applyEffect(world, selections)
+		}
+
+		val effectiveXP = CD.xp.toVector.flatMap {
+			case (rawSkill, multiplier) =>
+				// convert WeaponSkill special value to whatever the actively equipped weapon is
+				if (rawSkill == Taxonomy("Skills.WeaponSkill")) {
+					val weapons = InventoryLogic.equippedWeapons(entity)
+					if (weapons.size > 1) {
+						Noto.warn("Multiple equipped weapons, picking the first one, may want to revisit this")
+					}
+					if (weapons.isEmpty) {
+						Seq(Taxonomy("Skills.UnarmedSkill") -> multiplier.toFloat)
+					} else {
+						// if the weapon has multiple skills, split between each of them
+						val weaponSkills = weapons.head.data[Weapon].weaponSkills
+						weaponSkills.map(skill => skill -> (multiplier.toFloat / weaponSkills.size))
+					}
+				} else {
+					Seq(rawSkill -> multiplier.toFloat)
+				}
+		}
+
+
+		for ((skill, multiplier) <- effectiveXP) {
+			// 1.5 becomes -> 1, plus 1 50% of the time
+			var amount = multiplier.toInt
+			val partialAmount = arx.Prelude.fract(multiplier)
+			if (randomizer.nextFloat01() < partialAmount) {
+				amount += 1
+			}
+			SkillsLogic.gainSkillXP(entity, skill, amount)
 		}
 
 		world.endEvent(CardPlayed(entity, card))
@@ -437,6 +472,22 @@ object CardLogic {
 
 	def cardAndAllAttachments(card: Entity)(implicit view : WorldView): List[Entity] = {
 		card :: card[CardData].attachedCards.values.flatten.flatMap(c => cardAndAllAttachments(c)).toList
+	}
+
+	def isCardInOneOf(deckEnt : Entity, card : Entity, locations : Vector[CardLocation])(implicit view : WorldView) : Boolean = {
+		locations.exists(l => isCardIn(deckEnt, card, l))
+	}
+	def isCardIn(deckEnt : Entity, card : Entity, location : CardLocation)(implicit view : WorldView) : Boolean = {
+		val deck = deckEnt[DeckData]
+		val collection = location match {
+			case CardLocation.Hand => deck.hand
+			case CardLocation.DrawPile => deck.drawPile
+			case CardLocation.DiscardPile => deck.discardPile
+			case CardLocation.ExhaustPile => deck.exhaustPile
+			case CardLocation.ExpendedPile => deck.expendedPile
+			case CardLocation.NotInDeck => Vector()
+		}
+		collection.contains(card)
 	}
 
 	def cardsInLocation(deck : Entity, location : CardLocation)(implicit view : WorldView) : Vector[Entity] = cardsInLocation(deck(DeckData), location)

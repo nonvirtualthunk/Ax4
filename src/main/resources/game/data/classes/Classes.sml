@@ -1,19 +1,29 @@
 Classes {
 
-  Spearman {
-    description : "A soldier trained in wielding a spear (more words here)"
+  Soldier {
+    description : "A soldier trained in combat"
+
+    cardRewards {
+      Parry {
+        targetLevel: 1
+        free : true
+      }
+    }
 
     levelUpPerks: {
+      ArmorProficiency {
+        targetLevel: 1
+        free : true
+      }
       SpearProficiency {
-        levelRange: 1
-        free: true
-      },
+        targetLevel : 1
+      }
       SpearMastery {
-        levelRange: 2-5
+        targetLevel : 2
         requires: Perk(SpearProficiency)
-      },
+      }
       CloseRangeSpearFighter {
-        levelRange: 2-5
+        targetLevel : 3
         requires: Perk(SpearProficiency)
       }
     }

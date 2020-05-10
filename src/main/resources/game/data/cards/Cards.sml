@@ -2,6 +2,7 @@ Cards {
 
   Move {
     name : Move
+    xp: MoveSkill -> 1
 
     cardEffectGroups : [
       {
@@ -14,31 +15,30 @@ Cards {
         effects: [Move(5)]
       }
     ]
-
-
-    xp: Move -> 1
   }
 
   Gather {
     name : Gather
     apCost : 2
     staminaCost : 0
-    effects: [Gather(1)]
-
     xp: Gather -> 1
+
+    effects: [Gather(1)]
   }
 
   Harvest {
     name: Harvest
     apCost: 2
     staminaCost: 1
-    effects: [Gather(1)]
-
     xp: Gather -> 1
+
+    effects: [Gather(1)]
   }
 
   PiercingStab {
     name: Piercing Stab
+    tags: [Expend]
+    xp : WeaponSkill -> 2
 
     effects : [
       {
@@ -53,14 +53,11 @@ Cards {
         condition : [HasDamageType(Piercing), HasAtLeastMaxRange(2)]
       }
     ]
-
-    tags: [Expend]
-
-    xp : WeaponSkill -> 2
   }
 
   SwiftStrike {
     name: Swift Strike
+    xp : WeaponSkill -> 2
 
     effects: [
       {
@@ -73,13 +70,12 @@ Cards {
       },
       Draw(1)
     ]
-
-    xp : WeaponSkill -> 2
   }
 
   SweepingLegStrike {
     name : Sweeping Leg Strike
     tags : [Expend]
+    xp : WeaponSkill -> 2
 
     effects: [
       {
@@ -93,13 +89,12 @@ Cards {
         }]
       }
     ]
-
-    xp : WeaponSkill -> 2
   }
 
   RingingBlow {
     name : Ringing Blow
     tags : [Expend]
+    xp : WeaponSkill -> 2
 
     effects: [
       {
@@ -114,13 +109,12 @@ Cards {
         onHitTargetEffects : [Stunned(1)]
       }
     ]
-
-    xp : WeaponSkill -> 2
   }
 
   DoubleStrike {
     name : Double Strike
     tags : [Expend]
+    xp : WeaponSkill -> 2
 
     effects: [
       {
@@ -135,6 +129,7 @@ Cards {
   ChargingStrike {
     name : Charging Strike
     tags : [Expend]
+    xp: WeaponSkill -> 2
 
     effects : [
       Move(2),
@@ -150,6 +145,7 @@ Cards {
   FlashingPoints {
     name : Flashing Points
     tags : [Expend]
+    xp: WeaponSkill -> 2
 
     effectsDescription : "Every strike applies 2 [dazzled] for the rest of the turn"
 
@@ -158,22 +154,40 @@ Cards {
 
   Parry {
     name: Parry
-
     apCost: 1
     staminaCost: 1
-    effects: [Parry(3)]
-
     xp: Parry -> 1
+
+    effects: [Parry(3)]
   }
 
   Block {
     name: Block
-
     apCost: 1
     staminaCost: 1
-    effects: [Block(1)]
-
     xp: Block -> 1
+
+    effects: [Block(1)]
+  }
+
+  TurtleStance {
+    name : Turtle Stance
+    apCost : 1
+    staminaCost : 1
+
+    effects: [TurtleStance(1)]
+
+    xp : Block -> 1
+  }
+
+  HedgehogStance {
+    name : Hedgehog Stance
+    apCost : 1
+    staminaCost : 1
+
+    effects: [HedgehogStance(1)]
+
+    xp : Parry -> 1
   }
 
   FlurryOfBlows {
@@ -181,6 +195,8 @@ Cards {
 
     apCost: 0
     staminaCost: 0
+    xp: UnarmedSkill -> 1
+
     effects: [
       {
         type: SpecialAttack
@@ -211,7 +227,5 @@ Cards {
         description : "Return to hand whenever an unarmed attack is made"
       }
     ]
-
-    xp: UnarmedSkill -> 1
   }
 }

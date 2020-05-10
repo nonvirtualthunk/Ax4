@@ -39,7 +39,6 @@ class AIComponent extends GameComponent {
 
 			println(s"Chosen attack : $attack")
 
-			CharacterLogic.gainMovePoints(entity, Sext.fromInt(5))
 
 			attack.targetPattern match {
 				case TargetPattern.Enemies(numEnemies) if numEnemies == 1 =>
@@ -48,8 +47,10 @@ class AIComponent extends GameComponent {
 						CombatLogic.canAttackBeMade(entity, pos, Left(enemy), attack)
 					})).find(t => t._2.isDefined) match {
 						case Some((chosenEnemy, path)) =>
-							MovementLogic.moveCharacterOnPath(entity, path.get)
-							CombatLogic.attack(world, entity, Seq(chosenEnemy), attack)
+							MovementLogic.moveCharacterOnPath(entity, path.get, Some(5))
+							if (CombatLogic.canAttackBeMade(entity, CharacterLogic.position(entity), Left(chosenEnemy), attack)) {
+								CombatLogic.attack(world, entity, Seq(chosenEnemy), attack)
+							}
 						case None => Noto.info("No path available to any enemy")
 					}
 				case _ =>

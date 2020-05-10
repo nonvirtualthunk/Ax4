@@ -3,7 +3,6 @@ package arx.ax4.game.logic
 import arx.ax4.game.entities.AttackConditionals.AttackConditional
 import arx.ax4.game.entities.AttackKey.Primary
 import arx.ax4.game.entities.Companions.CombatData
-import arx.ax4.game.entities.SpecialAttack.PowerAttack
 import arx.ax4.game.entities._
 import arx.ax4.game.logic.CombatLogicTest.{AntiMudDefense, Sandbox, SingleAttackBuff}
 import arx.core.introspection.FieldOperations._
@@ -33,50 +32,50 @@ class CombatLogicTest extends FunSuite {
 		WorldQuery.assert(s"health < 10 AND health > 0 FROM CharacterInfo WHERE id == $defenderA OR id == $defenderB", "baseline, both defenders should have been hit, but not killed")
 	}
 
-	test("test trivial attack scenario, with conditional defense bonus") {
-		val sandbox = new Sandbox
-		import sandbox._
-		implicit val view = world.view
-
-		world.modify(defenderA, CombatData.conditionalDefenseModifiers append (AntiMudDefense -> DefenseModifier(10,1)), None)
-
-		CombatLogic.attack(world, attacker, List(defenderA, defenderB), primaryAttack)
-
-		WorldQuery.assert(s"health == 10 FROM CharacterInfo WHERE id == $defenderA", "defender with anti-mud monster defenses should be fine")
-		WorldQuery.assert(s"health < 10 FROM CharacterInfo where id == $defenderB", "but defender without such defenses should still get hit")
-
-		// give the attacker a bonus when attacking a single target, with enough of a bonus to compensate for the conditional defense bonus it has
-		world.modify(attacker, CombatData.conditionalAttackModifiers append (SingleAttackBuff -> AttackModifier(accuracyBonus = 20)), None)
-
-		CombatLogic.attack(world, attacker, List(defenderA), primaryAttack)
-
-		// two strikes, each dealing 1d6 (median -> 4) damage, minus 1 each from the conditional bonus to armor = 6 damage, so 4 health remaining
-		WorldQuery.assert(s"health == 4 from CharacterInfo where id == $defenderA")
-	}
-
-	test("test trivial attack scenario, with special attack") {
-		val sandbox = new Sandbox
-		import sandbox._
-		implicit val view = world.view
-
-		// use the power attack special attack which reduces accuracy but doubles damage. With default arrangement the accuracy penalty
-		// is too high for the attack to hit, so it should be a miss as a result
-		val attackData = primaryAttack.copy()
-		attackData.merge(PowerAttack.attackModifier)
-		CombatLogic.attack(world, attacker, List(defenderA, defenderB), attackData)
-
-		WorldQuery.assert(s"health == 10 FROM CharacterInfo WHERE id == $defenderA OR id == $defenderB", "defenders should not be hurt because attack too inaccurate")
-
-		// give the attacker a bonus when attacking a single target, with enough of a bonus to compensate for the penalty from power attack
-		world.modify(attacker, CombatData.conditionalAttackModifiers append (SingleAttackBuff -> AttackModifier(accuracyBonus = 20)), None)
-
-		CombatLogic.attack(world, attacker, List(defenderA), attackData)
-
-		// the target attacked with power attack should now have 0 health, but the other one should be untouched
-		WorldQuery.assert(s"health == 0 FROM CharacterInfo WHERE id == $defenderA")
-		WorldQuery.assert(s"health == 10 FROM CharacterInfo WHERE id == $defenderB")
-
-	}
+//	test("test trivial attack scenario, with conditional defense bonus") {
+//		val sandbox = new Sandbox
+//		import sandbox._
+//		implicit val view = world.view
+//
+//		world.modify(defenderA, CombatData.conditionalDefenseModifiers append (AntiMudDefense -> DefenseModifier(10,1)), None)
+//
+//		CombatLogic.attack(world, attacker, List(defenderA, defenderB), primaryAttack)
+//
+//		WorldQuery.assert(s"health == 10 FROM CharacterInfo WHERE id == $defenderA", "defender with anti-mud monster defenses should be fine")
+//		WorldQuery.assert(s"health < 10 FROM CharacterInfo where id == $defenderB", "but defender without such defenses should still get hit")
+//
+//		// give the attacker a bonus when attacking a single target, with enough of a bonus to compensate for the conditional defense bonus it has
+//		world.modify(attacker, CombatData.conditionalAttackModifiers append (SingleAttackBuff -> AttackModifier(accuracyBonus = 20)), None)
+//
+//		CombatLogic.attack(world, attacker, List(defenderA), primaryAttack)
+//
+//		// two strikes, each dealing 1d6 (median -> 4) damage, minus 1 each from the conditional bonus to armor = 6 damage, so 4 health remaining
+//		WorldQuery.assert(s"health == 4 from CharacterInfo where id == $defenderA")
+//	}
+//
+//	test("test trivial attack scenario, with special attack") {
+//		val sandbox = new Sandbox
+//		import sandbox._
+//		implicit val view = world.view
+//
+//		// use the power attack special attack which reduces accuracy but doubles damage. With default arrangement the accuracy penalty
+//		// is too high for the attack to hit, so it should be a miss as a result
+//		val attackData = primaryAttack.copy()
+//		attackData.merge(PowerAttack.attackModifier)
+//		CombatLogic.attack(world, attacker, List(defenderA, defenderB), attackData)
+//
+//		WorldQuery.assert(s"health == 10 FROM CharacterInfo WHERE id == $defenderA OR id == $defenderB", "defenders should not be hurt because attack too inaccurate")
+//
+//		// give the attacker a bonus when attacking a single target, with enough of a bonus to compensate for the penalty from power attack
+//		world.modify(attacker, CombatData.conditionalAttackModifiers append (SingleAttackBuff -> AttackModifier(accuracyBonus = 20)), None)
+//
+//		CombatLogic.attack(world, attacker, List(defenderA), attackData)
+//
+//		// the target attacked with power attack should now have 0 health, but the other one should be untouched
+//		WorldQuery.assert(s"health == 0 FROM CharacterInfo WHERE id == $defenderA")
+//		WorldQuery.assert(s"health == 10 FROM CharacterInfo WHERE id == $defenderB")
+//
+//	}
 
 }
 
@@ -97,14 +96,14 @@ object CombatLogicTest {
 		override def toRichText(settings: RichTextRenderSettings): RichText = RichText("single attack buff")
 	}
 
-	case object TestPowerAttack extends SpecialAttack {
-		condition = AttackConditionals.AnyAttack
-		attackModifier = AttackModifier(
-			namePrefix = Some("power attack : "),
-			accuracyBonus = -10,
-			damageModifiers = Vector(DamageModifier(DamagePredicate.All, DamageDelta.DamageMultiplier(2.0f)))
-		)
-	}
+//	case object TestPowerAttack extends SpecialAttack {
+//		condition = AttackConditionals.AnyAttack
+//		attackModifier = AttackModifier(
+//			namePrefix = Some("power attack : "),
+//			accuracyBonus = -10,
+//			damageModifiers = Vector(DamageModifier(DamagePredicate.All, DamageDelta.DamageMultiplier(2.0f)))
+//		)
+//	}
 
 	def loadDataFromConfig[T <: AxAuxData](cv : ConfigValue)(implicit clazz : ClassTag[T]) = {
 		val x : T = ReflectionAssistant.instantiate[T]
@@ -120,7 +119,7 @@ object CombatLogicTest {
 
 		val attacker = world.createEntity()
 		attacker.attachI(new CombatData)(cd => {
-			cd.specialAttacks += "power attack" -> TestPowerAttack
+//			cd.specialAttacks += "power attack" -> TestPowerAttack
 		})(world)
 		attacker.attachI(new CharacterInfo)(ci => {
 			ci.health = Reduceable(10)

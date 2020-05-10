@@ -1,10 +1,10 @@
 package arx.ax4.game.entities.cardeffects
 
 import arx.application.Noto
-import arx.ax4.game.action.{EntityPredicate, EntitySelector, HexSelector, OptionSelector, ResourceGatherSelector, Selectable, SelectableInstance, SelectionResult, Selector, SelfEntityPredicate}
+import arx.ax4.game.action.{EntityPredicate, EntitySelector, HexSelector, MoveCharacterInstance, OptionSelector, ResourceGatherSelector, Selectable, SelectableInstance, SelectionResult, Selector, SelfEntityPredicate}
 import arx.ax4.game.entities.Companions.{CharacterInfo, CombatData, Equipment, Physical, TagData}
 import arx.ax4.game.entities.Conditionals.BaseAttackConditional
-import arx.ax4.game.entities.{AttackConditionals, AttackData, AttackKey, AttackModifier, CardLibrary, CardSelector, CardTypes, CharacterInfo, DeckData, EntityArchetype, Equipment, SpecialAttack, TargetPattern, Tiles}
+import arx.ax4.game.entities.{AttackConditionals, AttackData, AttackKey, AttackModifier, CardLibrary, CardSelector, CardTypes, CharacterInfo, DeckData, EntityArchetype, Equipment, FlagLibrary, SpecialAttack, TargetPattern, Tiles, Weapon}
 import arx.ax4.game.logic.CardAdditionStyle.{DrawDiscardSplit, DrawPile}
 import arx.ax4.game.logic.{CardAdditionStyle, CardLocation, CardLogic, CharacterLogic, CombatLogic, GatherLogic, InventoryLogic, TagLogic}
 import arx.core.introspection.Field
@@ -12,17 +12,18 @@ import arx.core.introspection.FieldOperations.{Add, Sub}
 import arx.core.math.Sext
 import arx.core.representation.ConfigValue
 import arx.core.vec.coordinates.{AxialVec3, HexRingIterator}
-import arx.engine.data.{CustomConfigDataLoader, TAuxData}
+import arx.engine.data.{CustomConfigDataLoader, Moddable, TAuxData}
 import arx.engine.entity.{Entity, Taxon, Taxonomy}
 import arx.engine.world.{FieldOperationModifier, World, WorldView}
 import arx.graphics.TToImage
-import arx.graphics.helpers.{Color, HorizontalPaddingSection, ImageSection, RichText, RichTextRenderSettings, THasRichTextRepresentation, TaxonSections, TextSection}
+import arx.graphics.helpers.{Color, HorizontalPaddingSection, ImageSection, LineBreakSection, RGBA, RichText, RichTextRenderSettings, THasRichTextRepresentation, TaxonSections, TextSection}
 import arx.core.introspection.FieldOperations._
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe
 import scala.reflect.runtime.universe._
 import arx.Prelude._
+import arx.ax4.game.components.FlagComponent.ChangeFlagBy
 import arx.ax4.game.entities.AttackConditionals.AnyAttack
 
 
@@ -106,6 +107,29 @@ case class GatherCardEffect(range : Int) extends GameEffect {
 	}
 
 	override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"Gather $range")
+}
+
+case class MoveUpToDistance(baseDistance : Sext) extends GameEffect {
+	override def instantiate(world: WorldView, entity: Entity, source: Entity): Either[GameEffectInstance, String] = {
+		Left(MoveCharacterInstance(entity, Some(CharacterLogic.adjustedMoveDistance(entity, baseDistance)(world)), allowZeroMove = true))
+	}
+
+	override def toRichText(view: WorldView, entity: Entity, settings: RichTextRenderSettings): RichText = {
+		val adjDist = CharacterLogic.adjustedMoveDistance(entity, baseDistance)(view)
+		val color = if (adjDist > baseDistance) {
+			RGBA(0.15f, 0.25f, 0.6f, 1.0f)
+		} else if (adjDist < baseDistance) {
+			RGBA(0.6f, 0.25f, 0.05f, 1.0f)
+		} else {
+			RGBA(0,0,0,1)
+		}
+
+		RichText(TextSection(s"Move $adjDist", Moddable(color)))
+	}
+
+	override def toRichText(settings: RichTextRenderSettings): RichText = {
+		s"Move $baseDistance"
+	}
 }
 
 case class GainMovePoints(mp : Sext) extends SimpleGameEffect {
@@ -223,7 +247,7 @@ case class AddCardToDeck(cardArchetypes : Seq[Taxon], cardAdditionStyle: CardAdd
 						val cardArch = CardLibrary.withKind(chosenKind)
 
 						val card = CardLogic.createCard(entity, cardArch)(world)
-						CardLogic.addCard(entity, card, cardAdditionStyle)(world)
+						CardLogic.addCards(entity, Vector(card), cardAdditionStyle)(world)
 					}
 
 					override def nextSelector(results: SelectionResult): Option[Selector[_]] = if (cardArchetypes.size > 1) {
@@ -295,7 +319,23 @@ case class EquipItemEffect(item : Entity) extends GameEffect {
 		Right("Entity cannot equip items")
 	}
 
-	override def toRichText(settings: RichTextRenderSettings): RichText = RichText("Equip")
+
+	override def toRichText(view: WorldView, entity: Entity, settings: RichTextRenderSettings): RichText = {
+		implicit val wview = view
+
+		var ret = RichText(TextSection("Equip") :: LineBreakSection(20) :: Nil)
+		for (weapon <- item.dataOpt[Weapon]) {
+			for ((key,attack) <- weapon.attacks.toList.sortBy(_._1)) {
+				ret ++= AttackGameEffect.toRichText(attack, attack, attack.name.capitalize, settings)
+				ret += LineBreakSection(20)
+			}
+		}
+		ret
+	}
+
+	override def toRichText(settings: RichTextRenderSettings): RichText = {
+		RichText("Equip")
+	}
 }
 
 
@@ -310,6 +350,24 @@ case class AddAttackModifierEffect(condition : BaseAttackConditional, modifier :
 	})
 
 	override def toRichText(settings: RichTextRenderSettings): RichText = RichText(s"Attack Modifier : $modifier")
+}
+
+case class ChangeFlagTo(flag : Taxon, target : Int, isMax : Boolean) extends SimpleGameEffect {
+	override def applyEffect(world: World, entity: Entity): Unit = {
+		implicit val view = world.view
+		if ((isMax && TagLogic.rawFlagValue(entity, flag) < target) ||
+			(!isMax && TagLogic.rawFlagValue(entity, flag) > target)) {
+			TagLogic.changeFlagTo(entity, flag, target)(world)
+		}
+	}
+
+	override def toRichText(settings: RichTextRenderSettings): RichText = {
+		if (!FlagLibrary.getWithKind(flag).forall(_.hidden)) {
+			RichText.parse(s"[$flag] -> $target", settings)
+		} else {
+			RichText.Empty
+		}
+	}
 }
 
 case class ChangeFlag(flag : Taxon, delta : Int, limitToZero : Boolean) extends SimpleGameEffect {
@@ -331,6 +389,7 @@ object GameEffectConfigLoader extends CustomConfigDataLoader[GameEffect] {
 	val MaxHPPattern = "(?i)MaxHP\\(([+-]?[0-9]+)\\)".r
 	val KeyNumberPattern = "([a-zA-Z]+)\\s*\\(([+-]?[0-9]+)\\s*\\)".r
 	val MoveCardToPattern = "(?i)move\\s?card\\s?to\\s?\\(([a-zA-Z]+)\\)".r
+	val IncreaseFlagToPattern = "(?i)([a-zA-Z.]+)\\sincrease\\s?to\\s?\\(([0-9]+)\\)".r
 
 
 	val allFlags = {
@@ -345,11 +404,14 @@ object GameEffectConfigLoader extends CustomConfigDataLoader[GameEffect] {
 				case APPattern(ap) => Some(PayActionPoints(ap.toInt))
 				case StaminaPattern(stam) => Some(PayStamina(stam.toInt))
 				case GatherPattern(range) => Some(GatherCardEffect(range.toInt))
-				case MovePattern(mp) => Some(GainMovePoints(mp.toInt))
+				case MovePattern(mp) =>
+//					Some(GainMovePoints(mp.toInt))
+					Some(MoveUpToDistance(mp.toInt))
 				//				case SpecialAttackPattern(attName) if SpecialAttack.withNameExists(attName) => AddSpecialAttackCardEffect(attName, SpecialAttack.withName(attName))
 				case AddCardPattern(cardName) => Some(AddCardToDeck(List(Taxonomy(cardName, "CardTypes")), DrawPile))
 				case MaxHPPattern(maxHP) => Some(ChangeMaxHP(maxHP.toInt))
 				//				case SpecialAttackPattern(attackName) => SpecialAttackCardEffect(SpecialAttack.withName(attackName))
+				case IncreaseFlagToPattern(flag, target) => Some(ChangeFlagTo(Taxonomy(flag, "Flags"), target.toInt, true))
 				case KeyNumberPattern(key, numberStr) =>
 					val number = numberStr.toInt
 					Taxonomy.standardizeTaxonString(key) match {

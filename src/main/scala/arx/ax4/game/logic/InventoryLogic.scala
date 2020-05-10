@@ -1,7 +1,7 @@
 package arx.ax4.game.logic
 
 import arx.ax4.game.entities.Companions.{Equipment, Inventory, Item, TagData}
-import arx.ax4.game.entities.{Equipment, Inventory, Item, TagData}
+import arx.ax4.game.entities.{Equipment, Inventory, Item, TagData, Weapon}
 import arx.ax4.game.event.{EquipItem, TransferItem, UnequipItem}
 import arx.engine.entity.Entity
 import arx.engine.world.{World, WorldView}
@@ -80,5 +80,9 @@ object InventoryLogic {
 			case Some(equip) => equip.equipped.toList.sortBy(i => IdentityLogic.kind(i).name)
 			case None => Nil
 		}
+	}
+
+	def equippedWeapons(entity : Entity)(implicit view : WorldView) : Seq[Entity] = {
+		equippedItems(entity).filter(_.hasData[Weapon])
 	}
 }

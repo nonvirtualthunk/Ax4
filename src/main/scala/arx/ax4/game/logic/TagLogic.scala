@@ -1,5 +1,7 @@
 package arx.ax4.game.logic
 
+import arx.Prelude
+import arx.Prelude.sign
 import arx.ax4.game.entities.Companions.TagData
 import arx.ax4.game.entities.{AttackModifier, FlagEquivalency, FlagLibrary, TagData}
 import arx.ax4.game.event.ChangeFlagEvent
@@ -13,14 +15,23 @@ object TagLogic {
 		flags.map(f => flagValue(TD, f)).sum
 	}
 
+	def rawFlagValue(ent: Entity, flag: Taxon)(implicit view : WorldView) : Int = rawFlagValue(ent[TagData], flag)
+	def rawFlagValue(td: TagData, flag: Taxon)(implicit view : WorldView) : Int = td.flags.getOrElse(flag, 0)
+
 	def flagValue(td : TagData, flag : Taxon)(implicit view : WorldView) : Int = {
 		val equivalentFlagsSum = FlagEquivalency.flagEquivalences.get(flag)
-			.map(eq => flagValue(td, eq.taxon) * eq.multiplier)
+			.map(eq => {
+				val otherFlagValue = flagValue(td, eq.taxon)
+				otherFlagValue * eq.multiplier + (sign(otherFlagValue) * eq.adder)
+			})
 			.sum
-		td.flags.getOrElse(flag, 0) + equivalentFlagsSum
+		rawFlagValue(td, flag) + equivalentFlagsSum
 	}
 	def flagValue(entity : Entity, flag : Taxon)(implicit view : WorldView) : Int = {
-		entity.dataOpt[TagData].map(td => flagValue(td, flag)).getOrElse(0)
+
+	import arx.Prelude._
+
+	entity.dataOpt[TagData].map(td => flagValue(td, flag)).getOrElse(0)
 	}
 	def flagValue(entity : Entity, flag : String)(implicit view : WorldView) : Int = {
 		flagValue(entity, Taxonomy(flag, "Flags"))
@@ -30,12 +41,21 @@ object TagLogic {
 		changeFlagBy(entity, Taxonomy(flag, "Flags"), delta, limitToZero)
 	}
 	def changeFlagBy(entity : Entity, flag : Taxon, delta : Int, limitToZero : Boolean)(implicit world : World) : Int = {
-		val curValue = flagValue(entity, flag)(world.view)
-		val newValue = if (limitToZero) {
+		val flagInfo = FlagLibrary.getWithKind(flag)
+
+		val curValue = rawFlagValue(entity, flag)(world.view)
+		val newLimitedValue = if (limitToZero || flagInfo.exists(_.limitToZero)) {
 			(curValue + delta).max(0)
 		} else {
 			curValue + delta
 		}
+
+		val newValue = if (flagInfo.exists(_.binary)) {
+			newLimitedValue.max(0).min(1)
+		} else {
+			newLimitedValue
+		}
+
 		if (newValue != curValue) {
 			world.startEvent(ChangeFlagEvent(entity, flag, curValue, newValue))
 			world.modify(entity, TagData.flags.incrementKey(flag, newValue - curValue))
@@ -45,7 +65,7 @@ object TagLogic {
 	}
 
 	def changeFlagTo(entity : Entity, flag : Taxon, value : Int)(implicit world : World) : Int = {
-		val curValue = flagValue(entity, flag)(world.view)
+		val curValue = rawFlagValue(entity, flag)(world.view)
 		if (curValue != value) {
 			world.startEvent(ChangeFlagEvent(entity, flag, curValue, value))
 			world.modify(entity, TagData.flags.incrementKey(flag, value - curValue))
@@ -59,7 +79,7 @@ object TagLogic {
 	def allFlags(entity : Entity)(implicit view : WorldView) : Map[Taxon, Int] = entity.dataOpt[TagData].map(_.flags).getOrElse(Map())
 
 	def allFlagAttackModifiers(entity : Entity)(implicit view : WorldView) : Map[Taxon, Vector[AttackModifier]] = {
-		for ((flag,count) <- allFlags(entity); flagInfo <- FlagLibrary.getWithKind(flag)) yield {
+		for ((flag,count) <- allFlags(entity); if count > 0; flagInfo <- FlagLibrary.getWithKind(flag)) yield {
 			flag -> flagInfo.attackModifiers
 		}
 	}

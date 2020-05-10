@@ -13,7 +13,7 @@ object ActionLogic {
 		world.startEvent(ActionTaken(action))
 		val res = action match {
 			case MoveAction(character, path) =>
-				MovementLogic.moveCharacterOnPath(character, path)
+				MovementLogic.moveCharacterOnPath(character, path, None)
 			case AttackAction(attacker, attack, attackFrom, targets, preMove, postMove) =>
 				val entityTargets = targets match {
 					case Left(entityTargets) => entityTargets
